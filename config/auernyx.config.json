@@ -1,0 +1,20 @@
+{
+  "name": "Auernyx",
+  "mode": "Passive until invoked",
+  "daemon": {
+    "host": "127.0.0.1",
+    "port": 43117,
+    "secret": "",
+    "maxBodyBytes": 65536,
+    "rateLimit": {
+      "windowMs": 10000,
+      "maxRequests": 30
+    }
+  },
+  "ledger": {
+    "enabled": true
+  },
+  "paths": {
+    "scanAllowedRoots": []
+  }
+}

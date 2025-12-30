@@ -1,0 +1,9 @@
+{
+  "allowedCapabilities": [
+    "scanRepo",
+    "fenerisPrep",
+    "baselinePre",
+    "baselinePost",
+    "docker"
+  ]
+}

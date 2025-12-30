@@ -1,0 +1,52 @@
+{
+  "name": "auernyx-agent",
+  "displayName": "Auernyx Agent",
+  "description": "Embedded assistant persona for guidance, analysis, and tooling inside VS Code.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./dist/clients/vscode/extension.js",
+
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+
+  "bin": {
+    "auernyx": "./dist/clients/cli/auernyx.js",
+    "auernyx-daemon": "./dist/clients/cli/auernyx-daemon.js"
+  },
+
+  "contributes": {
+    "commands": [
+      {
+        "command": "auernyx.ask",
+        "title": "Ask Auernyx"
+      },
+      {
+        "command": "auernyx.scanRepo",
+        "title": "Scan Repo (Auernyx)"
+      },
+      {
+        "command": "auernyx.fenerisPrep",
+        "title": "Prepare Feneris Port"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.25",
+    "@types/vscode": "^1.106.1",
+    "@vscode/test-electron": "^2.5.2",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "cli": "node ./dist/clients/cli/auernyx.js",
+    "daemon": "node ./dist/clients/cli/auernyx-daemon.js",
+    "watch": "tsc -watch -p ./"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

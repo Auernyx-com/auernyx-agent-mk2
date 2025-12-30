@@ -1,0 +1,3168 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\Windows\system32> Get-LocalUser
+
+Name               Enabled Description
+----               ------- -----------
+Administrator      False   Built-in account for administering the computer/domain
+DefaultAccount     False   A user account managed by the system.
+Guest              True    Built-in account for guest access to the computer/domain
+Jhugh              True
+WDAGUtilityAccount False   A user account managed and used by the system for Windows Defender Application Guard scen...
+WsiAccount         False   A user account managed and used by the system for Web Sign-in scenarios.
+
+
+PS C:\Windows\system32> Get-LocalGroupMember -Group "Administrators"
+
+ObjectClass Name                   PrincipalSource
+----------- ----                   ---------------
+User        AEsir101\Administrator Local
+User        AESIR101\Jhugh         MicrosoftAccount
+
+
+PS C:\Windows\system32> Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Remote*'
+
+
+CreateEncryptedOnlyTickets : 0
+fAllowFullControl          : 1
+fAllowToGetHelp            : 0
+fEnableChatControl         : 1
+MaxTicketExpiry            : 6
+MaxTicketExpiryUnits       : 1
+PSPath                     : Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentContr
+                             olSet\Control\Remote Assistance
+PSParentPath               : Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentContr
+                             olSet\Control
+PSChildName                : Remote Assistance
+PSDrive                    : HKLM
+PSProvider                 : Microsoft.PowerShell.Core\Registry
+
+
+
+PS C:\Windows\system32> Get-Service -Name TermService
+
+Status   Name               DisplayName
+------   ----               -----------
+Stopped  TermService        Remote Desktop Services
+
+
+PS C:\Windows\system32> Get-WmiObject -Class Win32_TerminalServiceSetting
+Get-WmiObject : Invalid class "Win32_TerminalServiceSetting"
+At line:1 char:1
++ Get-WmiObject -Class Win32_TerminalServiceSetting
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidType: (:) [Get-WmiObject], ManagementException
+    + FullyQualifiedErrorId : GetWMIManagementException,Microsoft.PowerShell.Commands.GetWmiObjectComm
+   and
+
+PS C:\Windows\system32> Get-CimInstance Win32_StartupCommand | Select-Object Name,Command,Location
+
+Name                                                     Command
+----                                                     -------
+OneDriveSetup                                            C:\Windows\System32\OneDriveSetup.exe /thfi...
+OneDriveSetup                                            C:\Windows\System32\OneDriveSetup.exe /thfi...
+MicrosoftEdgeAutoLaunch_3560D1CA452AB37FB525A8EAB0B0D797 "C:\Program Files (x86)\Microsoft\Edge\Appl...
+OneDrive                                                 "C:\Program Files\Microsoft OneDrive\OneDri...
+Docker Desktop                                           C:\Program Files\Docker\Docker\Docker Deskt...
+electron.app.Fing                                        C:\Program Files\Fing\Fing.exe --processSta...
+electron.app.BlueStacks Services                         C:\Users\Jhugh\AppData\Local\Programs\blues...
+SecurityHealth                                           %windir%\system32\SecurityHealthSystray.exe
+
+
+PS C:\Windows\system32> Get-ScheduledTask | Select TaskName,TaskPath,State
+
+TaskName                                                                 TaskPath
+--------                                                                 --------
+ASUS Hotplug Controller                                                  \
+ASUS Monitor Control                                                     \
+ASUS Optimization 36D18D69AFC3                                           \
+ASUS Update Checker 2.0                                                  \
+ASUSSmartDisplayControl                                                  \
+AsusSystemAnalysis_754F3273-0563-4F20-B12F-826510B07474                  \
+BlueStacksHelper_nxt                                                     \
+Git for Windows Updater                                                  \
+MicrosoftEdgeUpdateTaskMachineCore{82ADC466-2452-4903-9407-4003485CF4D6} \
+MicrosoftEdgeUpdateTaskMachineUA{7010A416-278C-4F3D-BFDB-B0BD204227DB}   \
+npcapwatchdog                                                            \
+NVIDIA App SelfUpdate_{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}             \
+OneDrive Per-Machine Standalone Update Task                              \
+OneDrive Reporting Task-S-1-5-21-825047201-4286172558-3527776787-1001    \
+OneDrive Reporting Task-S-1-5-21-825047201-4286172558-3527776787-1002    \
+OneDrive Startup Task-S-1-5-21-825047201-4286172558-3527776787-1001      \
+OneDrive Startup Task-S-1-5-21-825047201-4286172558-3527776787-1002      \
+RtkAudUService64_BG                                                      \
+AcPowerNotification                                                      \ASUS\
+ArmourySocketServer                                                      \ASUS\
+ASUSUpdateTaskMachineCore                                                \ASUS\
+ASUSUpdateTaskMachineUA                                                  \ASUS\
+P508PowerAgent_sdk                                                       \ASUS\
+Office Actions Server                                                    \Microsoft\Office\
+Office Automatic Updates 2.0                                             \Microsoft\Office\
+Office Background Push Maintenance                                       \Microsoft\Office\
+Office ClickToRun Service Monitor                                        \Microsoft\Office\
+Office Feature Updates                                                   \Microsoft\Office\
+Office Feature Updates Logon                                             \Microsoft\Office\
+Office Performance Monitor                                               \Microsoft\Office\
+Office Startup Maintenance                                               \Microsoft\Office\
+.NET Framework NGEN v4.0.30319                                           \Microsoft\Windows\.NET Fra...
+.NET Framework NGEN v4.0.30319 64                                        \Microsoft\Windows\.NET Fra...
+.NET Framework NGEN v4.0.30319 64 Critical                               \Microsoft\Windows\.NET Fra...
+.NET Framework NGEN v4.0.30319 Critical                                  \Microsoft\Windows\.NET Fra...
+RecoverabilityToastTask                                                  \Microsoft\Windows\AccountH...
+AD RMS Rights Policy Template Management (Automated)                     \Microsoft\Windows\Active D...
+AD RMS Rights Policy Template Management (Manual)                        \Microsoft\Windows\Active D...
+EDP Policy Manager                                                       \Microsoft\Windows\AppID\
+PolicyConverter                                                          \Microsoft\Windows\AppID\
+VerifiedPublisherCertStoreCheck                                          \Microsoft\Windows\AppID\
+MareBackup                                                               \Microsoft\Windows\Applicat...
+Microsoft Compatibility Appraiser Exp                                    \Microsoft\Windows\Applicat...
+PcaPatchDbTask                                                           \Microsoft\Windows\Applicat...
+SdbinstMergeDbTask                                                       \Microsoft\Windows\Applicat...
+StartupAppTask                                                           \Microsoft\Windows\Applicat...
+appuriverifierdaily                                                      \Microsoft\Windows\Applicat...
+appuriverifierinstall                                                    \Microsoft\Windows\Applicat...
+CleanupTemporaryState                                                    \Microsoft\Windows\Applicat...
+DsSvcCleanup                                                             \Microsoft\Windows\Applicat...
+Backup                                                                   \Microsoft\Windows\AppListB...
+BackupNonMaintenance                                                     \Microsoft\Windows\AppListB...
+Pre-staged app cleanup                                                   \Microsoft\Windows\AppxDepl...
+UCPD velocity                                                            \Microsoft\Windows\AppxDepl...
+Proxy                                                                    \Microsoft\Windows\Autochk\
+BitLocker Encrypt All Drives                                             \Microsoft\Windows\BitLocker\
+BitLocker MDM policy Refresh                                             \Microsoft\Windows\BitLocker\
+UninstallDeviceTask                                                      \Microsoft\Windows\Bluetooth\
+BgTaskRegistrationMaintenanceTask                                        \Microsoft\Windows\BrokerIn...
+maintenancetasks                                                         \Microsoft\Windows\capabili...
+AikCertEnrollTask                                                        \Microsoft\Windows\Certific...
+CryptoPolicyTask                                                         \Microsoft\Windows\Certific...
+KeyPreGenTask                                                            \Microsoft\Windows\Certific...
+SystemTask                                                               \Microsoft\Windows\Certific...
+UserTask                                                                 \Microsoft\Windows\Certific...
+UserTask-Roam                                                            \Microsoft\Windows\Certific...
+ProactiveScan                                                            \Microsoft\Windows\Chkdsk\
+SyspartRepair                                                            \Microsoft\Windows\Chkdsk\
+License Validation                                                       \Microsoft\Windows\Clip\
+CreateObjectTask                                                         \Microsoft\Windows\CloudExp...
+Backup                                                                   \Microsoft\Windows\CloudRes...
+Restore                                                                  \Microsoft\Windows\CloudRes...
+UnifiedConsentSyncTask                                                   \Microsoft\Windows\ConsentU...
+Consolidator                                                             \Microsoft\Windows\Customer...
+UsbCeip                                                                  \Microsoft\Windows\Customer...
+Data Integrity Check And Scan                                            \Microsoft\Windows\Data Int...
+Data Integrity Scan                                                      \Microsoft\Windows\Data Int...
+Data Integrity Scan for Crash Recovery                                   \Microsoft\Windows\Data Int...
+ScheduledDefrag                                                          \Microsoft\Windows\Defrag\
+Device                                                                   \Microsoft\Windows\Device I...
+Device User                                                              \Microsoft\Windows\Device I...
+Driver Recovery on Reboot                                                \Microsoft\Windows\Device S...
+Metadata Refresh                                                         \Microsoft\Windows\Device S...
+HandleCommand                                                            \Microsoft\Windows\DeviceDi...
+HandleWnsCommand                                                         \Microsoft\Windows\DeviceDi...
+IntegrityCheck                                                           \Microsoft\Windows\DeviceDi...
+LocateCommandUserSession                                                 \Microsoft\Windows\DeviceDi...
+RegisterDeviceAccountChange                                              \Microsoft\Windows\DeviceDi...
+RegisterDeviceLocationRightsChange                                       \Microsoft\Windows\DeviceDi...
+RegisterDevicePeriodic24                                                 \Microsoft\Windows\DeviceDi...
+RegisterDevicePolicyChange                                               \Microsoft\Windows\DeviceDi...
+RegisterDeviceProtectionStateChanged                                     \Microsoft\Windows\DeviceDi...
+RegisterDeviceSettingChange                                              \Microsoft\Windows\DeviceDi...
+RegisterDeviceWnsFallback                                                \Microsoft\Windows\DeviceDi...
+RegisterUserDevice                                                       \Microsoft\Windows\DeviceDi...
+RecommendedTroubleshootingScanner                                        \Microsoft\Windows\Diagnosis\
+Scheduled                                                                \Microsoft\Windows\Diagnosis\
+UnexpectedCodepath                                                       \Microsoft\Windows\Diagnosis\
+DirectXDatabaseUpdater                                                   \Microsoft\Windows\DirectX\
+DXGIAdapterCache                                                         \Microsoft\Windows\DirectX\
+SilentCleanup                                                            \Microsoft\Windows\DiskClea...
+Microsoft-Windows-DiskDiagnosticDataCollector                            \Microsoft\Windows\DiskDiag...
+Microsoft-Windows-DiskDiagnosticResolver                                 \Microsoft\Windows\DiskDiag...
+Diagnostics                                                              \Microsoft\Windows\DiskFoot...
+StorageSense                                                             \Microsoft\Windows\DiskFoot...
+dusmtask                                                                 \Microsoft\Windows\DUSM\
+EDP App Launch Task                                                      \Microsoft\Windows\EDP\
+EDP Auth Task                                                            \Microsoft\Windows\EDP\
+EDP Inaccessible Credentials Task                                        \Microsoft\Windows\EDP\
+StorageCardEncryption Task                                               \Microsoft\Windows\EDP\
+ExploitGuard MDM policy Refresh                                          \Microsoft\Windows\ExploitG...
+DmClient                                                                 \Microsoft\Windows\Feedback...
+DmClientOnScenarioDownload                                               \Microsoft\Windows\Feedback...
+File History (maintenance mode)                                          \Microsoft\Windows\FileHist...
+BootstrapUsageDataReporting                                              \Microsoft\Windows\Flightin...
+GovernedFeatureUsageProcessing                                           \Microsoft\Windows\Flightin...
+ReconcileConfigs                                                         \Microsoft\Windows\Flightin...
+ReconcileFeatures                                                        \Microsoft\Windows\Flightin...
+UsageDataFlushing                                                        \Microsoft\Windows\Flightin...
+UsageDataReceiver                                                        \Microsoft\Windows\Flightin...
+UsageDataReporting                                                       \Microsoft\Windows\Flightin...
+RefreshCache                                                             \Microsoft\Windows\Flightin...
+Monitoring                                                               \Microsoft\Windows\Hotpatch\
+InputSettingsRestoreDataAvailable                                        \Microsoft\Windows\input\
+LocalUserSyncDataAvailable                                               \Microsoft\Windows\input\
+MouseSyncDataAvailable                                                   \Microsoft\Windows\input\
+PenSyncDataAvailable                                                     \Microsoft\Windows\input\
+RemoteMouseSyncDataAvailable                                             \Microsoft\Windows\input\
+RemotePenSyncDataAvailable                                               \Microsoft\Windows\input\
+RemoteTouchpadSyncDataAvailable                                          \Microsoft\Windows\input\
+syncpensettings                                                          \Microsoft\Windows\input\
+TouchpadSyncDataAvailable                                                \Microsoft\Windows\input\
+RestoreDevice                                                            \Microsoft\Windows\InstallS...
+ScanForUpdates                                                           \Microsoft\Windows\InstallS...
+ScanForUpdatesAsUser                                                     \Microsoft\Windows\InstallS...
+SmartRetry                                                               \Microsoft\Windows\InstallS...
+WakeUpAndContinueUpdates                                                 \Microsoft\Windows\InstallS...
+WakeUpAndScanForUpdates                                                  \Microsoft\Windows\InstallS...
+Synchronize Language Settings                                            \Microsoft\Windows\Internat...
+La57Cleanup                                                              \Microsoft\Windows\Kernel\
+Installation                                                             \Microsoft\Windows\Language...
+ReconcileLanguageResources                                               \Microsoft\Windows\Language...
+Uninstallation                                                           \Microsoft\Windows\Language...
+TempSignedLicenseExchange                                                \Microsoft\Windows\License ...
+WindowsActionDialog                                                      \Microsoft\Windows\Location\
+WinSAT                                                                   \Microsoft\Windows\Maintena...
+DetectHardwareChange                                                     \Microsoft\Windows\Manageme...
+RemediateHardwareChange                                                  \Microsoft\Windows\Manageme...
+Cellular                                                                 \Microsoft\Windows\Manageme...
+Logon                                                                    \Microsoft\Windows\Manageme...
+MdmDiagnosticsCleanup                                                    \Microsoft\Windows\Manageme...
+Retry                                                                    \Microsoft\Windows\Manageme...
+RunOnReboot                                                              \Microsoft\Windows\Manageme...
+MapsToastTask                                                            \Microsoft\Windows\Maps\
+MapsUpdateTask                                                           \Microsoft\Windows\Maps\
+AutomaticOfflineMemoryDiagnostic                                         \Microsoft\Windows\MemoryDi...
+ProcessMemoryDiagnosticEvents                                            \Microsoft\Windows\MemoryDi...
+RunFullMemoryDiagnostic                                                  \Microsoft\Windows\MemoryDi...
+LPRemove                                                                 \Microsoft\Windows\MUI\
+Mcbuilder                                                                \Microsoft\Windows\MUI\
+SystemSoundsService                                                      \Microsoft\Windows\Multimedia\
+NcsiIdentifyUserProxies                                                  \Microsoft\Windows\Network ...
+WiFiTask                                                                 \Microsoft\Windows\NlaSvc\
+PCR Prediction Framework Firmware Update Task                            \Microsoft\Windows\PCRPF\
+RequestTrace                                                             \Microsoft\Windows\Performa...
+WhesvcToast                                                              \Microsoft\Windows\Performa...
+Secure-Boot-Update                                                       \Microsoft\Windows\PI\
+Sqm-Tasks                                                                \Microsoft\Windows\PI\
+Device Install Group Policy                                              \Microsoft\Windows\Plug and...
+Device Install Reboot Required                                           \Microsoft\Windows\Plug and...
+Sysprep Generalize Drivers                                               \Microsoft\Windows\Plug and...
+Pluton-Ksp-Provisioning                                                  \Microsoft\Windows\Pluton\
+AnalyzeSystem                                                            \Microsoft\Windows\Power Ef...
+EduPrintProv                                                             \Microsoft\Windows\Printing\
+PrinterCleanupTask                                                       \Microsoft\Windows\Printing\
+PrintJobCleanupTask                                                      \Microsoft\Windows\Printing\
+LoginCheck                                                               \Microsoft\Windows\PushToIn...
+Registration                                                             \Microsoft\Windows\PushToIn...
+MobilityManager                                                          \Microsoft\Windows\Ras\
+VerifyWinRE                                                              \Microsoft\Windows\Recovery...
+Initialization                                                           \Microsoft\Windows\ReFsDedu...
+RegIdleBackup                                                            \Microsoft\Windows\Registry\
+RemoteAssistanceTask                                                     \Microsoft\Windows\RemoteAs...
+OOBEFodSetup                                                             \Microsoft\Windows\Servicing\
+StartComponentCleanup                                                    \Microsoft\Windows\Servicing\
+PITRTask                                                                 \Microsoft\Windows\Setup\
+Account Cleanup                                                          \Microsoft\Windows\SharedPC\
+CreateObjectTask                                                         \Microsoft\Windows\Shell\
+FamilySafetyMonitor                                                      \Microsoft\Windows\Shell\
+FamilySafetyRefreshTask                                                  \Microsoft\Windows\Shell\
+IndexerAutomaticMaintenance                                              \Microsoft\Windows\Shell\
+ThemeAssetTask_SyncFODState                                              \Microsoft\Windows\Shell\
+ThemesSyncedImageDownload                                                \Microsoft\Windows\Shell\
+UpdateUserPictureTask                                                    \Microsoft\Windows\Shell\
+UpdateUserPictureTaskContained                                           \Microsoft\Windows\Shell\
+SvcRestartTask                                                           \Microsoft\Windows\Software...
+SvcRestartTaskLogon                                                      \Microsoft\Windows\Software...
+SvcRestartTaskNetwork                                                    \Microsoft\Windows\Software...
+SpaceAgentTask                                                           \Microsoft\Windows\SpacePort\
+SpaceManagerTask                                                         \Microsoft\Windows\SpacePort\
+SpeechModelDownloadTask                                                  \Microsoft\Windows\Speech\
+MaintenanceTasks                                                         \Microsoft\Windows\StateRep...
+Storage Tiers Management Initialization                                  \Microsoft\Windows\Storage ...
+Storage Tiers Optimization                                               \Microsoft\Windows\Storage ...
+EnableLicenseAcquisition                                                 \Microsoft\Windows\Subscrip...
+LicenseAcquisition                                                       \Microsoft\Windows\Subscrip...
+PowerGridForecastTask                                                    \Microsoft\Windows\Sustaina...
+SustainabilityTelemetry                                                  \Microsoft\Windows\Sustaina...
+HybridDriveCachePrepopulate                                              \Microsoft\Windows\Sysmain\
+HybridDriveCacheRebalance                                                \Microsoft\Windows\Sysmain\
+ResPriStaticDbSync                                                       \Microsoft\Windows\Sysmain\
+WsSwapAssessmentTask                                                     \Microsoft\Windows\Sysmain\
+SR                                                                       \Microsoft\Windows\SystemRe...
+Interactive                                                              \Microsoft\Windows\Task Man...
+MsCtfMonitor                                                             \Microsoft\Windows\TextServ...
+ForceSynchronizeTime                                                     \Microsoft\Windows\Time Syn...
+SynchronizeTime                                                          \Microsoft\Windows\Time Syn...
+SynchronizeTimeZone                                                      \Microsoft\Windows\Time Zone\
+Tpm-HASCertRetr                                                          \Microsoft\Windows\TPM\
+Tpm-Maintenance                                                          \Microsoft\Windows\TPM\
+Tpm-PreAttestationHealthCheck                                            \Microsoft\Windows\TPM\
+Report policies                                                          \Microsoft\Windows\UpdateOr...
+Schedule Maintenance Work                                                \Microsoft\Windows\UpdateOr...
+Schedule Scan                                                            \Microsoft\Windows\UpdateOr...
+Schedule Scan Static Task                                                \Microsoft\Windows\UpdateOr...
+Schedule Wake To Work                                                    \Microsoft\Windows\UpdateOr...
+Schedule Work                                                            \Microsoft\Windows\UpdateOr...
+Start Oobe Expedite Work                                                 \Microsoft\Windows\UpdateOr...
+StartOobeAppsScanAfterUpdate                                             \Microsoft\Windows\UpdateOr...
+StartOobeAppsScan_LicenseAccepted                                        \Microsoft\Windows\UpdateOr...
+UIEOrchestrator                                                          \Microsoft\Windows\UpdateOr...
+USO_UxBroker                                                             \Microsoft\Windows\UpdateOr...
+UUS Failover Task                                                        \Microsoft\Windows\UpdateOr...
+UPnPHostConfig                                                           \Microsoft\Windows\UPnP\
+UsageAndQualityInsights-MaintenanceTask                                  \Microsoft\Windows\UsageAnd...
+Usb-Notifications                                                        \Microsoft\Windows\USB\
+HiveUploadTask                                                           \Microsoft\Windows\User Pro...
+PerformRemediation                                                       \Microsoft\Windows\WaaSMedic\
+WiFiTask                                                                 \Microsoft\Windows\WCM\
+ResolutionHost                                                           \Microsoft\Windows\WDI\
+QueueReporting                                                           \Microsoft\Windows\Windows ...
+BfeOnServiceStartTypeChange                                              \Microsoft\Windows\Windows ...
+InitialConfiguration                                                     \Microsoft\Windows\WindowsA...
+PolicyConfiguration                                                      \Microsoft\Windows\WindowsA...
+InitialConfiguration                                                     \Microsoft\Windows\WindowsA...
+Calibration Loader                                                       \Microsoft\Windows\WindowsC...
+Refresh Group Policy Cache                                               \Microsoft\Windows\WindowsU...
+Scheduled Start                                                          \Microsoft\Windows\WindowsU...
+CacheTask                                                                \Microsoft\Windows\Wininet\
+CDSSync                                                                  \Microsoft\Windows\WlanSvc\
+MoProfileManagement                                                      \Microsoft\Windows\WlanSvc\
+WIM-Hash-Management                                                      \Microsoft\Windows\WOF\
+WIM-Hash-Validation                                                      \Microsoft\Windows\WOF\
+Work Folders Logon Synchronization                                       \Microsoft\Windows\Work Fol...
+Work Folders Maintenance Work                                            \Microsoft\Windows\Work Fol...
+Automatic-Device-Join                                                    \Microsoft\Windows\Workplac...
+Device-Sync                                                              \Microsoft\Windows\Workplac...
+Recovery-Check                                                           \Microsoft\Windows\Workplac...
+NotificationTask                                                         \Microsoft\Windows\WwanSvc\
+OobeDiscovery                                                            \Microsoft\Windows\WwanSvc\
+XblGameSaveTask                                                          \Microsoft\XblGameSave\
+
+
+PS C:\Windows\system32> tasklist /fi "PID eq XXXX"
+ERROR: The search filter cannot be recognized.
+PS C:\Windows\system32> netstat -ano | findstr LISTENING
+  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       1160
+  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING       4
+  TCP    0.0.0.0:5040           0.0.0.0:0              LISTENING       10720
+  TCP    0.0.0.0:7680           0.0.0.0:0              LISTENING       25768
+  TCP    0.0.0.0:49664          0.0.0.0:0              LISTENING       1788
+  TCP    0.0.0.0:49665          0.0.0.0:0              LISTENING       1640
+  TCP    0.0.0.0:49668          0.0.0.0:0              LISTENING       2552
+  TCP    0.0.0.0:49669          0.0.0.0:0              LISTENING       3704
+  TCP    0.0.0.0:49674          0.0.0.0:0              LISTENING       5568
+  TCP    0.0.0.0:49696          0.0.0.0:0              LISTENING       1716
+  TCP    0.0.0.0:49702          0.0.0.0:0              LISTENING       6780
+  TCP    0.0.0.0:49703          0.0.0.0:0              LISTENING       6780
+  TCP    0.0.0.0:49708          0.0.0.0:0              LISTENING       6780
+  TCP    0.0.0.0:49712          0.0.0.0:0              LISTENING       5836
+  TCP    0.0.0.0:49719          0.0.0.0:0              LISTENING       6704
+  TCP    0.0.0.0:49720          0.0.0.0:0              LISTENING       6704
+  TCP    0.0.0.0:49725          0.0.0.0:0              LISTENING       6704
+  TCP    0.0.0.0:49727          0.0.0.0:0              LISTENING       6704
+  TCP    0.0.0.0:49728          0.0.0.0:0              LISTENING       6704
+  TCP    0.0.0.0:49729          0.0.0.0:0              LISTENING       6704
+  TCP    127.0.0.1:1042         0.0.0.0:0              LISTENING       20276
+  TCP    127.0.0.1:1043         0.0.0.0:0              LISTENING       20276
+  TCP    127.0.0.1:6850         0.0.0.0:0              LISTENING       13112
+  TCP    127.0.0.1:7778         0.0.0.0:0              LISTENING       6472
+  TCP    127.0.0.1:9012         0.0.0.0:0              LISTENING       14608
+  TCP    127.0.0.1:9013         0.0.0.0:0              LISTENING       14608
+  TCP    127.0.0.1:9014         0.0.0.0:0              LISTENING       16076
+  TCP    127.0.0.1:11001        0.0.0.0:0              LISTENING       6756
+  TCP    127.0.0.1:13030        0.0.0.0:0              LISTENING       6876
+  TCP    127.0.0.1:13031        0.0.0.0:0              LISTENING       6836
+  TCP    127.0.0.1:13032        0.0.0.0:0              LISTENING       6836
+  TCP    127.0.0.1:22112        0.0.0.0:0              LISTENING       6876
+  TCP    127.0.0.1:24830        0.0.0.0:0              LISTENING       6604
+  TCP    127.0.0.1:27339        0.0.0.0:0              LISTENING       4
+  TCP    127.0.0.1:43227        0.0.0.0:0              LISTENING       6208
+  TCP    127.0.0.1:48080        0.0.0.0:0              LISTENING       5836
+  TCP    127.0.0.1:50100        0.0.0.0:0              LISTENING       6836
+  TCP    127.0.0.1:50923        0.0.0.0:0              LISTENING       6472
+  TCP    127.0.0.1:51100        0.0.0.0:0              LISTENING       10296
+  TCP    127.0.0.1:63842        0.0.0.0:0              LISTENING       2336
+  TCP    [::]:135               [::]:0                 LISTENING       1160
+  TCP    [::]:445               [::]:0                 LISTENING       4
+  TCP    [::]:7680              [::]:0                 LISTENING       25768
+  TCP    [::]:49664             [::]:0                 LISTENING       1788
+  TCP    [::]:49665             [::]:0                 LISTENING       1640
+  TCP    [::]:49668             [::]:0                 LISTENING       2552
+  TCP    [::]:49669             [::]:0                 LISTENING       3704
+  TCP    [::]:49674             [::]:0                 LISTENING       5568
+  TCP    [::]:49696             [::]:0                 LISTENING       1716
+  TCP    [::1]:49677            [::]:0                 LISTENING       6800
+PS C:\Windows\system32> tasklist /fi "PID eq XXXX"
+ERROR: The search filter cannot be recognized.
+PS C:\Windows\system32> cmdkey /list
+
+Currently stored credentials:
+
+    Target: LegacyGeneric:target=git:https://github.com
+    Type: Generic
+    User: Ghostwolf101
+    Local machine persistence
+
+    Target: LegacyGeneric:target=WindowsLive:(token):name=jhughes@auernyx.com;serviceuri=http://passport.net/purpose
+    Type: Generic
+    User: Jhughes@auernyx.com
+    Local machine persistence
+
+    Target: LegacyGeneric:target=MicrosoftAccount:user=jhughes@auernyx.com
+    Type: Generic
+    User: Jhughes@auernyx.com
+    Local machine persistence
+
+    Target: WindowsLive:target=virtualapp/didlogical
+    Type: Generic
+    User: 02cexunssresbodj
+    Local machine persistence
+
+    Target: LegacyGeneric:target=Microsoft OneDrive Generic Data - Personal Vault VHD Info
+    Type: Generic
+    User: 081b45600d99c318
+    Local machine persistence
+
+    Target: LegacyGeneric:target=GitHub - https://api.github.com/Ghostwolf101
+    Type: Generic
+    User: Ghostwolf101
+
+PS C:\Windows\system32> dsregcmd /status
+
++----------------------------------------------------------------------+
+| Device State                                                         |
++----------------------------------------------------------------------+
+
+             AzureAdJoined : NO
+          EnterpriseJoined : NO
+              DomainJoined : NO
+           Virtual Desktop : NOT SET
+               Device Name : AEsir101
+
++----------------------------------------------------------------------+
+| User State                                                           |
++----------------------------------------------------------------------+
+
+                    NgcSet : NO
+           WorkplaceJoined : NO
+             WamDefaultSet : YES
+       WamDefaultAuthority : consumers
+              WamDefaultId : https://login.microsoft.com
+            WamDefaultGUID : {D7F9888F-E3FC-49B0-9EA6-A85B5F392A4F} (MicrosoftAccount)
+
++----------------------------------------------------------------------+
+| SSO State                                                            |
++----------------------------------------------------------------------+
+
+                AzureAdPrt : NO
+       AzureAdPrtAuthority : NO
+             EnterprisePrt : NO
+    EnterprisePrtAuthority : NO
+
++----------------------------------------------------------------------+
+| IE Proxy Config for Current User                                     |
++----------------------------------------------------------------------+
+
+      Auto Detect Settings : NO
+    Auto-Configuration URL :
+         Proxy Server List :
+         Proxy Bypass List :
+
++----------------------------------------------------------------------+
+| WinHttp Default Proxy Config                                         |
++----------------------------------------------------------------------+
+
+               Access Type : DIRECT
+
++----------------------------------------------------------------------+
+| Ngc Prerequisite Check                                               |
++----------------------------------------------------------------------+
+
+            IsDeviceJoined : NO
+             IsUserAzureAD : NO
+             PolicyEnabled : NO
+          PostLogonEnabled : YES
+            DeviceEligible : YES
+        SessionIsNotRemote : YES
+            CertEnrollment : none
+              PreReqResult : WillNotProvision
+
+For more information, please visit https://www.microsoft.com/aadjerrors
+PS C:\Windows\system32> Get-ProvisioningPackage -Online
+Get-ProvisioningPackage : A parameter cannot be found that matches parameter name 'Online'.
+At line:1 char:25
++ Get-ProvisioningPackage -Online
++                         ~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-ProvisioningPackage], ParameterBindingExceptio
+   n
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.Windows.Provisioning.ProvUtils.Commands
+   .GetProvisioningPackage
+
+PS C:\Windows\system32> reg query HKLM\SOFTWARE\Policies /s
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Cryptography
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Cryptography\Configuration
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\CA
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\CA\Certificates
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\CA\CRLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\CA\CTLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Disallowed
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Disallowed\Certificates
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Disallowed\CRLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Disallowed\CTLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Root
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Root\Certificates
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Root\CRLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\Root\CTLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\trust
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\trust\Certificates
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\trust\CRLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\trust\CTLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPeople
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPeople\Certificates
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPeople\CRLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPeople\CTLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPublisher
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPublisher\Certificates
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPublisher\CRLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\SystemCertificates\TrustedPublisher\CTLs
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\TPM
+    OSManagedAuthLevel    REG_DWORD    0x5
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx
+    MdmHosts    REG_SZ    ^(?:[^\/]*)\.MANAGE[^\.]*\.(MICROSOFT\.(COM|US)|MICROSOFTONLINE\.CN)$
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\BITS
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Bowser
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\Internet Settings
+    CallLegacyWCMPolicies    REG_DWORD    0x0
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\Internet Settings\Cache
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DataCollection
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EnhancedStorageDevices
+    TCGSecurityActivationDisabled    REG_DWORD    0x0
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\IPSec
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\IPSec\Policy
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\IPSec\Policy\Local
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\MpeHttpExt
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\MpeHttpExt\Payload
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\MpeHttpExt\Payload\PreventPolicyKeyDelete
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Network Connections
+    NC_PersonalFirewallConfig    REG_DWORD    0x0
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkConnectivityStatusIndicator
+    (Default)    REG_SZ
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\safer
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\safer\codeidentifiers
+    authenticodeenabled    REG_DWORD    0x0
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\SettingSync
+    DisableSettingSync    REG_DWORD    0x2
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Sudo
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WcmSvc
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WcmSvc\GroupPolicy
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WcmSvc\Local
+    WCMPresent    REG_DWORD    0x1
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WorkplaceJoin
+    (Default)    REG_SZ
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WSDAPI
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WSDAPI\Discovery Proxies
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Policy Manager
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient
+    EnableMulticast    REG_DWORD    0x0
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\WPP
+    WindowsProtectedPrintMode    REG_DWORD    0x1
+    EnabledBy    REG_DWORD    0x1
+    EnabledTimestamp    REG_QWORD    0x1dc5d3cc7971d9f
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\Client
+    fEnableUsbBlockDeviceBySetupClass    REG_DWORD    0x1
+    fEnableUsbNoAckIsochWriteToDevice    REG_DWORD    0x50
+    fEnableUsbSelectDeviceByInterface    REG_DWORD    0x1
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\Client\UsbBlockDeviceBySetupClasses
+    1000    REG_SZ    {3376f4ce-ff8d-40a2-a80f-bb4359d1415c}
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\Client\UsbSelectDeviceByInterfaces
+    1000    REG_SZ    {6bdd1fc6-810f-11d0-bec7-08002be2092f}
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Windows File Protection
+    KnownDllList    REG_SZ    nlhtml.dll
+
+PS C:\Windows\system32> Get-WmiObject Win32_PnPSignedDriver | Select DeviceName,DriverVersion,Manufacturer | Sort-Object DeviceName
+
+DeviceName                                                   DriverVersion
+----------                                                   -------------
+
+
+                                                             2:10.0,2:6.3,2:6.2,2:6.1,2:6.0,2:5.2,2:5.1
+ACPI Fan                                                     10.0.26100.1150
+ACPI Fan                                                     10.0.26100.1150
+ACPI Fan                                                     10.0.26100.1150
+ACPI Fan                                                     10.0.26100.1150
+ACPI Fan                                                     10.0.26100.1150
+ACPI Fan                                                     10.0.26100.1150
+ACPI Lid                                                     10.0.26100.1150
+ACPI Power Button                                            10.0.26100.1150
+ACPI Processor Aggregator                                    10.0.26100.1150
+ACPI Sleep Button                                            10.0.26100.1150
+ACPI Thermal Zone                                            10.0.26100.1150
+ACPI Wake Alarm                                              10.0.26100.1150
+ACPI x64-based PC                                            10.0.26100.1
+ACSEHIDRemap Device                                          1.0.0.15
+ACSEVirtualBus Device                                        1.0.0.15
+Armoury Crate Control Interface                              1.2.0.1
+ASUS Precision Touchpad                                      16.0.0.36
+ASUS System Control Interface v3                             3.1.50.0
+ASUS UEFI                                                    10.1.2.306
+Audio Endpoint                                               10.0.26100.1
+Audio Endpoint                                               10.0.26100.1
+Charge Arbitration Driver                                    10.0.26100.7309
+Composite Bus Enumerator                                     10.0.26100.1150
+Computer Device                                              10.0.26100.1
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Device Firmware                                              10.0.26100.4768
+Disk drive                                                   10.0.26100.7309
+Disk drive                                                   10.0.26100.7309
+Disk drive                                                   10.0.26100.7309
+DolbyAPO Software Device (HSA)                               3.30803.830.0
+DolbyAPO SWC Device                                          3.30808.873.0
+Generic PnP Monitor                                          10.0.26100.7309
+Generic software device                                      10.0.26100.1
+Generic software device                                      10.0.26100.1
+Generic software device                                      10.0.26100.1
+Generic software device                                      10.0.26100.1
+Generic software device                                      10.0.26100.1
+Generic software device                                      10.0.26100.1
+Generic software device                                      10.0.26100.1
+Generic SuperSpeed USB Hub                                   10.0.26100.7309
+Generic USB Hub                                              10.0.26100.7309
+Generic USB Hub                                              10.0.26100.7309
+Generic volume shadow copy                                   10.0.26100.1
+Generic volume shadow copy                                   10.0.26100.1
+Generic volume shadow copy                                   10.0.26100.1
+Generic volume shadow copy                                   10.0.26100.1
+Generic volume shadow copy                                   10.0.26100.1
+HID Keyboard Device                                          10.0.26100.1882
+HID Keyboard Device                                          10.0.26100.1882
+HID Keyboard Device                                          10.0.26100.1882
+HID Keyboard Device                                          10.0.26100.1882
+HID-compliant consumer control device                        10.0.26100.1
+HID-compliant consumer control device                        10.0.26100.1
+HID-compliant device                                         10.0.26100.7309
+HID-compliant device                                         10.0.26100.7309
+HID-compliant device                                         10.0.26100.7309
+HID-compliant mouse                                          10.0.26100.1150
+HID-compliant mouse                                          10.0.26100.1150
+HID-compliant mouse                                          10.0.26100.1150
+HID-compliant system controller                              10.0.26100.7309
+HID-compliant system controller                              10.0.26100.7309
+HID-compliant vendor-defined device                          10.0.26100.7309
+HID-compliant vendor-defined device                          10.0.26100.7309
+HID-compliant wireless radio controls                        10.0.26100.7309
+High Definition Audio Controller                             10.0.26100.7309
+High precision event timer                                   10.0.26100.1150
+I2C HID Device                                               10.0.26100.7309
+I2C HID Device                                               10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel Processor                                              10.0.26100.7309
+Intel RST VMD Controller A77F                                20.0.0.1038
+Intel(R) Dynamic Application Loader Host Interface           1.46.2024.221
+Intel(R) Dynamic Tuning Technology                           9.0.11701.44281
+Intel(R) Dynamic Tuning Technology Updater Component         9.0.11701.44281
+Intel(R) GNA Scoring Accelerator module                      3.5.0.1578
+Intel(R) Graphics Command Center                             32.0.101.6651
+Intel(R) iCLS Client                                         1.73.132.0
+Intel(R) Innovation Platform Framework Extensible Framework  2.2.10000.20
+Intel(R) Innovation Platform Framework Generic Participant   2.2.10000.20
+Intel(R) Innovation Platform Framework Manager               2.2.10000.20
+Intel(R) Innovation Platform Framework Processor Participant 2.2.10000.20
+Intel(R) LPC Controller/eSPI Controller - 7A0C               10.1.46.5
+Intel(R) Management Engine Interface #1                      2407.6.1.0
+Intel(R) Management Engine WMI Provider                      2411.6.3.0
+Intel(R) PCI Express Root Port #25 - 7A48                    10.1.46.5
+Intel(R) PCI Express Root Port #5 - 7A3C                     10.1.46.5
+Intel(R) PCI Express Root Port #6 - 7A3D                     10.1.46.5
+Intel(R) PCIe RC 010 G5 - A70D                               10.1.49.10
+Intel(R) Power Engine Plug-in                                10.0.26100.7309
+Intel(R) Serial IO GPIO Host Controller - INTC1085           30.100.2417.30
+Intel(R) Serial IO I2C Host Controller - 7A4C                30.100.2417.30
+Intel(R) Serial IO I2C Host Controller - 7A4D                30.100.2417.30
+Intel(R) Serial IO I2C Host Controller - 7A7C                30.100.2417.30
+Intel(R) Shared SRAM - 7A27                                  10.1.46.5
+Intel(R) SMBus - 7A23                                        10.1.46.5
+Intel(R) SPI (flash) Controller - 7A24                       10.1.46.5
+Intel(R) UHD Graphics                                        32.0.101.6651
+Intel® Smart Sound Technology BUS                            10.29.0.12030
+Intel® Smart Sound Technology for USB Audio                  10.29.0.12030
+Intel® Smart Sound Technology OED                            10.29.0.12030
+Local Print Queue                                            10.0.26100.1
+Local Print Queue                                            10.0.26100.1
+MassStorageClass                                             10.0.26100.5074
+MassStorageClass                                             10.0.26100.5074
+Microsoft AC Adapter                                         10.0.26100.7309
+Microsoft ACPI-Compliant Control Method Battery              10.0.26100.7309
+Microsoft ACPI-Compliant System                              10.0.26100.7309
+Microsoft Basic Display Driver                               10.0.26100.4202
+Microsoft Basic Render Driver                                10.0.26100.7309
+Microsoft Hyper-V PCI Server                                 10.0.26100.3037
+Microsoft Hyper-V Virtual Disk Server                        10.0.26100.7462
+Microsoft Hyper-V Virtual Machine Bus Provider               10.0.26100.7309
+Microsoft Hyper-V Virtualization Infrastructure Driver       10.0.26100.7309
+Microsoft Hypervisor Service                                 10.0.26100.7309
+Microsoft Input Configuration Device                         10.0.26100.1150
+Microsoft Kernel Debug Network Adapter                       10.0.26100.3624
+Microsoft Storage Spaces Controller                          10.0.26100.7309
+Microsoft Streaming Service Proxy                            10.0.26100.1
+Microsoft System Management BIOS Driver                      10.0.26100.1
+Microsoft UEFI-Compliant System                              10.0.26100.7019
+Microsoft Virtual Drive Enumerator                           10.0.26100.1591
+Microsoft Wi-Fi Direct Virtual Adapter                       10.0.26100.7019
+Microsoft Wi-Fi Direct Virtual Adapter                       10.0.26100.7019
+Microsoft Windows Management Interface for ACPI              10.0.26100.1150
+Microsoft Windows Management Interface for ACPI              10.0.26100.1150
+Microsoft Windows Management Interface for ACPI              10.0.26100.1150
+Microsoft Windows Management Interface for ACPI              10.0.26100.1150
+Microsoft Windows Management Interface for ACPI              10.0.26100.1150
+Motherboard resources                                        10.0.26100.1150
+Motherboard resources                                        10.0.26100.1150
+Motherboard resources                                        10.0.26100.1150
+Motherboard resources                                        10.0.26100.1150
+Motherboard resources                                        10.0.26100.1150
+Motherboard resources                                        10.0.26100.1150
+Motherboard resources                                        10.0.26100.1150
+NDIS Virtual Network Adapter Enumerator                      10.0.26100.1
+NVIDIA GeForce RTX 5060 Laptop GPU                           32.0.15.7702
+NVIDIA High Definition Audio                                 1.4.3.2
+NVIDIA Platform Controllers and Framework                    32.0.15.7582
+NVIDIA Virtual Audio Device (Wave Extensible) (WDM)          4.65.0.3
+PC/AT Enhanced PS/2 Keyboard (101/102-Key)                   10.0.26100.1882
+PCI Express Downstream Switch Port                           10.0.26100.7309
+PCI Express Downstream Switch Port                           10.0.26100.7309
+PCI Express Downstream Switch Port                           10.0.26100.7309
+PCI Express Downstream Switch Port                           10.0.26100.7309
+PCI Express Root Complex                                     10.0.26100.7309
+PCI Express Upstream Switch Port                             10.0.26100.7309
+PCI standard host CPU bridge                                 10.0.26100.1150
+Plug and Play Software Device Enumerator                     10.0.26100.4202
+Programmable interrupt controller                            10.0.26100.1150
+RAS Async Adapter                                            10.0.26100.1
+Realtek 8852CE WiFi 6E PCI-E NIC                             6001.16.170.100
+Realtek Asio Component                                       1.0.13.1
+Realtek Audio Effects Component                              13.2149.1669.502
+Realtek Audio Effects Component                              13.2149.1669.502
+Realtek Audio Universal Service                              1.0.840.8
+Realtek Bluetooth Adapter                                    18.4028.2505.800
+Realtek Bluetooth LE Audio Driver                            2.0.11.0
+Realtek Hardware Support Application                         11.0.6000.357
+Realtek High Definition Audio                                6.0.9815.1
+Realtek OVWrap2 Component                                    11.0.6000.50
+Realtek OVWrapN Component                                    11.0.6000.51
+Realtek PCIe GbE Family Controller                           1168.21.903.2024
+Remote Desktop Device Redirector Bus                         10.0.26100.1150
+RtkFilter0
+SAMSUNG Mobile USB Composite Device                          2.21.0.0
+SAMSUNG Mobile USB Modem                                     2.21.0.0
+SM-S906U                                                     10.0.26100.7309
+System timer                                                 10.0.26100.1150
+Thunderbolt(TM) Controller - 1134                            1.41.1420.0
+Thunderbolt(TM) HSA Component                                1.41.1420.0
+Thunderbolt(TM) Toast Component                              1.41.1420.0
+Trusted Platform Module 2.0                                  10.0.26100.7309
+UCM-UCSI ACPI Device                                         10.0.26100.1882
+UMBus Root Bus Enumerator                                    10.0.26100.1150
+USB Composite Device                                         10.0.26100.7309
+USB Composite Device                                         10.0.26100.7309
+USB Composite Device                                         10.0.26100.7309
+USB Input Device                                             10.0.26100.7309
+USB Input Device                                             10.0.26100.7309
+USB Input Device                                             10.0.26100.7309
+USB Input Device                                             10.0.26100.7309
+USB Input Device                                             10.0.26100.7309
+USB Mass Storage Device                                      10.0.26100.4768
+USB Root Hub (USB 3.0)                                       10.0.26100.7309
+USB Root Hub (USB 3.0)                                       10.0.26100.7309
+USB Video Device                                             10.0.26100.7309
+USB Video Device                                             10.0.26100.7309
+USB xHCI Compliant Host Controller                           10.0.26100.7309
+USB xHCI Compliant Host Controller                           10.0.26100.7309
+Voice Clarity                                                10.0.26100.6700
+Volume                                                       10.0.26100.5074
+Volume                                                       10.0.26100.5074
+Volume                                                       10.0.26100.5074
+Volume                                                       10.0.26100.5074
+Volume                                                       10.0.26100.5074
+Volume                                                       10.0.26100.5074
+Volume                                                       10.0.26100.5074
+Volume                                                       10.0.26100.5074
+Volume Manager                                               10.0.26100.7309
+WAN Miniport (IKEv2)                                         10.0.26100.1
+WAN Miniport (IP)                                            10.0.26100.1
+WAN Miniport (IPv6)                                          10.0.26100.1
+WAN Miniport (L2TP)                                          10.0.26100.1
+WAN Miniport (Network Monitor)                               10.0.26100.1
+WAN Miniport (PPPOE)                                         10.0.26100.1
+WAN Miniport (PPTP)                                          10.0.26100.1
+WAN Miniport (SSTP)                                          10.0.26100.1
+WinUsb Device                                                10.0.26100.1150
+
+
+PS C:\Windows\system32> Get-WinEvent -LogName Security | where {$_.Id -eq 4624 -or $_.Id -eq 4625} | Select-Object -First 30 | fl
+
+
+TimeCreated  : 12/12/2025 2:06:25 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:05:22 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:02:35 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:40 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:40 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:39 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:12 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             7
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         No
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-21-825047201-4286172558-3527776787-1001
+                Account Name:           jhughes@auernyx.com
+                Account Domain:         MicrosoftAccount
+                Logon ID:               0x25EC16E
+                Linked Logon ID:                0x25EC02C
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6fc
+                Process Name:           C:\Windows\System32\lsass.exe
+
+               Network Information:
+                Workstation Name:       AESIR101
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Negotiat
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:12 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             7
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-21-825047201-4286172558-3527776787-1001
+                Account Name:           jhughes@auernyx.com
+                Account Domain:         MicrosoftAccount
+                Logon ID:               0x25EC02C
+                Linked Logon ID:                0x25EC16E
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6fc
+                Process Name:           C:\Windows\System32\lsass.exe
+
+               Network Information:
+                Workstation Name:       AESIR101
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Negotiat
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:09 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             11
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         No
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-21-825047201-4286172558-3527776787-1001
+                Account Name:           jhughes@auernyx.com
+                Account Domain:         MicrosoftAccount
+                Logon ID:               0x25984A3
+                Linked Logon ID:                0x2598458
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0xb40
+                Process Name:           C:\Windows\System32\svchost.exe
+
+               Network Information:
+                Workstation Name:       AESIR101
+                Source Network Address: 127.0.0.1
+                Source Port:            0
+
+               Detailed Authentication Information:
+                Logon Process:          User32
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:09 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             11
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-21-825047201-4286172558-3527776787-1001
+                Account Name:           jhughes@auernyx.com
+                Account Domain:         MicrosoftAccount
+                Logon ID:               0x2598458
+                Linked Logon ID:                0x25984A3
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0xb40
+                Process Name:           C:\Windows\System32\svchost.exe
+
+               Network Information:
+                Workstation Name:       AESIR101
+                Source Network Address: 127.0.0.1
+                Source Port:            0
+
+               Detailed Authentication Information:
+                Logon Process:          User32
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:06 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:06 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:05 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:05 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:05 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 2:01:05 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:54:11 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:54:08 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:24:39 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:04:11 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:52 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:42 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:41 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:41 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:40 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:40 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:40 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:40 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 1:01:39 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+TimeCreated  : 12/12/2025 12:54:11 AM
+ProviderName : Microsoft-Windows-Security-Auditing
+Id           : 4624
+Message      : An account was successfully logged on.
+
+               Subject:
+                Security ID:            S-1-5-18
+                Account Name:           AESIR101$
+                Account Domain:         WORKGROUP
+                Logon ID:               0x3E7
+
+               Logon Information:
+                Logon Type:             5
+                Restricted Admin Mode:  -
+                Remote Credential Guard:        -
+                Virtual Account:                No
+                Elevated Token:         Yes
+
+               Impersonation Level:             Impersonation
+
+               New Logon:
+                Security ID:            S-1-5-18
+                Account Name:           SYSTEM
+                Account Domain:         NT AUTHORITY
+                Logon ID:               0x3E7
+                Linked Logon ID:                0x0
+                Network Account Name:   -
+                Network Account Domain: -
+                Logon GUID:             {00000000-0000-0000-0000-000000000000}
+
+               Process Information:
+                Process ID:             0x6b4
+                Process Name:           C:\Windows\System32\services.exe
+
+               Network Information:
+                Workstation Name:       -
+                Source Network Address: -
+                Source Port:            -
+
+               Detailed Authentication Information:
+                Logon Process:          Advapi
+                Authentication Package: Negotiate
+                Transited Services:     -
+                Package Name (NTLM only):       -
+                Key Length:             0
+
+               This event is generated when a logon session is created. It is generated on the
+               computer that was accessed.
+
+               The subject fields indicate the account on the local system which requested the logon.
+               This is most commonly a service such as the Server service, or a local process such as
+               Winlogon.exe or Services.exe.
+
+               The logon type field indicates the kind of logon that occurred. The most common types
+               are 2 (interactive) and 3 (network).
+
+               The New Logon fields indicate the account for whom the new logon was created, i.e. the
+               account that was logged on.
+
+               The network fields indicate where a remote logon request originated. Workstation name
+               is not always available and may be left blank in some cases.
+
+               The impersonation level field indicates the extent to which a process in the logon
+               session can impersonate.
+
+               The authentication information fields provide detailed information about this specific
+               logon request.
+                - Logon GUID is a unique identifier that can be used to correlate this event with a
+               KDC event.
+                - Transited services indicate which intermediate services have participated in this
+               logon request.
+                - Package name indicates which sub-protocol was used among the NTLM protocols.
+                - Key length indicates the length of the generated session key. This will be 0 if no
+               session key was requested.
+
+
