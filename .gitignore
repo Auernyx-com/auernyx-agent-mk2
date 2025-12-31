@@ -4,3 +4,5 @@ logs/
 artifacts/
 external/
 .vscode/
+.auernyx/
+docs/SEARCH.md
