@@ -1,6 +1,8 @@
 {
   "allowedCapabilities": [
     "scanRepo",
+    "searchDocPreview",
+    "searchDocApply",
     "fenerisPrep",
     "baselinePre",
     "baselinePost",
