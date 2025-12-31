@@ -64,13 +64,13 @@ export class Ledger {
         }
     }
 
-    private withLock<T>(fn: () => T): T {
+    private withLock<T>(fn: () => T): { acquired: true; value: T } | { acquired: false } {
         const deadline = Date.now() + 2000;
         while (true) {
             try {
                 const fd = fs.openSync(this.lockPath, "wx");
                 try {
-                    return fn();
+                    return { acquired: true, value: fn() };
                 } finally {
                     try {
                         fs.closeSync(fd);
@@ -85,8 +85,7 @@ export class Ledger {
                 }
             } catch {
                 if (Date.now() > deadline) {
-                    // If the lock is stuck, skip writing rather than corrupting the chain.
-                    return fn();
+                    return { acquired: false };
                 }
                 // Busy wait with a tiny delay.
                 const start = Date.now();
@@ -100,19 +99,28 @@ export class Ledger {
     append(sessionId: string, event: string, data?: unknown): LedgerEntry {
         const ts = new Date().toISOString();
 
-        const computeAndMaybeWrite = (): LedgerEntry => {
-            const prevHash = this.writeEnabled ? (this.getTailHashFromFile() ?? this.lastHash) : this.lastHash;
+        const computeEntry = (prevHash: string | undefined): LedgerEntry => {
             const toHash = stableStringify({ ts, sessionId, event, data, prevHash });
             const hash = crypto.createHash("sha256").update(toHash).digest("hex");
-
-            const entry: LedgerEntry = { ts, sessionId, event, data, prevHash, hash };
-            if (this.writeEnabled) {
-                fs.appendFileSync(this.ledgerPath, JSON.stringify(entry) + "\n");
-                this.lastHash = hash;
-            }
-            return entry;
+            return { ts, sessionId, event, data, prevHash, hash };
         };
 
-        return this.writeEnabled ? this.withLock(computeAndMaybeWrite) : computeAndMaybeWrite();
+        if (!this.writeEnabled) {
+            return computeEntry(this.lastHash);
+        }
+
+        const locked = this.withLock(() => {
+            const prevHash = this.getTailHashFromFile() ?? this.lastHash;
+            const entry = computeEntry(prevHash);
+            fs.appendFileSync(this.ledgerPath, JSON.stringify(entry) + "\n");
+            this.lastHash = entry.hash;
+            return entry;
+        });
+
+        if (locked.acquired) return locked.value;
+
+        // Could not acquire the lock: do not write (prevents hash-chain forks).
+        const bestEffortPrev = this.getTailHashFromFile() ?? this.lastHash;
+        return computeEntry(bestEffortPrev);
     }
 }

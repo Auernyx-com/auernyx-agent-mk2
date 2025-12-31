@@ -6,6 +6,8 @@ import { loadConfig } from "./config";
 import { ApprovalRequiredError, isValidApproval } from "./approvals";
 
 import * as http from "http";
+import * as os from "os";
+import * as crypto from "crypto";
 
 import { scanRepo } from "../capabilities/scanRepo";
 import { fenerisPrep } from "../capabilities/fenerisPrep";
@@ -26,6 +28,67 @@ import { skjoldrFirewallRestoreBaseline } from "../capabilities/skjoldrFirewallR
 import * as fs from "fs";
 import * as path from "path";
 import { getKintsugiPolicy, policyHash, verifyKintsugiIntegrity } from "./kintsugi/memory";
+
+function daemonLockPathForRepo(repoRoot: string): string {
+    const normalized = path.resolve(repoRoot).toLowerCase();
+    const hash = crypto.createHash("sha256").update(normalized).digest("hex").slice(0, 16);
+    return path.join(os.tmpdir(), `auernyx-mk2-daemon-${hash}.lock`);
+}
+
+function tryReadPid(lockPath: string): number | undefined {
+    try {
+        const raw = fs.readFileSync(lockPath, "utf8").trim();
+        const pid = Number(raw.split(/\s+/)[0]);
+        return Number.isFinite(pid) && pid > 0 ? pid : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+function isProcessAlive(pid: number): boolean {
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function acquireSingleInstanceLock(repoRoot: string): { lockPath: string; release: () => void } {
+    const lockPath = daemonLockPathForRepo(repoRoot);
+    try {
+        const fd = fs.openSync(lockPath, "wx");
+        fs.writeFileSync(fd, `${process.pid} ${new Date().toISOString()}`);
+        fs.closeSync(fd);
+    } catch {
+        const pid = tryReadPid(lockPath);
+        if (typeof pid === "number" && isProcessAlive(pid)) {
+            throw new Error("daemon_already_running");
+        }
+        // Stale lock: remove and retry once.
+        try {
+            fs.unlinkSync(lockPath);
+        } catch {
+            // ignore
+        }
+        const fd = fs.openSync(lockPath, "wx");
+        fs.writeFileSync(fd, `${process.pid} ${new Date().toISOString()}`);
+        fs.closeSync(fd);
+    }
+
+    let released = false;
+    const release = () => {
+        if (released) return;
+        released = true;
+        try {
+            fs.unlinkSync(lockPath);
+        } catch {
+            // ignore
+        }
+    };
+
+    return { lockPath, release };
+}
 
 export interface AuernyxCore {
     router: Router;
@@ -394,6 +457,7 @@ function readTailLines(filePath: string, maxLines: number): string[] {
 }
 
 export function startDaemon(repoRoot: string) {
+    const instance = acquireSingleInstanceLock(repoRoot);
     const cfg = loadConfig(repoRoot);
     const host = process.env.AUERNYX_HOST ?? cfg.daemon.host;
     const port = process.env.AUERNYX_PORT ? Number(process.env.AUERNYX_PORT) : cfg.daemon.port;
@@ -585,6 +649,25 @@ export function startDaemon(repoRoot: string) {
         // Deterministic, short status line.
         // eslint-disable-next-line no-console
         console.log(`Auernyx daemon listening on http://${host}:${port}`);
+    });
+
+    const cleanup = () => {
+        try {
+            server.close();
+        } catch {
+            // ignore
+        }
+        instance.release();
+    };
+
+    process.once("exit", cleanup);
+    process.once("SIGINT", () => {
+        cleanup();
+        process.exit(0);
+    });
+    process.once("SIGTERM", () => {
+        cleanup();
+        process.exit(0);
     });
 
     return server;
