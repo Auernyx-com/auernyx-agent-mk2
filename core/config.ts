@@ -14,6 +14,7 @@ export interface DaemonConfig {
 
 export interface AuernyxConfig {
     writeEnabled?: boolean;
+    receiptsEnabled?: boolean;
     daemon?: Partial<DaemonConfig>;
     paths?: {
         scanAllowedRoots?: string[];
@@ -96,6 +97,7 @@ export function loadConfig(repoRoot: string): {
     governance: GovernanceConfig;
     addons: { skjoldrFirewall: SkjoldrFirewallConfig };
     writeEnabled: boolean;
+    receiptsEnabled: boolean;
 } {
     try {
         const filePath = path.join(repoRoot, "config", "auernyx.config.json");
@@ -105,7 +107,8 @@ export function loadConfig(repoRoot: string): {
                 paths: { scanAllowedRoots: [] },
                 governance: DEFAULT_GOVERNANCE,
                 addons: { skjoldrFirewall: DEFAULT_SKJOLDR },
-                writeEnabled: process.env.AUERNYX_WRITE_ENABLED === "1"
+                writeEnabled: process.env.AUERNYX_WRITE_ENABLED === "1",
+                receiptsEnabled: process.env.AUERNYX_RECEIPTS_ENABLED === "0" ? false : true
             };
         }
 
@@ -118,6 +121,13 @@ export function loadConfig(repoRoot: string): {
                 : process.env.AUERNYX_WRITE_ENABLED === "0"
                     ? false
                     : parsed.writeEnabled === true;
+
+        const receiptsEnabled =
+            process.env.AUERNYX_RECEIPTS_ENABLED === "1"
+                ? true
+                : process.env.AUERNYX_RECEIPTS_ENABLED === "0"
+                    ? false
+                    : parsed.receiptsEnabled !== false;
 
         const host = parsed.daemon?.host ?? DEFAULT_DAEMON.host;
         const port = Number(parsed.daemon?.port ?? DEFAULT_DAEMON.port);
@@ -215,7 +225,8 @@ export function loadConfig(repoRoot: string): {
                     timeoutMs: Number.isFinite(skjoldr.timeoutMs) && skjoldr.timeoutMs > 0 ? skjoldr.timeoutMs : DEFAULT_SKJOLDR.timeoutMs,
                 }
             },
-            writeEnabled
+            writeEnabled,
+            receiptsEnabled
         };
     } catch {
         return {
@@ -223,7 +234,8 @@ export function loadConfig(repoRoot: string): {
             paths: { scanAllowedRoots: [] },
             governance: DEFAULT_GOVERNANCE,
             addons: { skjoldrFirewall: DEFAULT_SKJOLDR },
-            writeEnabled: process.env.AUERNYX_WRITE_ENABLED === "1"
+            writeEnabled: process.env.AUERNYX_WRITE_ENABLED === "1",
+            receiptsEnabled: process.env.AUERNYX_RECEIPTS_ENABLED === "0" ? false : true
         };
     }
 }

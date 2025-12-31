@@ -91,6 +91,11 @@ Mk2 runs capabilities through a governed orchestrator loop:
 
 `POST /run` remains primarily for meta intents (e.g. `capabilities`, `status`) and for compatibility, but governed execution is enforced via the plan/step flow.
 
+### Governance law (invariants)
+
+The invariants that define Mk2’s governance model are documented here:
+- [docs/mk2-governance-law.md](docs/mk2-governance-law.md)
+
 ## Kintsugi governance storage (repo-local)
 
 Mk2 stores Kintsugi governance/audit artifacts under:
