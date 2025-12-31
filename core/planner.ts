@@ -72,6 +72,24 @@ function stableStringify(value: unknown): string {
     return JSON.stringify(normalize(value));
 }
 
+function cloneNoSharedRefs<T>(value: T): T {
+    const clone = (v: any): any => {
+        if (v === null || v === undefined) return v;
+        const t = typeof v;
+        if (t === "number" || t === "boolean" || t === "string") return v;
+        if (Array.isArray(v)) return v.map(clone);
+        if (t === "object") {
+            const out: Record<string, any> = {};
+            for (const k of Object.keys(v)) {
+                out[k] = clone(v[k]);
+            }
+            return out;
+        }
+        return String(v);
+    };
+    return clone(value) as T;
+}
+
 function classifyStepType(meta: { readOnly: boolean; tier: number }): PlanStepType {
     if (meta.readOnly) return "READ_ONLY";
     if (meta.tier >= 2) return "HIGH_RISK";
@@ -93,8 +111,9 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
     // Canonical controlled write path: Search doc updates.
     // Step 1: preview (dry-run), Step 2: apply (requires APPLY confirm).
     if (capability === "searchDocApply" || capability === "searchDocPreview") {
-        const previewTool: PlanTool = { kind: "capability", name: "searchDocPreview" };
-        const applyTool: PlanTool = { kind: "capability", name: "searchDocApply" };
+        const step1Input = cloneNoSharedRefs(input);
+        const step2Input = cloneNoSharedRefs(input);
+        const inputForHash = cloneNoSharedRefs(input ?? null);
 
         const rollbackPoints: RollbackPoint[] = [
             {
@@ -104,7 +123,7 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
             }
         ];
 
-        const requiredEvidence: EvidenceRequirement[] = [
+        const requiredEvidenceTemplate: EvidenceRequirement[] = [
             {
                 id: "ev-1",
                 type: "user_assertion",
@@ -112,20 +131,24 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
             }
         ];
 
+        const planRequiredEvidence = cloneNoSharedRefs(requiredEvidenceTemplate);
+        const step2RequiredEvidence = cloneNoSharedRefs(requiredEvidenceTemplate);
+
         const steps: PlanStep[] = [
             {
                 id: "step-1",
                 type: "READ_ONLY",
-                tool: previewTool,
-                input,
+                // Avoid shared object references (planner hashing forbids them).
+                tool: { kind: "capability", name: "searchDocPreview" },
+                input: step1Input,
                 requiredEvidence: [],
             },
             {
                 id: "step-2",
                 type: "CONTROLLED_WRITE",
-                tool: applyTool,
-                input,
-                requiredEvidence,
+                tool: { kind: "capability", name: "searchDocApply" },
+                input: step2Input,
+                requiredEvidence: step2RequiredEvidence,
                 rollbackPointId: rollbackPoints[0].id
             }
         ];
@@ -133,10 +156,13 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
         const draft: Omit<Plan, "planId"> = {
             version: 2,
             intent,
-            inputHash: sha256Hex(stableStringify(input ?? null)),
+            inputHash: sha256Hex(stableStringify(inputForHash)),
             riskClass: classifyRisk(steps),
-            tools: [previewTool, applyTool],
-            requiredEvidence,
+            tools: [
+                { kind: "capability", name: "searchDocPreview" },
+                { kind: "capability", name: "searchDocApply" }
+            ],
+            requiredEvidence: planRequiredEvidence,
             rollbackPoints,
             steps
         };
@@ -146,7 +172,7 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
     }
 
     const meta = getCapabilityMeta(capability);
-    const tool: PlanTool = { kind: "capability", name: capability };
+    const stepTool: PlanTool = { kind: "capability", name: capability };
 
     const stepType = classifyStepType(meta);
 
@@ -163,7 +189,7 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
         {
             id: "step-1",
             type: stepType,
-            tool,
+            tool: stepTool,
             input,
             requiredEvidence: [],
             rollbackPointId: rollbackPoints.length ? rollbackPoints[0].id : undefined
@@ -175,7 +201,7 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
         intent,
         inputHash: sha256Hex(stableStringify(input ?? null)),
         riskClass: classifyRisk(steps),
-        tools: [tool],
+        tools: [{ kind: "capability", name: capability }],
         requiredEvidence: [],
         rollbackPoints,
         steps
