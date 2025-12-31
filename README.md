@@ -71,7 +71,7 @@ The browser UI is a control surface, not a privileged channel. All requests are 
 
 ### Receipts API (read-only)
 
-If writes are enabled and a run produces a receipt, the daemon can serve receipt metadata and artifacts:
+If receipts are enabled and a run produces a receipt, the daemon can serve receipt metadata and artifacts:
 
 - List receipts: `GET /receipts?limit=25`
 - List receipt files: `GET /receipts/<runId>`
@@ -81,6 +81,7 @@ Notes:
 
 - These endpoints require the daemon secret when one is configured.
 - Receipts are stored under `.auernyx/receipts/`.
+- Receipts can be disabled with `AUERNYX_RECEIPTS_ENABLED=0`.
 
 ### Orchestrator API (plan → approve → execute)
 
@@ -90,6 +91,25 @@ Mk2 runs capabilities through a governed orchestrator loop:
 - Execute step: `POST /step` with `{ intent, input, stepId, approval }`
 
 `POST /run` remains primarily for meta intents (e.g. `capabilities`, `status`) and for compatibility, but governed execution is enforced via the plan/step flow.
+
+### Controlled write path: Search index update
+
+Mk2 includes one canonical controlled-write example that is fully governed:
+
+- **Intent:** `search doc`
+- **Input JSON** (examples):
+	- Add/update an entry:
+		- `{ "action": "add", "docPath": "docs/thing.md", "title": "Thing" }`
+	- Remove an entry:
+		- `{ "action": "remove", "docPath": "docs/thing.md" }`
+
+Behavior:
+
+- The planner emits a **two-step plan**:
+	- `step-1` (READ_ONLY): `searchDocPreview` (dry-run preview + before/after hashes)
+	- `step-2` (CONTROLLED_WRITE): `searchDocApply` (writes `docs/SEARCH.md`)
+- `step-2` requires explicit approval with `confirm=APPLY`.
+- The receipt captures the preview/apply outputs, including before/after hashes.
 
 ### Governance law (invariants)
 

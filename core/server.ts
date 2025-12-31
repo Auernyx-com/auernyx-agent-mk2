@@ -10,6 +10,8 @@ import * as os from "os";
 import * as crypto from "crypto";
 
 import { scanRepo } from "../capabilities/scanRepo";
+import { searchDocPreview } from "../capabilities/searchDocPreview";
+import { searchDocApply } from "../capabilities/searchDocApply";
 import { fenerisPrep } from "../capabilities/fenerisPrep";
 import { baselinePre } from "../capabilities/baselinePre";
 import { baselinePost } from "../capabilities/baselinePost";
@@ -105,6 +107,8 @@ export function createCore(repoRoot: string): AuernyxCore {
 
     const router = createRouter(policy, {
         scanRepo,
+        searchDocPreview,
+        searchDocApply,
         fenerisPrep,
         baselinePre,
         baselinePost,
@@ -1144,6 +1148,7 @@ export function startDaemon(repoRoot: string) {
                     ctx: { repoRoot, sessionId: core.sessionId, ledger: core.ledger },
                     intent,
                     input: body.input,
+                    executeStepId: stepId,
                     stepApprovals: approvalForStep,
                     evidence,
                 });

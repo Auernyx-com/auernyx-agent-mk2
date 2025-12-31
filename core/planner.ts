@@ -90,6 +90,61 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
         throw new Error("unroutable_intent");
     }
 
+    // Canonical controlled write path: Search doc updates.
+    // Step 1: preview (dry-run), Step 2: apply (requires APPLY confirm).
+    if (capability === "searchDocApply" || capability === "searchDocPreview") {
+        const previewTool: PlanTool = { kind: "capability", name: "searchDocPreview" };
+        const applyTool: PlanTool = { kind: "capability", name: "searchDocApply" };
+
+        const rollbackPoints: RollbackPoint[] = [
+            {
+                id: "rb-1",
+                description:
+                    "Rollback: restore docs/SEARCH.md to its previous content (use git restore, or use the receipt’s recorded before-hash as the reference)."
+            }
+        ];
+
+        const requiredEvidence: EvidenceRequirement[] = [
+            {
+                id: "ev-1",
+                type: "user_assertion",
+                description: "Reviewer confirms the dry-run output matches intent and is safe to apply."
+            }
+        ];
+
+        const steps: PlanStep[] = [
+            {
+                id: "step-1",
+                type: "READ_ONLY",
+                tool: previewTool,
+                input,
+                requiredEvidence: [],
+            },
+            {
+                id: "step-2",
+                type: "CONTROLLED_WRITE",
+                tool: applyTool,
+                input,
+                requiredEvidence,
+                rollbackPointId: rollbackPoints[0].id
+            }
+        ];
+
+        const draft: Omit<Plan, "planId"> = {
+            version: 2,
+            intent,
+            inputHash: sha256Hex(stableStringify(input ?? null)),
+            riskClass: classifyRisk(steps),
+            tools: [previewTool, applyTool],
+            requiredEvidence,
+            rollbackPoints,
+            steps
+        };
+
+        const planId = sha256Hex(stableStringify(draft));
+        return { ...draft, planId };
+    }
+
     const meta = getCapabilityMeta(capability);
     const tool: PlanTool = { kind: "capability", name: capability };
 

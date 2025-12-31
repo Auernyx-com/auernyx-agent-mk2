@@ -85,6 +85,7 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
         route(intent: Intent): CapabilityName | null {
             const text = intent.raw.trim().toLowerCase();
             if (text.startsWith("scan")) return "scanRepo";
+            if (text.startsWith("search doc")) return "searchDocApply";
             if (text.includes("feneris")) return "fenerisPrep";
             if (text.includes("baseline pre")) return "baselinePre";
             if (text.includes("baseline post")) return "baselinePost";

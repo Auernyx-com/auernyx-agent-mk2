@@ -28,6 +28,8 @@ export async function runLifecycle(args: {
     ctx: RouterContext;
     intent: string;
     input?: unknown;
+    // Optional: execute only a single step from the planned steps.
+    executeStepId?: string;
     // Legacy approval: used only for single-step plans (mapped to step-1).
     approval?: Approval;
     // Preferred path: per-step approvals.
@@ -137,7 +139,7 @@ export async function runLifecycle(args: {
         }
     }
 
-    // Execute the plan steps. (Currently planner emits 1 step; this supports N.)
+    // Execute the plan steps. (Planner may emit N steps.)
     const approvals = Array.isArray(args.stepApprovals) ? args.stepApprovals : [];
     const byStepId = new Map<string, StepApproval>();
     for (const a of approvals) {
@@ -146,12 +148,37 @@ export async function runLifecycle(args: {
 
     const outputs: unknown[] = [];
 
+    const requestedStepId = typeof args.executeStepId === "string" ? args.executeStepId.trim() : "";
+    const stepIds = plan.steps.map((s) => s.id);
+    const requestedIndex = requestedStepId ? stepIds.indexOf(requestedStepId) : -1;
+    if (requestedStepId && requestedIndex < 0) {
+        receipt?.appendEvent("refusal", { code: "unknown_step", stepId: requestedStepId, knownStepIds: stepIds });
+        receipt?.writeJson("final.json", {
+            ok: false,
+            status: "REFUSED",
+            stage: "execution",
+            planId: (plan as any).planId,
+            refusal: { code: "unknown_step", reason: `Unknown stepId: ${requestedStepId}` }
+        });
+        const finalized = receipt?.finalize();
+        return {
+            ok: false,
+            capability: plan.steps[0]?.tool?.name,
+            plan,
+            refusal: { code: "unknown_step", reason: `Unknown stepId: ${requestedStepId}` },
+            ...(finalized ? { receipt: finalized } : {})
+        };
+    }
+
     try {
-        for (let i = 0; i < plan.steps.length; i++) {
+        const start = requestedStepId ? requestedIndex : 0;
+        const endExclusive = requestedStepId ? requestedIndex + 1 : plan.steps.length;
+
+        for (let i = start; i < endExclusive; i++) {
             const step = plan.steps[i];
             const approval = byStepId.get(step.id);
             if (!approval) {
-                const missingStepIds = plan.steps.slice(i).map((s) => s.id);
+                const missingStepIds = (requestedStepId ? [step.id] : plan.steps.slice(i).map((s) => s.id));
                 receipt?.appendEvent("approval.missing", { missingStepIds });
                 receipt?.writeJson("outputs.json", { outputs });
                 receipt?.writeJson("final.json", {
@@ -189,7 +216,12 @@ export async function runLifecycle(args: {
         }
 
         receipt?.writeJson("outputs.json", { outputs });
-        receipt?.writeJson("final.json", { ok: true, planId: (plan as any).planId, steps: plan.steps.map((s: any) => s.id) });
+        receipt?.writeJson("final.json", {
+            ok: true,
+            status: "OK",
+            planId: (plan as any).planId,
+            steps: requestedStepId ? [requestedStepId] : plan.steps.map((s: any) => s.id)
+        });
         const finalized = receipt?.finalize();
         return {
             ok: true,
