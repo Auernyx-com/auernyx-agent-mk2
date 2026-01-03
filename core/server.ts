@@ -31,6 +31,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { getKintsugiPolicy, policyHash, verifyKintsugiIntegrity } from "./kintsugi/memory";
 import { runLifecycle } from "./runLifecycle";
+import { ensureGenesisRecord, verifyProvenance, activateJudgment, clearJudgment, appendProvenanceAudit } from "./provenance";
 
 function daemonLockPathForRepo(repoRoot: string): string {
     const normalized = path.resolve(repoRoot).toLowerCase();
@@ -105,6 +106,17 @@ export function createCore(repoRoot: string): AuernyxCore {
     const cfg = loadConfig(repoRoot);
     const ledger = new Ledger(repoRoot, { writeEnabled: cfg.writeEnabled });
 
+    // Startup provenance verification (behavior first).
+    ensureGenesisRecord(repoRoot, { writeEnabled: cfg.writeEnabled });
+    const prov = verifyProvenance(repoRoot);
+    if (!prov.ok) {
+        activateJudgment(repoRoot, prov);
+        appendProvenanceAudit(repoRoot, { kind: "startup.provenance.fail", data: prov });
+    } else {
+        clearJudgment(repoRoot);
+        appendProvenanceAudit(repoRoot, { kind: "startup.provenance.ok" });
+    }
+
     const router = createRouter(policy, {
         scanRepo,
         searchDocPreview,
@@ -127,7 +139,7 @@ export function createCore(repoRoot: string): AuernyxCore {
         skjoldrFirewallRestoreBaseline
     });
 
-    ledger.append(state.sessionId, "core.start", { repoRoot });
+    ledger.append(state.sessionId, "core.start", { repoRoot, provenance: prov.ok ? "PASS" : "FAIL" });
 
     return {
         router,
@@ -836,12 +848,64 @@ export function startDaemon(repoRoot: string) {
         }
 
         if (req.method === "GET" && req.url === "/") {
-            return writeJson(res, 200, {
-                ok: true,
-                service: "auernyx-mk2-daemon",
-                ui: "/ui",
-                health: "/health",
-            });
+                        const accept = String(req.headers["accept"] ?? "");
+                        const userAgent = String(req.headers["user-agent"] ?? "");
+                        const payload = {
+                                ok: true,
+                                service: "auernyx-mk2-daemon",
+                                ui: "/ui",
+                                health: "/health",
+                        };
+
+                        const url = new URL(req.url, `http://${host}:${port}`);
+                        const format = String(url.searchParams.get("format") ?? "").toLowerCase();
+                        const wantsJson = format === "json" || accept.includes("application/json");
+                        const looksLikeBrowser = accept.includes("text/html") || /Mozilla\//i.test(userAgent);
+
+                        // Human-friendly default for browsers.
+                        if (!wantsJson && looksLikeBrowser) {
+                                const html = `<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Auernyx Mk2 Daemon</title>
+        <style>
+            :root { color-scheme: light dark; }
+            body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+            h1 { margin: 0 0 8px 0; font-size: 18px; }
+            .hint { font-size: 12px; opacity: 0.8; }
+            code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+            a { text-decoration: none; }
+            details { margin-top: 12px; }
+            pre { white-space: pre-wrap; word-break: break-word; padding: 12px; border: 1px solid rgba(127,127,127,0.35); }
+        </style>
+    </head>
+    <body>
+        <h1>Auernyx Mk2 Daemon</h1>
+        <div class="hint">This endpoint is headless. Use the UI link below for a human-friendly page.</div>
+        <ul>
+            <li><a href="/ui">Open UI</a></li>
+            <li><a href="/health">Health</a></li>
+        </ul>
+        <div class="hint">For JSON, request <code>Accept: application/json</code> or use <code>/?format=json</code>.</div>
+
+        <details>
+            <summary>Reveal JSON (unsafe)</summary>
+            <div class="hint">This may expose proprietary structure. Prefer receipts for auditing.</div>
+            <pre>${JSON.stringify(payload, null, 2)}</pre>
+        </details>
+    </body>
+</html>`;
+                                res.writeHead(200, {
+                                        "content-type": "text/html; charset=utf-8",
+                                        "content-length": Buffer.byteLength(html)
+                                });
+                                res.end(html);
+                                return;
+                        }
+
+                        return writeJson(res, 200, payload);
         }
 
         if (req.method === "GET" && req.url === "/ui") {

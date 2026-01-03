@@ -6,6 +6,7 @@ import { createHumanApproval } from "../../core/approvals";
 import { capabilityRequiresApproval, CapabilityName, getCapabilityMeta } from "../../core/policy";
 import { runLifecycle } from "../../core/runLifecycle";
 import { loadConfig } from "../../core/config";
+import { planForIntent } from "../../core/planner";
 import * as readline from "readline";
 
 async function promptApproval(capability: string): Promise<string | null> {
@@ -58,10 +59,18 @@ function usageAndExit(): never {
             "Non-interactive approvals:",
             "  --reason <TEXT>         Approval reason (skips prompts)",
             "  --identity <TEXT>       Approver identity (when required)",
-            "  --confirm APPLY         Required for mutating operations"
+            "  --confirm APPLY         Required for mutating operations",
+            "",
+            "Execution routing:",
+            "  --no-daemon             Force local execution (skip daemon)",
+            "  --local                 Alias for --no-daemon"
         ].join("\n")
     );
     process.exit(1);
+}
+
+function hasFlag(argv: string[], name: string): boolean {
+    return argv.includes(name);
 }
 
 function parseIntFlag(argv: string[], name: string): number | undefined {
@@ -235,6 +244,8 @@ async function main() {
     const argv = process.argv.slice(2);
     const raw = argv.join(" ").trim();
 
+    const noDaemon = hasFlag(argv, "--no-daemon") || hasFlag(argv, "--local") || process.env.AUERNYX_NO_DAEMON === "1";
+
     const approvalFlags = parseApprovalFlags(argv);
 
     if (!raw) {
@@ -251,10 +262,10 @@ async function main() {
     const cfg = loadConfig(repoRoot);
     const identityRequired = cfg.governance.approverIdentity.trim().length > 0;
 
-    // Try daemon first.
-    let daemonResp = await tryRunViaDaemon({ repoRoot }, daemonIntent, daemonInput);
+    // Try daemon first (unless explicitly disabled).
+    let daemonResp = noDaemon ? null : await tryRunViaDaemon({ repoRoot }, daemonIntent, daemonInput);
     if (daemonResp !== null) {
-        if (!daemonResp.ok && daemonResp.error === "approval_required") {
+        if (!daemonResp.ok && (daemonResp.error === "approval_required" || daemonResp.error === "step_approval_required")) {
             const cap = daemonResp.capability ?? "capability";
             const reason = approvalFlags.nonInteractive ? approvalFlags.reason! : await promptApproval(cap);
             if (!reason) process.exit(4);
@@ -264,14 +275,19 @@ async function main() {
                 : null;
             if (identityRequired && (!identity || identity.trim().length === 0)) process.exit(4);
 
-            const confirm = controlled
+            // Confirm is required for any non-readOnly capability, even via daemon.
+            const capName = (typeof daemonResp.capability === "string" ? daemonResp.capability : undefined) as CapabilityName | undefined;
+            const meta = capName ? getCapabilityMeta(capName) : undefined;
+            const effectiveControlled = controlled || (meta ? !meta.readOnly : false);
+
+            const confirm = effectiveControlled
                 ? (approvalFlags.nonInteractive ? approvalFlags.confirm : await promptText("Controlled operation. Type APPLY to continue: "))
                 : null;
-            if (controlled && confirm !== "APPLY") process.exit(4);
+            if (effectiveControlled && confirm !== "APPLY") process.exit(4);
 
             const approval = createHumanApproval(reason, {
                 identity: identity ?? undefined,
-                confirm: controlled ? "APPLY" : undefined
+                confirm: effectiveControlled ? "APPLY" : undefined
             });
             const retry = await tryRunViaDaemon({ repoRoot }, daemonIntent, daemonInput, approval);
             if (retry === null) {
@@ -309,33 +325,34 @@ async function main() {
     const meta = getCapabilityMeta(capability as CapabilityName);
     const effectiveControlled = controlled || !meta.readOnly;
 
-    let approval = undefined;
-    if (capabilityRequiresApproval(capability as CapabilityName)) {
-        const reason = approvalFlags.nonInteractive ? approvalFlags.reason! : await promptApproval(capability);
-        if (!reason) process.exit(4);
+    // Governed execution requires step approvals. Use a single prompt (or --reason) and map it to each planned step.
+    const reason = approvalFlags.nonInteractive ? approvalFlags.reason! : await promptApproval(capability);
+    if (!reason) process.exit(4);
 
-        const identity = identityRequired
-            ? (approvalFlags.nonInteractive ? approvalFlags.identity : await promptText(`Approver identity required. Type identity (expected: ${cfg.governance.approverIdentity}): `))
-            : null;
-        if (identityRequired && (!identity || identity.trim().length === 0)) process.exit(4);
+    const identity = identityRequired
+        ? (approvalFlags.nonInteractive ? approvalFlags.identity : await promptText(`Approver identity required. Type identity (expected: ${cfg.governance.approverIdentity}): `))
+        : null;
+    if (identityRequired && (!identity || identity.trim().length === 0)) process.exit(4);
 
-        const confirm = effectiveControlled
-            ? (approvalFlags.nonInteractive ? approvalFlags.confirm : await promptText("Controlled operation. Type APPLY to continue: "))
-            : null;
-        if (effectiveControlled && confirm !== "APPLY") process.exit(4);
+    const confirm = effectiveControlled
+        ? (approvalFlags.nonInteractive ? approvalFlags.confirm : await promptText("Controlled operation. Type APPLY to continue: "))
+        : null;
+    if (effectiveControlled && confirm !== "APPLY") process.exit(4);
 
-        approval = createHumanApproval(reason, {
-            identity: identity ?? undefined,
-            confirm: effectiveControlled ? "APPLY" : undefined
-        });
-    }
+    const approval = createHumanApproval(reason, {
+        identity: identity ?? undefined,
+        confirm: effectiveControlled ? "APPLY" : undefined
+    });
+
+    const plan = planForIntent(core.router, daemonIntent, localInput);
+    const stepApprovals = plan.steps.map((s) => ({ ...approval, stepId: s.id }));
 
     const lifecycle = await runLifecycle({
         router: core.router,
         ctx: { repoRoot, sessionId: core.sessionId, ledger: core.ledger },
         intent: daemonIntent,
         input: localInput,
-        approval: approval ?? undefined,
+        stepApprovals,
     });
 
     if (!lifecycle.ok) {

@@ -2,6 +2,7 @@ import { capabilityRequiresApproval, CapabilityName, getCapabilityMeta, Policy }
 import { Approval, ApprovalRequiredError, approvalIdentity, isValidApproval, isValidStepApproval, StepApproval } from "./approvals";
 import { loadConfig } from "./config";
 import { readGovernanceLock } from "./governanceLock";
+import { isJudgmentActive } from "./provenance";
 import type { PlanStep } from "./planner";
 
 export interface Intent {
@@ -45,6 +46,15 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
 
         if (!policy.isAllowed(capability)) {
             throw new Error(`Policy blocked capability: ${capability}`);
+        }
+
+        // Obsidian's Judgment: when active, refuse all privileged (non-readOnly) capabilities.
+        // Enforcement is behavioral; UI is downstream.
+        if (isJudgmentActive(ctx.repoRoot)) {
+            const meta = getCapabilityMeta(capability);
+            if (!meta.readOnly) {
+                throw new Error("obsidian_judgment_active");
+            }
         }
 
         const cfg = loadConfig(ctx.repoRoot);

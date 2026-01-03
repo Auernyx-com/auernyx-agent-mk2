@@ -53,6 +53,10 @@ This repo also supports running Auernyx outside VS Code via a local daemon and a
 
 Windows convenience launchers:
 
+- `Launch-Auernyx.cmd` (recommended): single double-click entry point that lets you choose:
+	- Headless daemon (browser UI)
+	- VS Code interface
+
 
 ### Web UI (no VS Code)
 

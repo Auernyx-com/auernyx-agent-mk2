@@ -7,6 +7,7 @@ import { loadConfig } from "./config";
 import { evidenceFromExternalRef, evidenceFromFileHash, evidenceFromPastedText, type Evidence } from "./evidence";
 import { ApprovalRequiredError } from "./approvals";
 import * as crypto from "crypto";
+import { activateJudgment, appendProvenanceAudit, clearJudgment, ensureGenesisRecord, verifyProvenance } from "./provenance";
 
 export type RunLifecycleResult = {
     ok: boolean;
@@ -70,6 +71,7 @@ export async function runLifecycle(args: {
             return { code: err.code, reason: "approval_required" };
         }
         const msg = err instanceof Error ? err.message : String(err);
+        if (msg === "obsidian_judgment_active") return { code: "obsidian_judgment", reason: "obsidian_judgment_active" };
         if (msg === "confirm_required") return { code: "confirm_required", reason: msg };
         if (msg === "no_authority") return { code: "no_authority", reason: msg };
         if (msg === "write_disabled") return { code: "write_disabled", reason: msg };
@@ -83,6 +85,33 @@ export async function runLifecycle(args: {
     receipt?.writeJson("intake.json", intake);
     receipt?.ensureEmptyFile("approvals.ndjson");
     receipt?.ensureEmptyFile("toolcalls.ndjson");
+
+    // Provenance verification happens before any human-facing response.
+    // If provenance fails, enter Obsidian's Judgment and restrict privileged execution.
+    ensureGenesisRecord(args.ctx.repoRoot, { writeEnabled: loadConfig(args.ctx.repoRoot).writeEnabled });
+    const prov = verifyProvenance(args.ctx.repoRoot);
+    if (!prov.ok) {
+        appendProvenanceAudit(args.ctx.repoRoot, { kind: "provenance.fail", data: prov });
+        receipt?.appendEvent("provenance.fail", prov);
+        activateJudgment(args.ctx.repoRoot, prov);
+
+        // Allow read-only intents to continue; refuse privileged operations.
+        // We do not attempt to explain here beyond the refusal/receipt.
+        const plannedCapability = args.router.route({ raw: args.intent }) ?? undefined;
+        if (plannedCapability) {
+            try {
+                // Import lazily to avoid cycles: classify via planner/meta when executing.
+                // Router enforcement will block non-readOnly anyway.
+                void plannedCapability;
+            } catch {
+                // ignore
+            }
+        }
+    } else {
+        // Provenance ok => clear any prior judgment marker.
+        clearJudgment(args.ctx.repoRoot);
+        receipt?.appendEvent("provenance.ok");
+    }
 
     const gate = legitimacyGate(args.intent);
     if (!gate.ok) {

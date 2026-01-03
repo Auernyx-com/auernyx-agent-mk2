@@ -22,3 +22,9 @@ Artifacts:
 - Kintsugi policy snapshot created during baseline PRE
   - file: `.auernyx/kintsugi/policy/history/20260103T032113_574Z_d80823b7-f003-4a19-8f39-a96fe66fc41e.policy.json`
   - sha256: `C3950CCBC2A8560869D3A198B8EBBDCC6C77B2A21158311DA64D9AE59E8A5850`
+
+## 2026-01-03 — Smoke Topdown Script
+
+Regression guard / sanity-check entrypoint:
+- file: `tools/smoke-topdown.ps1`
+- sha256: `51BA06443FAAC6A7682DDA57B3F9949D113106A4E665653D8AA4EDB6EB1B25D7`

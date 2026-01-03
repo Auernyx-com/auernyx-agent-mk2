@@ -1,0 +1,8 @@
+{
+  "launcherTarget": "cmd",
+  "cmdPath": "Launch-Auernyx.cmd",
+  "exePath": "dist/AuernyxMk2.exe",
+  "iconSourcePng": "clients/vscode/aeurnyx socal face.png",
+  "iconPath": "assets/auernyx.ico",
+  "shortcutName": "Auernyx Mk2"
+}
