@@ -52,6 +52,38 @@ function Scan-Root([string]$Root, [string]$Label) {
   return $hits.ToArray()
 }
 
+function Scan-RetiredBrand([string]$Root, [string]$Label) {
+  Write-Host ("Scanning retired-brand token (citadel) in {0}: {1}" -f $Label, $Root)
+
+  $allowRelPrefixes = @(
+    'codex\archives\citadel-retired\',
+    'archives\citadel-retired\'
+  )
+
+  $hits = New-Object System.Collections.Generic.List[object]
+
+  foreach ($f in (Get-ScanFiles -Root $Root)) {
+    $rel = $f.FullName.Substring($Root.Length).TrimStart('\','/')
+    $relNorm = $rel -replace '/','\\'
+    $relLower = $relNorm.ToLowerInvariant()
+
+    $allowed = $false
+    foreach ($pfx in $allowRelPrefixes) {
+      if ($relLower.StartsWith($pfx)) { $allowed = $true; break }
+    }
+    if ($allowed) { continue }
+
+    $m = Select-String -LiteralPath $f.FullName -Pattern 'citadel' -SimpleMatch -AllMatches -ErrorAction SilentlyContinue
+    if ($m) {
+      foreach ($r in $m) {
+        $hits.Add([pscustomobject]@{ File = $f.FullName; Line = $r.LineNumber; Text = $r.Line.Trim() })
+      }
+    }
+  }
+
+  return $hits.ToArray()
+}
+
 function Read-BranchesConfig([string]$TrunkRoot) {
   $cfgPath = Join-Path $TrunkRoot 'config\branches.json'
   if (-not (Test-Path -LiteralPath $cfgPath)) { return $null }
@@ -63,6 +95,9 @@ $trunkRoot = Get-TrunkRoot
 $allHits = New-Object System.Collections.Generic.List[object]
 $trunkHits = Scan-Root -Root $trunkRoot -Label 'TRUNK'
 if ($trunkHits) { $allHits.AddRange($trunkHits) }
+
+$brandHits = Scan-RetiredBrand -Root $trunkRoot -Label 'TRUNK'
+if ($brandHits) { $allHits.AddRange($brandHits) }
 
 if ($ScanBranches) {
   $cfg = Read-BranchesConfig -TrunkRoot $trunkRoot
@@ -77,6 +112,9 @@ if ($ScanBranches) {
       $root = Split-Path -Parent $entryPath
       $branchHits = Scan-Root -Root $root -Label ("BRANCH:{0}" -f $bName)
       if ($branchHits) { $allHits.AddRange($branchHits) }
+
+      $branchBrandHits = Scan-RetiredBrand -Root $root -Label ("BRANCH:{0}" -f $bName)
+      if ($branchBrandHits) { $allHits.AddRange($branchBrandHits) }
     }
   }
 }
