@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { randomUUID } from "crypto";
 import { sha256FileHex } from "./integrity";
+import { guardedCopyFile, guardedMkdir, guardedWriteFileExclusive } from "./guardedFs";
 
 export type KnownGoodEntry = {
     kgsId: string;
@@ -17,8 +18,8 @@ export type KnownGoodEntry = {
     ledgerHeadHash?: string;
 };
 
-function ensureDir(dirPath: string) {
-    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+function ensureDir(repoRoot: string, dirPath: string) {
+    guardedMkdir(repoRoot, dirPath, "knownGood", "mkdir");
 }
 
 function nowIso(): string {
@@ -81,18 +82,18 @@ export function recordKnownGood(
     const base = knownGoodBaseDir(repoRoot);
     const entriesDir = knownGoodEntriesDir(repoRoot);
     const snapshotsDir = knownGoodSnapshotsDir(repoRoot);
-    ensureDir(base);
-    ensureDir(entriesDir);
-    ensureDir(snapshotsDir);
+    ensureDir(repoRoot, base);
+    ensureDir(repoRoot, entriesDir);
+    ensureDir(repoRoot, snapshotsDir);
 
     const snapshotDir = path.join(snapshotsDir, kgsId);
-    ensureDir(snapshotDir);
+    ensureDir(repoRoot, snapshotDir);
 
     const allowlistSnap = path.join(snapshotDir, "allowlist.json");
     const configSnap = path.join(snapshotDir, "auernyx.config.json");
 
-    fs.copyFileSync(allowlistFile, allowlistSnap);
-    fs.copyFileSync(configFile, configSnap);
+    guardedCopyFile(repoRoot, allowlistFile, allowlistSnap, "knownGood", "copy allowlist");
+    guardedCopyFile(repoRoot, configFile, configSnap, "knownGood", "copy config");
 
     const entry: KnownGoodEntry = {
         kgsId,
@@ -107,7 +108,7 @@ export function recordKnownGood(
     };
 
     const entryFile = path.join(entriesDir, `${fileStamp(iso)}_${kgsId}.kgs.json`);
-    fs.writeFileSync(entryFile, JSON.stringify(entry, null, 2) + "\n", { encoding: "utf8", flag: "wx" });
+    guardedWriteFileExclusive(repoRoot, entryFile, JSON.stringify(entry, null, 2) + "\n", "knownGood", "write entry");
 
     return entry;
 }
@@ -130,8 +131,8 @@ export function restoreKnownGood(repoRoot: string, kgsId: string): KnownGoodEntr
     const allowlistFile = path.join(repoRoot, "config", "allowlist.json");
     const configFile = path.join(repoRoot, "config", "auernyx.config.json");
 
-    fs.copyFileSync(entry.allowlistPath, allowlistFile);
-    fs.copyFileSync(entry.configPath, configFile);
+    guardedCopyFile(repoRoot, entry.allowlistPath, allowlistFile, "knownGood", "restore allowlist");
+    guardedCopyFile(repoRoot, entry.configPath, configFile, "knownGood", "restore config");
 
     return entry;
 }

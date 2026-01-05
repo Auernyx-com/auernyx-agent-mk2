@@ -1,0 +1,65 @@
+{
+  "version": "auernyx-vscode-policy@1",
+  "mode": "governance-first",
+  "write_gate": {
+    "required": true,
+    "cli_flag": "--apply",
+    "env_var": "AUERNYX_WRITE_ENABLED",
+    "env_required_value": "1"
+  },
+  "two_step_flow": {
+    "default_action": "preview",
+    "require_preview_before_apply": true
+  },
+  "protected_paths": [
+    ".git/**",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/dist/**"
+  ],
+  "canon_paths": [
+    ".canon/**",
+    "var/canon/**"
+  ],
+  "canon_rules": {
+    "must_be_gitignored": true,
+    "never_commit_canon": true
+  },
+  "git_rules": {
+    "require_repo_root_detection": true,
+    "capture_status_porcelain_pre": true,
+    "capture_status_porcelain_post": true,
+    "deny_history_rewrites": true
+  },
+  "refusal_conditions": [
+    "missing_write_gate",
+    "attempt_write_protected_path",
+    "canon_not_gitignored",
+    "request_disables_audit_or_receipts",
+    "request_introduces_silent_bypass",
+    "ambiguous_side_effect_request"
+  ],
+  "receipt": {
+    "emit_on_refusal": true,
+    "fields": [
+      "timestamp_local",
+      "timestamp_utc",
+      "repo_root",
+      "invocation",
+      "write_gate_state",
+      "git_porcelain_pre",
+      "git_porcelain_post",
+      "proposed_files",
+      "changed_files",
+      "plan_hash_sha256",
+      "diff_hash_sha256",
+      "receipt_hash_sha256",
+      "decision",
+      "reason_code"
+    ]
+  },
+  "closeout_reminder": {
+    "enabled": true,
+    "message": "Run baseline pre-check at start, baseline post-check at end of workday; SHA-256 hash + verify + push to git before closing."
+  }
+}

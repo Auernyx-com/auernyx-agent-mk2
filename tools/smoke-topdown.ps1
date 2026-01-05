@@ -4,7 +4,7 @@
 #  2) Start daemon read-only
 #  3) Verify HTTP negotiation
 #  4) Run CLI read-only checks
-#  5) Run controlled ops locally (--no-daemon --confirm APPLY)
+#  5) Run controlled ops locally (--no-daemon --apply)
 #  6) Assert genesis.json exists
 #  7) Exit non-zero on any failure
 
@@ -246,10 +246,10 @@ try {
     RunCli 'memory' 'memory --reason "smoke-topdown"' $false $false
   }
 
-  # 5) Run controlled ops locally (--no-daemon --confirm APPLY)
+  # 5) Run controlled ops locally (--no-daemon --apply)
   TryStep 'Run controlled ops locally' {
     RunCli 'baseline post (local)' 'baseline post --reason "smoke-topdown"' $true $false
-    RunCli 'baseline pre (local, confirm APPLY)' 'baseline pre --reason "smoke-topdown" --confirm APPLY' $true $true
+    RunCli 'baseline pre (local, apply, allow-dirty)' 'baseline pre --reason "smoke-topdown" --apply --allow-dirty' $true $true
   }
 
   # 6) Assert genesis.json exists

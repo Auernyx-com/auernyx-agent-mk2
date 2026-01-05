@@ -1,10 +1,10 @@
-import * as fs from "fs";
 import * as path from "path";
 import type { RouterContext } from "../core/router";
+import { guardedMkdir, guardedWriteFile } from "../core/guardedFs";
 
 export async function fenerisPrep(ctx: RouterContext, _input?: unknown): Promise<{ targetDir: string }> {
     const targetDir = path.join(ctx.repoRoot, "feneris-windows");
-    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+    guardedMkdir(ctx.repoRoot, targetDir, "fenerisPrep", "mkdir feneris-windows");
 
     const core = `
 # Feneris Windows Watchdog – Initialization Template
@@ -20,6 +20,6 @@ Write-Output "Feneris initialization started."
 Stop-Transcript
 `;
 
-    fs.writeFileSync(path.join(targetDir, "init.ps1"), core, "utf8");
+    guardedWriteFile(ctx.repoRoot, path.join(targetDir, "init.ps1"), core, "fenerisPrep", "write init.ps1");
     return { targetDir };
 }

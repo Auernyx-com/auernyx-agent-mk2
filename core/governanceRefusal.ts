@@ -43,6 +43,15 @@ export function isPathProtected(repoRoot: string, candidatePath: string, protect
     const rel = normalizeRel(path.relative(repo, abs));
     if (!rel || rel.startsWith("..")) return false;
 
+    // Hard protected paths (always enforced): never write into these.
+    const relLower = rel.toLowerCase();
+    const segs = relLower.split("/").filter(Boolean);
+    const hasSeg = (s: string) => segs.includes(s);
+    if (relLower === ".git" || relLower.startsWith(".git/") || hasSeg(".git")) return true;
+    if (relLower === "node_modules" || relLower.startsWith("node_modules/") || hasSeg("node_modules")) return true;
+    if (relLower === ".venv" || relLower.startsWith(".venv/") || hasSeg(".venv")) return true;
+    if (relLower === "dist" || relLower.startsWith("dist/") || hasSeg("dist")) return true;
+
     if (isProtectedWorkspacePath(repoRoot, abs)) return true;
 
     const normalizedProtected = (protectedPaths ?? []).map(normalizeRel).filter(Boolean);

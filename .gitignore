@@ -3,6 +3,9 @@ dist/
 logs/
 artifacts/
 external/
+.venv/
+.canon/
+var/canon/
 .vscode/
 .auernyx/
 docs/SEARCH.md

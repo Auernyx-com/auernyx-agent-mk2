@@ -79,12 +79,13 @@ The CLI supports non-interactive approvals so automation doesn’t hang on promp
 
 - `--reason <TEXT>` (required to skip prompts)
 - `--identity <TEXT>` (only required when `governance.approverIdentity` is configured)
-- `--confirm APPLY` (required for any mutating operation)
+- `--apply` (required for any mutating operation)
+- `--confirm APPLY` (legacy; implied by `--apply`)
 
 Examples:
 
 - Baseline pre-check (mutating; requires explicit APPLY):
-	- `AUERNYX_WRITE_ENABLED=1 npm run cli -- baseline pre --reason "baseline pre-check" --confirm APPLY`
+	- `AUERNYX_WRITE_ENABLED=1 npm run cli -- baseline pre --reason "baseline pre-check" --apply`
 - Read-only checks (no APPLY needed):
 	- `npm run cli -- scan . --reason "work check: scan"`
 	- `npm run cli -- memory --reason "work check: memory"`

@@ -7,6 +7,11 @@ export interface Approval {
 
     // Optional governance hardening fields.
     identity?: string;
+    // Explicit arming flag (maps to CLI `--apply` / command palette Apply).
+    // Separate from the typed confirm phrase to support two-gate workflows.
+    apply?: boolean;
+    // Explicit override: allow controlled ops on dirty working tree.
+    allowDirty?: boolean;
     confirm?: "APPLY";
 }
 
@@ -15,12 +20,17 @@ export interface StepApproval extends Approval {
     evidenceRefs?: string[];
 }
 
-export function createHumanApproval(reason: string, options?: { identity?: string; confirm?: "APPLY" }): Approval {
+export function createHumanApproval(
+    reason: string,
+    options?: { identity?: string; apply?: boolean; allowDirty?: boolean; confirm?: "APPLY" }
+): Approval {
     return {
         approvedBy: "human",
         at: new Date().toISOString(),
         reason,
         identity: typeof options?.identity === "string" ? options.identity : undefined,
+        apply: typeof options?.apply === "boolean" ? options.apply : undefined,
+        allowDirty: typeof options?.allowDirty === "boolean" ? options.allowDirty : undefined,
         confirm: options?.confirm
     };
 }

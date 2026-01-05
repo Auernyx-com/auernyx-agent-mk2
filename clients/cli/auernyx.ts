@@ -65,7 +65,9 @@ function usageAndExit(): never {
             "Non-interactive approvals:",
             "  --reason <TEXT>         Approval reason (skips prompts)",
             "  --identity <TEXT>       Approver identity (when required)",
-            "  --confirm APPLY         Required for mutating operations",
+            "  --apply                 Arm mutating operations (required)",
+            "  --allow-dirty           Allow apply on dirty working tree",
+            "  --confirm APPLY         (legacy) confirm phrase; implied by --apply",
             "",
             "Execution routing:",
             "  --no-daemon             Force local execution (skip daemon)",
@@ -99,16 +101,22 @@ function parseApprovalFlags(argv: string[]): {
     nonInteractive: boolean;
     reason?: string;
     identity?: string;
+    apply: boolean;
+    allowDirty: boolean;
     confirm?: "APPLY";
 } {
     const reason = parseStringFlag(argv, "--reason") ?? parseStringFlag(argv, "--approve-reason");
     const identity = parseStringFlag(argv, "--identity");
+    const apply = hasFlag(argv, "--apply");
+    const allowDirty = hasFlag(argv, "--allow-dirty");
     const confirmRaw = parseStringFlag(argv, "--confirm");
     const confirm = confirmRaw === "APPLY" ? "APPLY" : undefined;
     return {
         nonInteractive: typeof reason === "string" && reason.trim().length > 0,
         reason: typeof reason === "string" ? reason.trim() : undefined,
         identity: typeof identity === "string" ? identity.trim() : undefined,
+        apply,
+        allowDirty,
         confirm
     };
 }
@@ -252,13 +260,16 @@ function buildNextCommandHint(args: {
     hasNoDaemon: boolean;
     hasReason: boolean;
     hasConfirmApply: boolean;
+    hasApplyFlag: boolean;
+    hasAllowDirtyFlag: boolean;
     hasIdentity: boolean;
 }): string {
     const base = `auernyx ${args.raw}`.trim();
     const extra: string[] = [];
 
     if (!args.hasNoDaemon) extra.push("--local");
-    if (args.effectiveControlled && !args.hasConfirmApply) extra.push("--confirm APPLY");
+    if (args.effectiveControlled && !args.hasApplyFlag) extra.push("--apply");
+    if (args.effectiveControlled && args.hasAllowDirtyFlag) extra.push("--allow-dirty");
 
     // For controlled operations, provide a non-interactive copy/paste path.
     if (args.effectiveControlled && !args.hasReason) extra.push('--reason "<WHY>"');
@@ -292,6 +303,8 @@ async function main() {
 
     const hasReasonFlag = typeof parseStringFlag(argv, "--reason") === "string" || typeof parseStringFlag(argv, "--approve-reason") === "string";
     const hasConfirmApplyFlag = parseStringFlag(argv, "--confirm") === "APPLY";
+    const hasApplyFlag = hasFlag(argv, "--apply");
+    const hasAllowDirtyFlag = hasFlag(argv, "--allow-dirty");
     const hasIdentityFlag = typeof parseStringFlag(argv, "--identity") === "string";
 
     // Try daemon first (unless explicitly disabled).
@@ -320,14 +333,11 @@ async function main() {
                 : null;
             if (effectiveControlled && identityRequiredForControlled && (!identity || identity.trim().length === 0)) process.exit(4);
 
-            const confirm = effectiveControlled
-                ? (approvalFlags.nonInteractive ? approvalFlags.confirm : await promptText("Controlled operation. Type APPLY to continue: "))
-                : null;
-            if (effectiveControlled && confirm !== "APPLY") process.exit(4);
-
             const approval = createHumanApproval(reason, {
                 identity: identity ?? undefined,
-                confirm: effectiveControlled ? "APPLY" : undefined
+                apply: effectiveControlled && approvalFlags.apply ? true : undefined,
+                allowDirty: effectiveControlled && approvalFlags.apply && approvalFlags.allowDirty ? true : undefined,
+                confirm: effectiveControlled && approvalFlags.apply ? "APPLY" : undefined
             });
 
             const retry = await tryRunViaDaemon({ repoRoot }, daemonIntent, daemonInput, approval);
@@ -354,6 +364,8 @@ async function main() {
                     hasNoDaemon: noDaemon,
                     hasReason: hasReasonFlag,
                     hasConfirmApply: hasConfirmApplyFlag,
+                    hasApplyFlag,
+                    hasAllowDirtyFlag,
                     hasIdentity: hasIdentityFlag
                 });
 
@@ -407,14 +419,11 @@ async function main() {
         : null;
     if (effectiveControlled && identityRequiredForControlled && (!identity || identity.trim().length === 0)) process.exit(4);
 
-    const confirm = effectiveControlled
-        ? (approvalFlags.nonInteractive ? approvalFlags.confirm : await promptText("Controlled operation. Type APPLY to continue: "))
-        : null;
-    if (effectiveControlled && confirm !== "APPLY") process.exit(4);
-
     const approval = createHumanApproval(reason, {
         identity: identity ?? undefined,
-        confirm: effectiveControlled ? "APPLY" : undefined
+        apply: effectiveControlled && approvalFlags.apply ? true : undefined,
+        allowDirty: effectiveControlled && approvalFlags.apply && approvalFlags.allowDirty ? true : undefined,
+        confirm: effectiveControlled && approvalFlags.apply ? "APPLY" : undefined
     });
 
     const plan = planForIntent(core.router, daemonIntent, localInput);

@@ -138,6 +138,9 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
 
             // Require APPLY for any non-readonly planned step.
             if (!meta.readOnly) {
+                if ((approval as any)?.apply !== true) {
+                    throw new Error("apply_flag_required");
+                }
                 if (approval.confirm !== "APPLY") {
                     throw new Error("confirm_required");
                 }

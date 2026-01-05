@@ -48,7 +48,10 @@ async function tryOpenJudgmentArt(repoRoot: string, channel: vscode.OutputChanne
     await vscode.commands.executeCommand("vscode.open", found);
 }
 
-async function getApprovalFromUser(capability: string): Promise<ReturnType<typeof createHumanApproval> | null> {
+async function getApprovalFromUser(
+    capability: string,
+    options?: { apply?: boolean }
+): Promise<ReturnType<typeof createHumanApproval> | null> {
     const pick = await vscode.window.showWarningMessage(
         `Approval required: ${capability}`,
         { modal: true, detail: "Auernyx will not execute changes without explicit human approval." },
@@ -65,7 +68,8 @@ async function getApprovalFromUser(capability: string): Promise<ReturnType<typeo
     });
 
     if (!reason) return null;
-    return createHumanApproval(reason.trim());
+    const apply = options?.apply === true;
+    return createHumanApproval(reason.trim(), apply ? { apply: true, confirm: "APPLY" } : undefined);
 }
 
 type RefusalLike = { code?: string; reason?: string } | undefined;
@@ -86,8 +90,9 @@ function refusalSummary(refusal: RefusalLike): { code: string; reason: string } 
 function nextValidStateForRefusal(code: string): string {
     if (code === "obsidian_judgment") return "Monitor-only: run Scan/Memory; fix provenance or enable write to create genesis.";
     if (code === "approval_required" || code === "step_approval_required") return "Provide explicit approval (human) for the requested capability.";
-    if (code === "confirm_required") return "Controlled operation: retry with confirm=APPLY.";
-    if (code === "write_disabled") return "Run locally with --no-daemon or stop daemon.";
+    if (code === "REFUSE_WRITE_GATE_MISSING") return "Set AUERNYX_WRITE_ENABLED=1 and use an Apply command/flag.";
+    if (code === "REFUSE_CANON_NOT_IGNORED") return "Add .canon/ and var/canon/ to .gitignore, then retry Apply.";
+    if (code === "PRECONDITIONS_NOT_MET") return "Ensure git is available and working tree is clean (or explicitly allow dirty for apply).";
     return "Try a read-only command (Scan/Memory) or open the receipt for details.";
 }
 
@@ -219,6 +224,7 @@ export async function activate(context: vscode.ExtensionContext) {
         intent: string;
         daemonInput?: unknown;
         approval?: ReturnType<typeof createHumanApproval>;
+        apply?: boolean;
     }): Promise<void> {
         uiState.status = "RUNNING";
         uiState.lastIntent = params.intent;
@@ -269,7 +275,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
 
             const needsApproval = capabilityRequiresApproval(capability as CapabilityName);
-            const approval = needsApproval ? await getApprovalFromUser(capability) : null;
+            const approval = needsApproval ? await getApprovalFromUser(capability, { apply: params.apply === true }) : null;
             if (needsApproval && !approval) {
                 uiState.status = "REFUSED";
                 uiState.lastReasonCode = "approval_required";
@@ -301,6 +307,9 @@ export async function activate(context: vscode.ExtensionContext) {
             uiState.status = "READY";
             renderStatus();
             vscode.window.showInformationMessage(`Auernyx: Ran ${capability}.`);
+
+            rails.appendLine("\nCloseout reminder:");
+            rails.appendLine("Run baseline pre-check at start, baseline post-check at end of workday; SHA-256 hash + verify + push to git before closing.");
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             rails.appendLine("ERROR");
@@ -317,15 +326,26 @@ export async function activate(context: vscode.ExtensionContext) {
             const input = await vscode.window.showInputBox({ prompt: "Auernyx (one verb): scan | memory | baseline pre | baseline post | feneris | …" });
             if (!input) return;
 
-            await runWithRails({ intent: input });
+            await runWithRails({ intent: input, apply: false });
+        }),
+
+        vscode.commands.registerCommand("auernyx.askApply", async () => {
+            const input = await vscode.window.showInputBox({ prompt: "Auernyx APPLY (armed): scan | memory | baseline pre | baseline post | feneris | …" });
+            if (!input) return;
+
+            await runWithRails({ intent: input, apply: true });
         }),
 
         vscode.commands.registerCommand("auernyx.scanRepo", async () => {
-            await runWithRails({ intent: "scan" });
+            await runWithRails({ intent: "scan", apply: false });
         }),
 
         vscode.commands.registerCommand("auernyx.fenerisPrep", async () => {
-            await runWithRails({ intent: "feneris" });
+            await runWithRails({ intent: "feneris", apply: false });
+        }),
+
+        vscode.commands.registerCommand("auernyx.fenerisPrepApply", async () => {
+            await runWithRails({ intent: "feneris", apply: true });
         })
     );
 

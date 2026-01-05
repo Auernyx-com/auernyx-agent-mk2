@@ -10,7 +10,7 @@ The script [tools/smoke-topdown.ps1](../tools/smoke-topdown.ps1) runs these step
 2. Start daemon **read-only**
 3. Verify HTTP negotiation (HTML by default, JSON when requested)
 4. Run CLI **read-only** checks
-5. Run **controlled** operations locally (forces `--no-daemon` + requires `--confirm APPLY`)
+5. Run **controlled** operations locally (forces `--no-daemon` + requires `--apply`)
 6. Assert `.auernyx/provenance/genesis.json` exists
 7. Exit non-zero on any failure
 

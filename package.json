@@ -21,12 +21,20 @@
         "title": "Ask Auernyx"
       },
       {
+        "command": "auernyx.askApply",
+        "title": "Ask Auernyx (Apply Changes)"
+      },
+      {
         "command": "auernyx.scanRepo",
         "title": "Scan Repo (Auernyx)"
       },
       {
         "command": "auernyx.fenerisPrep",
         "title": "Prepare Feneris Port"
+      },
+      {
+        "command": "auernyx.fenerisPrepApply",
+        "title": "Prepare Feneris Port (Apply Changes)"
       }
     ]
   },
