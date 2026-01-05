@@ -28,7 +28,7 @@ function Get-ScanFiles([string]$Root) {
 
       $rel = $_.FullName.Substring($Root.Length).TrimStart('\','/')
       foreach ($d in $skipDirs) {
-        if ($rel -like "$d\\*") { return $false }
+        if ($rel -like "$d\*") { return $false }
       }
       return $true
     }

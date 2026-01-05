@@ -68,6 +68,67 @@ function Get-EntrySha256([string]$EntryPath) {
   return (Get-FileHash -LiteralPath $EntryPath -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+function Get-KeyFilesHashes {
+  param(
+    [Parameter(Mandatory)] [string] $EntryPath,
+    [int] $MaxFiles = 50,
+    [long] $MaxTotalBytes = 10485760
+  )
+
+  $entryFull = (Resolve-Path -LiteralPath $EntryPath).Path
+  $dir = Split-Path -Parent $entryFull
+
+  $candidates = New-Object System.Collections.Generic.List[string]
+  $candidates.Add($entryFull)
+
+  foreach ($name in @('README.md','LICENSE','LICENSE.txt','manifest.json')) {
+    $p = Join-Path $dir $name
+    if (Test-Path -LiteralPath $p) { $candidates.Add((Resolve-Path -LiteralPath $p).Path) }
+  }
+
+  # bounded: only immediate folder, no recursion
+  $ps1 = Get-ChildItem -LiteralPath $dir -File -Filter '*.ps1' -Force -ErrorAction SilentlyContinue |
+    Where-Object {
+      # Avoid following symlinks/reparse points into chaos
+      -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)
+    } |
+    Select-Object -ExpandProperty FullName
+  foreach ($p in $ps1) { $candidates.Add($p) }
+
+  # Deduplicate deterministically
+  $unique = $candidates.ToArray() | Sort-Object -Unique
+
+  $results = New-Object System.Collections.Generic.List[object]
+  $totalBytes = [long]0
+  $count = 0
+
+  foreach ($path in $unique) {
+    if ($count -ge $MaxFiles) { break }
+    if (-not (Test-Path -LiteralPath $path)) { continue }
+
+    $item = Get-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+    if (-not $item) { continue }
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
+
+    $len = [long]0
+    try { $len = [long]$item.Length } catch { $len = [long]0 }
+    if (($totalBytes + $len) -gt $MaxTotalBytes) { break }
+
+    $sha = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    $results.Add([pscustomobject]@{ path = $path; sha256 = $sha })
+
+    $totalBytes += $len
+    $count++
+  }
+
+  return [pscustomobject]@{
+    mode = 'adjacent_allowlist'
+    limit = [pscustomobject]@{ max_files = $MaxFiles; max_total_bytes = $MaxTotalBytes }
+    key_files = $results.ToArray()
+    scanned = [pscustomobject]@{ files = $count; total_bytes = $totalBytes }
+  }
+}
+
 function Find-BaselineScript([string]$TrunkRoot) {
   $candidates = @(
     $env:AUERNYX_BASELINE_SCRIPT,
@@ -236,6 +297,7 @@ function Invoke-BranchWithReceipt {
   }
 
   $entrySha = Get-EntrySha256 -EntryPath $entryPath
+  $keyFiles = Get-KeyFilesHashes -EntryPath $entryPath
 
   $baselineLabel = ("trunk_{0}_{1}" -f $BranchName, (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ'))
 
@@ -278,6 +340,10 @@ function Invoke-BranchWithReceipt {
       pre     = if ($pre) { $pre } else { [pscustomobject]@{ enabled = $false } }
       post    = if ($post) { $post } else { [pscustomobject]@{ enabled = $false } }
     }
+    key_files_mode = $keyFiles.mode
+    key_files_limit = $keyFiles.limit
+    key_files_scanned = $keyFiles.scanned
+    key_files = $keyFiles.key_files
   }
 
   $written = Write-TrunkReceipt -TrunkRoot $trunkRoot -BranchName $BranchName -Receipt $receipt
