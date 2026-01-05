@@ -1,12 +1,9 @@
 [CmdletBinding()]
 param(
   [switch] $ScanBranches,
-  [string[]] $Patterns = @(
-    'C:\Æsir',
-    '\Æsir\',
-    'AEsir\RUNTIME',
-    'C:\AEsir'
-  )
+
+  # Retired token to forbid in active areas.
+  [string] $Token = 'citadel'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,17 +31,31 @@ function Get-ScanFiles([string]$Root) {
     }
 }
 
-function Scan-Root([string]$Root, [string]$Label) {
-  Write-Host ("Scanning {0}: {1}" -f $Label, $Root)
+function Scan-RetiredBrand([string]$Root, [string]$Label) {
+  Write-Host ("Scanning retired-brand token ({0}) in {1}: {2}" -f $Token, $Label, $Root)
+
+  $allowRelPrefixes = @(
+    'codex\archives\citadel-retired\',
+    'archives\citadel-retired\'
+  )
+
   $hits = New-Object System.Collections.Generic.List[object]
 
   foreach ($f in (Get-ScanFiles -Root $Root)) {
-    foreach ($p in $Patterns) {
-      $m = Select-String -LiteralPath $f.FullName -Pattern $p -SimpleMatch -AllMatches -ErrorAction SilentlyContinue
-      if ($m) {
-        foreach ($r in $m) {
-          $hits.Add([pscustomobject]@{ File = $f.FullName; Line = $r.LineNumber; Text = $r.Line.Trim() })
-        }
+    $rel = $f.FullName.Substring($Root.Length).TrimStart('\','/')
+    $relNorm = $rel -replace '/','\\'
+    $relLower = $relNorm.ToLowerInvariant()
+
+    $allowed = $false
+    foreach ($pfx in $allowRelPrefixes) {
+      if ($relLower.StartsWith($pfx)) { $allowed = $true; break }
+    }
+    if ($allowed) { continue }
+
+    $m = Select-String -LiteralPath $f.FullName -Pattern $Token -SimpleMatch -AllMatches -ErrorAction SilentlyContinue
+    if ($m) {
+      foreach ($r in $m) {
+        $hits.Add([pscustomobject]@{ File = $f.FullName; Line = $r.LineNumber; Text = $r.Line.Trim() })
       }
     }
   }
@@ -61,7 +72,7 @@ function Read-BranchesConfig([string]$TrunkRoot) {
 $trunkRoot = Get-TrunkRoot
 
 $allHits = New-Object System.Collections.Generic.List[object]
-$trunkHits = Scan-Root -Root $trunkRoot -Label 'TRUNK'
+$trunkHits = Scan-RetiredBrand -Root $trunkRoot -Label 'TRUNK'
 if ($trunkHits) { $allHits.AddRange($trunkHits) }
 
 if ($ScanBranches) {
@@ -75,7 +86,7 @@ if ($ScanBranches) {
       if (-not (Test-Path -LiteralPath $entry)) { continue }
       $entryPath = (Resolve-Path -LiteralPath $entry).Path
       $root = Split-Path -Parent $entryPath
-      $branchHits = Scan-Root -Root $root -Label ("BRANCH:{0}" -f $bName)
+      $branchHits = Scan-RetiredBrand -Root $root -Label ("BRANCH:{0}" -f $bName)
       if ($branchHits) { $allHits.AddRange($branchHits) }
     }
   }
@@ -83,20 +94,12 @@ if ($ScanBranches) {
 
 if ($allHits.Count -gt 0) {
   Write-Host ''
-  Write-Host ('HARD-CODED PATH HITS: {0}' -f $allHits.Count)
+  Write-Host ('RETIRED BRAND HITS: {0}' -f $allHits.Count)
   foreach ($h in ($allHits | Sort-Object File, Line)) {
     Write-Host ("{0}:{1}: {2}" -f $h.File, $h.Line, $h.Text)
   }
   exit 1
 }
 
-# Retired-brand scan lives in its own QA script (hard fail)
-$brandScript = Join-Path $PSScriptRoot 'Scan-RetiredBrand.ps1'
-if (Test-Path -LiteralPath $brandScript) {
-  & $brandScript -ScanBranches:$ScanBranches
-} else {
-  Write-Warning "WARN: missing retired-brand scanner: $brandScript"
-}
-
-Write-Host 'OK: no hardcoded cross-branch paths found.'
+Write-Host 'OK: retired brand token not found outside allowlist.'
 exit 0
