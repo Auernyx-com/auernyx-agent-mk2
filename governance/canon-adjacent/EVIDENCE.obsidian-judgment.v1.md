@@ -18,7 +18,7 @@ Mode: Maintenance-safe (schema + law artifacts, no new workflows)
 ## Updated (Mk2 — required TRUNK wiring)
 - governance/canon-adjacent/index.v1.json
   - Shape unchanged (only: schema, scope, members)
-  - Roster order: bastion, mnema, obsidian, ghost, feneris, ueden, mueden
+  - Roster order: bastion, mnema, sovreth, obsidian, ghost, feneris, ueden, mueden
 - governance/canon-adjacent/constraints/mnema.constraint.v1.json
   - Added: judgment_schema_ref -> schemas/aesir.governance.judgment.v1.json
   - Added 4 invariants (hard_refusal):
@@ -26,6 +26,20 @@ Mode: Maintenance-safe (schema + law artifacts, no new workflows)
     - MNEMA.JUDGMENT.EVIDENCE_REQUIRED
     - MNEMA.JUDGMENT.HITL_REQUIRED_FOR_NON_STOP_DECISIONS
     - MNEMA.JUDGMENT.NO_CLEAR_WITHOUT_RESTORATION_PROOF
+
+  ## Sovreth Addition
+  Files added (Mk2 — TRUNK law artifacts, schema-only):
+  - governance/canon-adjacent/blades/sovreth.blade.v1.json
+  - governance/canon-adjacent/constraints/sovreth.constraint.v1.json
+
+  Index roster order:
+  - bastion, mnema, sovreth, obsidian, ghost, feneris, ueden, mueden
+
+  Mnēma invariant added:
+  - MNEMA.CANON.CHANGES_REQUIRE_SOVRETH (hard_refusal)
+
+  Commit (Mk2):
+  - SHA: __________
 
 ## Behavioral change (SQUAD — Obsidian Judgment module)
 File:

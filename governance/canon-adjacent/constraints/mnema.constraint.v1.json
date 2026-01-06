@@ -8,6 +8,8 @@
     { "rule": "MNEMA.RECEIPT.APPROVAL_REQUIRED_WHEN_NEEDED", "enforcement": "hard_refusal" },
     { "rule": "MNEMA.APPEND_ONLY", "enforcement": "hard_refusal" },
 
+    { "rule": "MNEMA.CANON.CHANGES_REQUIRE_SOVRETH", "enforcement": "hard_refusal" },
+
     { "rule": "MNEMA.INFRACTION.EVIDENCE_REQUIRED", "enforcement": "hard_refusal" },
     { "rule": "MNEMA.INFRACTION.APPEND_ONLY", "enforcement": "hard_refusal" },
     { "rule": "MNEMA.INFRACTION.DISPOSITION_REQUIRES_APPROVAL", "enforcement": "hard_refusal" },

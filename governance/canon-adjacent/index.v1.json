@@ -11,6 +11,10 @@
       "blade_ref": "blades/mnema.blade.v1.json"
     },
     {
+      "id": "sovreth",
+      "blade_ref": "blades/sovreth.blade.v1.json"
+    },
+    {
       "id": "obsidian",
       "blade_ref": "blades/obsidian.blade.v1.json"
     },

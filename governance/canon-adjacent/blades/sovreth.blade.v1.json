@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "sovreth",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Canon Vault Controller",
+    "description": "Controls Canon Vault policy for what is canonical vs canon-adjacent. Enforces append-only canon ingestion, denies canon rewrites, and requires HITL approval + receipts for canon changes."
+  },
+  "capabilities": [
+    "classify_canon_vs_canon_adjacent",
+    "require_append_only_canon_ingestion",
+    "deny_canon_rewrite",
+    "require_receipts_and_provenance_for_canon_changes",
+    "require_hitl_for_canon_changes"
+  ],
+  "constraints_ref": [
+    "constraints/sovreth.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Sovreth guards Canon Vault integrity. No canon rewrite without HITL + receipts."
+  }
+}
