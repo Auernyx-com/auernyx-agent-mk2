@@ -1,0 +1,21 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "ghost-invariants",
+  "applies_to": "ghost",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "GHOST.NO_SIDE_EFFECTS", "enforcement": "hard_refusal" },
+    { "rule": "GHOST.BASELINE.PREPOST_REQUIRED", "enforcement": "hard_refusal" },
+    { "rule": "GHOST.DRIFT.SCAN_REQUIRED", "enforcement": "hard_refusal" },
+
+    { "rule": "GHOST.INFRACTION.RAISE_OPEN_ONLY", "enforcement": "hard_refusal" },
+    { "rule": "GHOST.NO_VERDICT", "enforcement": "hard_refusal" },
+    { "rule": "GHOST.EVIDENCE.REQUIRED", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "approval_schema_ref": "schemas/aesir.governance.approval.v1.json",
+    "infraction_schema_ref": "schemas/aesir.governance.infraction.v1.json"
+  }
+}

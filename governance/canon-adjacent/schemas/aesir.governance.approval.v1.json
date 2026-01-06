@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aesir.governance.approval.v1",
+  "title": "ÆSIR Governance Approval Record (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "approval_id",
+    "scope",
+    "intent",
+    "requested_by",
+    "approved_by",
+    "timestamps",
+    "evidence"
+  ],
+  "properties": {
+    "schema": {
+      "const": "aesir.governance.approval.v1"
+    },
+    "approval_id": {
+      "type": "string",
+      "description": "Unique approval record identifier (UUID recommended).",
+      "minLength": 8
+    },
+    "scope": {
+      "type": "string",
+      "description": "Where this approval is valid (e.g., trunk, branch:<name>).",
+      "minLength": 1
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "target"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Optional parameters for the privileged action.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "requested_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actor_id"
+      ],
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display": {
+          "type": "string"
+        }
+      }
+    },
+    "approved_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actor_id",
+        "method"
+      ],
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string",
+          "description": "How approval was granted (e.g., manual, signed-file, console-confirm).",
+          "minLength": 1
+        }
+      }
+    },
+    "timestamps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested_at",
+        "approved_at"
+      ],
+      "properties": {
+        "requested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan",
+        "receipt_bundle"
+      ],
+      "properties": {
+        "plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan_ref",
+            "plan_sha256"
+          ],
+          "properties": {
+            "plan_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "plan_sha256": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{64}$"
+            }
+          }
+        },
+        "receipt_bundle": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bundle_ref",
+            "bundle_sha256"
+          ],
+          "properties": {
+            "bundle_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "bundle_sha256": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{64}$"
+            }
+          }
+        },
+        "repo_context": {
+          "type": "object",
+          "description": "Optional, but useful when approvals are tied to a specific repo state.",
+          "additionalProperties": false,
+          "properties": {
+            "repo": {
+              "type": "string"
+            },
+            "branch": {
+              "type": "string"
+            },
+            "head_sha": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{7,40}$"
+            }
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Human rationale, optional."
+    }
+  }
+}

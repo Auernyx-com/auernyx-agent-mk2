@@ -1,0 +1,34 @@
+{
+  "schema": "aesir.governance.index.v1",
+  "scope": "trunk",
+  "members": [
+    {
+      "id": "bastion",
+      "blade_ref": "blades/bastion.blade.v1.json"
+    },
+    {
+      "id": "mnema",
+      "blade_ref": "blades/mnema.blade.v1.json"
+    },
+    {
+      "id": "obsidian",
+      "blade_ref": "blades/obsidian.blade.v1.json"
+    },
+    {
+      "id": "ghost",
+      "blade_ref": "blades/ghost.blade.v1.json"
+    },
+    {
+      "id": "feneris",
+      "blade_ref": "blades/feneris.blade.v1.json"
+    },
+    {
+      "id": "ueden",
+      "blade_ref": "blades/ueden.blade.v1.json"
+    },
+    {
+      "id": "mueden",
+      "blade_ref": "blades/mueden.blade.v1.json"
+    }
+  ]
+}

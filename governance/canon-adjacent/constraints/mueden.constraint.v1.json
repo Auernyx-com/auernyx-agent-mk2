@@ -1,0 +1,16 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "mueden-invariants",
+  "applies_to": "mueden",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "no_writes_ever", "enforcement": "hard_refusal" },
+    { "rule": "hash_mismatch_blocks_recall", "enforcement": "hard_refusal" },
+    { "rule": "manifest_mismatch_blocks_recall", "enforcement": "hard_refusal" },
+    { "rule": "recall_requires_integrity_pass", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true
+  }
+}

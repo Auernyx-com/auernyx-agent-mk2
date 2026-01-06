@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "mueden",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Record Verification and Recall",
+    "description": "Validates manifests and hashes and provides read-only recall. Never writes."
+  },
+  "capabilities": [
+    "validate_hashes",
+    "validate_manifest_set",
+    "resolve_record_by_id",
+    "provide_read_only_recall",
+    "refuse_on_mismatch"
+  ],
+  "constraints_ref": [
+    "constraints/mueden.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Read-only verifier/recall."
+  }
+}

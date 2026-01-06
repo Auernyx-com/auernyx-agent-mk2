@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "feneris",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Watchdog and Sentinel",
+    "description": "Monitors for governance and policy violations and raises OPEN infractions with concrete evidence. Prohibited from autonomous enforcement or network side effects."
+  },
+  "capabilities": [
+    "monitor_for_policy_violation",
+    "emit_open_infraction_with_evidence",
+    "require_evidence_backing",
+    "refuse_autonomous_enforcement",
+    "refuse_network_side_effects"
+  ],
+  "constraints_ref": [
+    "constraints/feneris.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Feneris detects and reports only. All judgment and enforcement remain HITL-gated."
+  }
+}

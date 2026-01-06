@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aesir.governance.infraction.v1",
+  "title": "ÆSIR Governance Infraction Record (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "infraction_id",
+    "scope",
+    "rule_id",
+    "severity",
+    "status",
+    "detected_by",
+    "timestamps",
+    "evidence"
+  ],
+  "properties": {
+    "schema": { "const": "aesir.governance.infraction.v1" },
+
+    "infraction_id": {
+      "type": "string",
+      "description": "Unique infraction record identifier (UUID recommended).",
+      "minLength": 8
+    },
+
+    "scope": {
+      "type": "string",
+      "description": "Where this infraction applies (e.g., trunk, branch:<name>).",
+      "minLength": 1
+    },
+
+    "rule_id": {
+      "type": "string",
+      "description": "Invariant/rule label violated (e.g., BASTION.NO_HIDDEN_SIDE_EFFECTS).",
+      "pattern": "^[A-Z][A-Z0-9_]*\\.[A-Z0-9_\\.]+$"
+    },
+
+    "severity": {
+      "type": "string",
+      "enum": ["info", "warn", "error", "critical"]
+    },
+
+    "status": {
+      "type": "string",
+      "description": "HITL law: only humans can move beyond 'open'.",
+      "enum": ["open", "confirmed", "closed", "false_positive", "waived"]
+    },
+
+    "detected_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_id", "method"],
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "description": "Who detected this (ghost, feneris, mueden, human:<name>, tool:<name>).",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "description": "How detection happened (scan, baseline_mismatch, policy_check, etc.).",
+          "minLength": 1
+        }
+      }
+    },
+
+    "timestamps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["detected_at"],
+      "properties": {
+        "detected_at": { "type": "string", "format": "date-time" },
+        "last_updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "evidence": {
+      "type": "array",
+      "description": "Evidence must be concrete: file refs + hashes, logs, receipts, etc.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "sha256"],
+        "properties": {
+          "ref": { "type": "string", "minLength": 1 },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Optional: log, file, receipt, screenshot, manifest, etc."
+          }
+        }
+      }
+    },
+
+    "repo_context": {
+      "type": "object",
+      "description": "Optional context for repo-bound infractions.",
+      "additionalProperties": false,
+      "properties": {
+        "repo": { "type": "string" },
+        "branch": { "type": "string" },
+        "head_sha": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{7,40}$"
+        }
+      }
+    },
+
+    "disposition": {
+      "type": "object",
+      "description": "HITL-required when status != open. This is the human decision envelope.",
+      "additionalProperties": false,
+      "required": ["approval_id", "decided_by", "decided_at", "reason"],
+      "properties": {
+        "approval_id": { "type": "string", "minLength": 8 },
+        "decided_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["actor_id"],
+          "properties": {
+            "actor_id": { "type": "string", "minLength": 1 },
+            "display": { "type": "string" }
+          }
+        },
+        "decided_at": { "type": "string", "format": "date-time" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "notes": {
+      "type": "string",
+      "description": "Optional human-readable notes."
+    }
+  },
+
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "open" } },
+        "required": ["status"]
+      },
+      "then": {
+        "not": { "required": ["disposition"] }
+      },
+      "else": {
+        "required": ["disposition"]
+      }
+    }
+  ]
+}

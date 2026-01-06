@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "ueden",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Record Capture",
+    "description": "Creates new records and receipt bundles as append-only artifacts. No validation authority."
+  },
+  "capabilities": [
+    "capture_state_snapshot",
+    "collect_execution_receipts",
+    "emit_append_only_record",
+    "emit_receipt_bundle",
+    "refuse_record_mutation"
+  ],
+  "constraints_ref": [
+    "constraints/ueden.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Append-only capture/writer. No myth wording."
+  }
+}

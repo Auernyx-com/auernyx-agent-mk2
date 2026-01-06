@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aesir.governance.judgment.v1",
+  "title": "ÆSIR Governance Judgment Record (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "judgment_id",
+    "scope",
+    "issued_by",
+    "timestamps",
+    "basis",
+    "decision",
+    "evidence"
+  ],
+  "properties": {
+    "schema": { "const": "aesir.governance.judgment.v1" },
+
+    "judgment_id": {
+      "type": "string",
+      "description": "Unique judgment identifier (UUID recommended).",
+      "minLength": 8
+    },
+
+    "scope": { "type": "string", "minLength": 1 },
+
+    "issued_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_id"],
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "const": "obsidian"
+        }
+      }
+    },
+
+    "timestamps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issued_at"],
+      "properties": {
+        "issued_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["infractions"],
+      "properties": {
+        "infractions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["infraction_id", "infraction_sha256", "rule_id"],
+            "properties": {
+              "infraction_id": { "type": "string", "minLength": 8 },
+              "infraction_sha256": {
+                "type": "string",
+                "pattern": "^[A-Fa-f0-9]{64}$"
+              },
+              "rule_id": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]*\\.[A-Z0-9_\\.]+$"
+              }
+            }
+          }
+        },
+
+        "plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["plan_ref", "plan_sha256"],
+          "properties": {
+            "plan_ref": { "type": "string", "minLength": 1 },
+            "plan_sha256": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{64}$"
+            }
+          }
+        },
+
+        "repo_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repo": { "type": "string" },
+            "branch": { "type": "string" },
+            "head_sha": { "type": "string", "pattern": "^[A-Fa-f0-9]{7,40}$" }
+          }
+        }
+      }
+    },
+
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "risk", "action"],
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "tamper_core",
+            "major_violation",
+            "minor_violation",
+            "insufficient_evidence",
+            "no_violation"
+          ]
+        },
+        "risk": {
+          "type": "string",
+          "enum": ["damage_likely", "damage_possible", "no_damage_indicated"]
+        },
+        "action": {
+          "type": "string",
+          "description": "Only stop/pause are allowed without HITL. Everything else requires HITL and is generally not allowed by TRUNK law.",
+          "enum": ["stop_work", "pause_work", "fallback_safe_version", "proceed_allowed", "deny_proceed"]
+        },
+
+        "restoration_required": {
+          "type": "boolean",
+          "default": false
+        },
+
+        "restoration_proof": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref", "sha256"],
+          "properties": {
+            "ref": { "type": "string", "minLength": 1 },
+            "sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" }
+          }
+        }
+      }
+    },
+
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "sha256"],
+        "properties": {
+          "ref": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+          "kind": { "type": "string" }
+        }
+      }
+    },
+
+    "hitl_approval": {
+      "type": "object",
+      "description": "Required for any action other than stop_work/pause_work.",
+      "additionalProperties": false,
+      "required": ["approval_id", "approved_by", "approved_at", "reason"],
+      "properties": {
+        "approval_id": { "type": "string", "minLength": 8 },
+        "approved_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["actor_id"],
+          "properties": {
+            "actor_id": { "type": "string", "minLength": 1 },
+            "display": { "type": "string" }
+          }
+        },
+        "approved_at": { "type": "string", "format": "date-time" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": {
+              "action": { "not": { "enum": ["stop_work", "pause_work"] } }
+            },
+            "required": ["action"]
+          }
+        }
+      },
+      "then": { "required": ["hitl_approval"] }
+    },
+
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": {
+              "risk": { "enum": ["damage_likely", "damage_possible"] }
+            },
+            "required": ["risk"]
+          }
+        }
+      },
+      "then": { "required": ["evidence"] }
+    },
+
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "verdict": { "const": "tamper_core" } },
+            "required": ["verdict"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "decision": { "required": ["restoration_required"] }
+        }
+      }
+    },
+
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "restoration_required": { "const": true } },
+            "required": ["restoration_required"]
+          }
+        }
+      },
+      "then": {
+        "properties": { "decision": { "required": ["restoration_proof"] } }
+      }
+    }
+  ]
+}

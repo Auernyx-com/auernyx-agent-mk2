@@ -1,0 +1,27 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "mnema-invariants",
+  "applies_to": "mnema",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "MNEMA.RECEIPT.PLAN_REQUIRED", "enforcement": "hard_refusal" },
+    { "rule": "MNEMA.RECEIPT.APPROVAL_REQUIRED_WHEN_NEEDED", "enforcement": "hard_refusal" },
+    { "rule": "MNEMA.APPEND_ONLY", "enforcement": "hard_refusal" },
+
+    { "rule": "MNEMA.INFRACTION.EVIDENCE_REQUIRED", "enforcement": "hard_refusal" },
+    { "rule": "MNEMA.INFRACTION.APPEND_ONLY", "enforcement": "hard_refusal" },
+    { "rule": "MNEMA.INFRACTION.DISPOSITION_REQUIRES_APPROVAL", "enforcement": "hard_refusal" },
+
+    { "rule": "MNEMA.JUDGMENT.APPEND_ONLY", "enforcement": "hard_refusal" },
+    { "rule": "MNEMA.JUDGMENT.EVIDENCE_REQUIRED", "enforcement": "hard_refusal" },
+    { "rule": "MNEMA.JUDGMENT.HITL_REQUIRED_FOR_NON_STOP_DECISIONS", "enforcement": "hard_refusal" },
+    { "rule": "MNEMA.JUDGMENT.NO_CLEAR_WITHOUT_RESTORATION_PROOF", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "approval_schema_ref": "schemas/aesir.governance.approval.v1.json",
+    "infraction_schema_ref": "schemas/aesir.governance.infraction.v1.json",
+    "judgment_schema_ref": "schemas/aesir.governance.judgment.v1.json"
+  }
+}

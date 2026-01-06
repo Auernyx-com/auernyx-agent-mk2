@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "obsidian",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Judgment and Stop Authority",
+    "description": "Issues STOP/PAUSE judgments for major violations and preventive damage risk. No non-stop decision is permitted without HITL approval. Tamper of author/core triggers hard stop until restoration proof exists."
+  },
+  "capabilities": [
+    "issue_judgment_record",
+    "require_stop_or_pause_on_damage_risk",
+    "require_full_proof_for_preventive_damage_decisions",
+    "require_hitl_for_non_stop_decisions",
+    "require_restoration_proof_before_resume_on_tamper"
+  ],
+  "constraints_ref": [
+    "constraints/obsidian.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Obsidian judges major violations and preventive damage risk. STOP/PAUSE are the only pre-authorized actions."
+  }
+}
