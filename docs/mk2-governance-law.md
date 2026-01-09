@@ -4,6 +4,13 @@ This document is the line in the sand for Mk2.
 
 After this point, changes to governance behavior must be intentional and reviewed.
 
+## Trunk vs canary
+
+- `main` is the trunk line.
+- `staging/platform-canary` is the canary line.
+- They may temporarily point at the same commit; tags define trunk law.
+- Canary promotion into trunk is explicit.
+
 ## Invariants
 
 1. **Single execution path**

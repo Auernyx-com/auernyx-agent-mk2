@@ -1,36 +1,4 @@
-// Planner module for Mk2
-// Defines Plan and Step types and a basic Planner class
-
-export type Step = {
-  id: string;
-  action: string;
-  tool: string;
-  requiresEvidence: string[];
-  rollback?: string;
-};
-
-export type Plan = {
-  intent: string;
-  steps: Step[];
-};
-
-export class Planner {
-  // Generate a plan from intent and context
-  createPlan(intent: string, context?: any): Plan {
-    // Minimal stub: returns a plan with one step
-    return {
-      intent,
-      steps: [
-        {
-          id: "step-1",
-          action: "exampleAction",
-          tool: "exampleTool",
-          requiresEvidence: [],
-        },
-      ],
-    };
-  }
-}import * as crypto from "crypto";
+import * as crypto from "crypto";
 import { CapabilityName, getCapabilityMeta } from "./policy";
 import type { Router } from "./router";
 
@@ -98,7 +66,6 @@ function stableStringify(value: unknown): string {
             }
             return out;
         }
-        // functions/symbols/etc are not representable deterministically
         return String(v);
     };
     return JSON.stringify(normalize(value));
@@ -151,7 +118,7 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
             {
                 id: "rb-1",
                 description:
-                    "Rollback: restore docs/SEARCH.md to its previous content (use git restore, or use the receipt’s recorded before-hash as the reference)."
+                    "Rollback: restore docs/SEARCH.md to its previous content (use git restore, or use the receipt's recorded before-hash as the reference)."
             }
         ];
 
@@ -170,10 +137,9 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
             {
                 id: "step-1",
                 type: "READ_ONLY",
-                // Avoid shared object references (planner hashing forbids them).
                 tool: { kind: "capability", name: "searchDocPreview" },
                 input: step1Input,
-                requiredEvidence: [],
+                requiredEvidence: []
             },
             {
                 id: "step-2",
@@ -242,3 +208,12 @@ export function planForIntent(router: Router, intent: string, input?: unknown): 
     const planId = sha256Hex(stableStringify(draft));
     return { ...draft, planId };
 }
+
+export class Planner {
+    constructor(private readonly router: Router) {}
+
+    createPlan(intent: string, input?: unknown): Plan {
+        return planForIntent(this.router, intent, input);
+    }
+}
+

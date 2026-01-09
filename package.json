@@ -48,6 +48,8 @@
     },
   "scripts": {
     "compile": "tsc -p ./",
+    "typecheck": "tsc -p ./ --noEmit",
+    "verify": "npm run typecheck && npm run compile && node ./dist/clients/cli/auernyx.js memory --reason \"verify\" --no-daemon && node ./dist/clients/cli/auernyx.js scan . --reason \"verify\" --no-daemon",
     "cli": "node ./dist/clients/cli/auernyx.js",
     "daemon": "node ./dist/clients/cli/auernyx-daemon.js",
     "assets:resize": "node ./tools/make-ico.js --resize-only --keep-temp",
@@ -61,5 +63,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "commonjs"
 }

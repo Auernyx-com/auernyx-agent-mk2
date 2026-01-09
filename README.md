@@ -50,6 +50,12 @@ auernyx-agent/
 
 This repo also supports running Auernyx outside VS Code via a local daemon and a CLI client.
 
+## Trunk vs canary
+
+- `main` is the trunk line.
+- `staging/platform-canary` is the canary line.
+- They may temporarily point at the same commit; tags define trunk law.
+- Canary promotion into trunk is explicit.
 
 Windows convenience launchers:
 

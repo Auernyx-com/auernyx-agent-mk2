@@ -1,8 +1,6 @@
 // Policy module for Mk2
 // Provides policy.load(), policy.evaluate(step), policy.refuse(reason, evidenceMissing[])
 
-import { Step } from "./planner";
-
 export type PolicySnapshot = {
   rules: any[];
 };

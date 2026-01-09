@@ -1,10 +1,6 @@
 // Router module for Mk2
 // Executes approved steps only, never thinks
 
-import { Step } from "./planner";
-import { PolicySnapshot } from "./policy";
-
-
 import { capabilityRequiresApproval, CapabilityName, getCapabilityMeta, Policy } from "./policy";
 import { Approval, ApprovalRequiredError, approvalIdentity, isValidApproval, isValidStepApproval, StepApproval } from "./approvals";
 import { loadConfig } from "./config";

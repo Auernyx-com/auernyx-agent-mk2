@@ -1,48 +1,4 @@
-// Receipts and Ledger module for Mk2
-// Generates per-step receipts, maintains append-only ledger with hash chaining
-
-import { Step } from "./planner";
-import * as fs from "fs";
 import * as crypto from "crypto";
-
-const RECEIPTS_DIR = "artifacts/receipts";
-const LEDGER_FILE = "artifacts/ledger.ndjson";
-
-export function sha256(data: string): string {
-  return crypto.createHash("sha256").update(data).digest("hex");
-}
-
-export function writeReceipt(step: Step, result: any): string {
-  const receipt = {
-    step,
-    result,
-    timestamp: new Date().toISOString(),
-  };
-  const json = JSON.stringify(receipt, null, 2);
-  const hash = sha256(json);
-  const filename = `${RECEIPTS_DIR}/receipt_${step.id}_${hash}.json`;
-  fs.writeFileSync(filename, json);
-  return filename;
-}
-
-export function appendLedgerEvent(event: any): void {
-  // Read last hash
-  let lastHash = "";
-  if (fs.existsSync(LEDGER_FILE)) {
-    const lines = fs.readFileSync(LEDGER_FILE, "utf8").trim().split("\n");
-    if (lines.length > 0) {
-      const last = JSON.parse(lines[lines.length - 1]);
-      lastHash = last.hash;
-    }
-  }
-  const entry = {
-    ...event,
-    timestamp: new Date().toISOString(),
-    prevHash: lastHash,
-  };
-  entry.hash = sha256(JSON.stringify(entry));
-  fs.appendFileSync(LEDGER_FILE, JSON.stringify(entry) + "\n");
-}import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 
