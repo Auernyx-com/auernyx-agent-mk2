@@ -56,4 +56,8 @@ jobs:
             --base "${{ github.ref_name }}" \
             --head "$BR" \
             --title "Update connected branch registry (auto-discovery)" \
-            --body "Automated update of branches/compat-matrix.generated.json from handshake discovery."
+            --body "Automated update of branches/compat-matrix.generated.json from handshake discovery." || {
+              echo "PR creation blocked for GitHub Actions in this repo settings. Branch was pushed: $BR"
+              echo "Open PR manually: https://github.com/${{ github.repository }}/pull/new/$BR"
+              exit 0
+            }
