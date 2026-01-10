@@ -22,3 +22,7 @@
 A correction addendum was recorded on 2026-01-09 clarifying the impact of an LLM model context shift (OpenAI 5.2 → 4.1) and the resulting verification hardening.
 See `docs/MILESTONE_20260105.md` for details.
 
+## 2026-01-10
+
+- Fixed volatility handshake validation for JSON Schema draft 2020-12 by using Ajv’s 2020 build (prevents “no schema with key or ref …/draft/2020-12/schema”).
+

@@ -1,9 +1,20 @@
 import { readFileSync } from "node:fs";
-import Ajv from "ajv";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const Ajv2020Import = require("ajv/dist/2020");
+const Ajv2020 = Ajv2020Import?.default ?? Ajv2020Import;
+
+const ajv = new Ajv2020({ allErrors: true });
+
+const compiledBySchema = new WeakMap();
 
 export function validateHandshake(handshakeJson, schemaJson) {
-  const ajv = new Ajv({ allErrors: true });
-  const validate = ajv.compile(schemaJson);
+  let validate = compiledBySchema.get(schemaJson);
+  if (!validate) {
+    validate = ajv.compile(schemaJson);
+    compiledBySchema.set(schemaJson, validate);
+  }
   const ok = validate(handshakeJson);
   return { ok: !!ok, errors: validate.errors || [] };
 }
