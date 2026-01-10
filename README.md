@@ -1,5 +1,7 @@
 # Auernyx Agent
 
+[![Branch Registry Update](https://github.com/Auernyx-com/auernyx-agent-mk2/actions/workflows/branch-registry-update.yml/badge.svg)](https://github.com/Auernyx-com/auernyx-agent-mk2/actions/workflows/branch-registry-update.yml)
+
 Embedded assistant persona for guidance, analysis, and tooling inside VS Code.
 
 ## Structure
