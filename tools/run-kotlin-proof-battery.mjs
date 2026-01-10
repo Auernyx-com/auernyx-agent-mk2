@@ -12,17 +12,17 @@ const args = isWindows ? ["/d", "/s", "/c", "gradlew.bat test"] : ["test"];
 
 const env = { ...process.env };
 
-if (!env.JAVA_HOME || String(env.JAVA_HOME).trim().length === 0) {
-    const jdkRoot = path.join(kotlinRoot, ".gradle-bootstrap", "jdk17");
-    if (fs.existsSync(jdkRoot)) {
+if (!env.JAVA_HOME || env.JAVA_HOME.trim().length === 0) {
+    const bootstrapRoot = path.join(kotlinRoot, ".gradle-bootstrap");
+    if (fs.existsSync(bootstrapRoot)) {
         const entries = fs
-            .readdirSync(jdkRoot, { withFileTypes: true })
+            .readdirSync(bootstrapRoot, { withFileTypes: true })
             .filter((e) => e.isDirectory())
             .map((e) => e.name)
             .sort();
 
         for (const name of entries) {
-            const candidateHome = path.join(jdkRoot, name);
+            const candidateHome = path.join(bootstrapRoot, name);
             const javaBin = path.join(candidateHome, "bin");
             const javaExe = path.join(javaBin, isWindows ? "java.exe" : "java");
             if (fs.existsSync(javaExe)) {
@@ -35,10 +35,10 @@ if (!env.JAVA_HOME || String(env.JAVA_HOME).trim().length === 0) {
 }
 
 const child = spawn(cmd, args, { cwd: kotlinRoot, stdio: "inherit", env });
-child.on("exit", (code) => process.exit(code ?? 1));
+child.on("exit", (code) => process.exit(code ?? 0));
 child.on("error", (err) => {
     // Surface spawn errors (missing Java/Gradle wrapper/etc).
     // eslint-disable-next-line no-console
-    console.error(String(err?.message ?? err));
+    console.error(err?.stack || err?.message || String(err));
     process.exit(1);
 });

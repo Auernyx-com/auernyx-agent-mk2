@@ -44,7 +44,7 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
     async function runInternal(capability: CapabilityName, ctx: RouterContext, input?: unknown, approval?: Approval): Promise<unknown> {
         // Block any direct execution that isn't explicitly marked as plan-based.
         if (!ctx.execution) {
-            throw new Error("direct_execution_disabled");
+            throw new Error("direct_execution_disabled: Direct execution is disabled. Operations must be performed through plan-based execution with a valid execution context.");
         }
 
         if (!policy.isAllowed(capability)) {
@@ -95,17 +95,17 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
     }
 
     return {
+        /**
+         * Extracts and normalizes the raw text from the intent by trimming whitespace
+         * and converting it to lowercase.
+         *
+         * @remarks
+         * This ensures consistent text processing for downstream logic, such as intent matching.
+         *
+         * @param intent - The intent object containing the raw text to be processed.
+         * @returns The normalized text string.
+         */
         route(intent: Intent): CapabilityName | null {
-            /**
-             * Extracts and normalizes the raw text from the intent by trimming whitespace
-             * and converting it to lowercase.
-             *
-             * @remarks
-             * This ensures consistent text processing for downstream logic, such as intent matching.
-             *
-             * @param intent - The intent object containing the raw text to be processed.
-             * @returns The normalized text string.
-             */
             const text = intent.raw.trim().toLowerCase();
             if (text.startsWith("scan")) return "scanRepo";
             if (text.startsWith("search doc")) return "searchDocApply";
@@ -151,7 +151,7 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
 
             // Require APPLY for any non-readonly planned step.
             if (!meta.readOnly) {
-                if ((approval as any)?.apply !== true) {
+                if (approval.apply !== true) {
                     throw new Error("apply_flag_required");
                 }
                 if (approval.confirm !== "APPLY") {
@@ -163,8 +163,8 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             return runInternal(step.tool.name, ctx, step.input, approval);
         },
 
-                async run(capability: CapabilityName, ctx: RouterContext, input?: unknown, approval?: Approval): Promise<unknown> {
-                    return runInternal(capability, ctx, input, approval);
-                }
-            };
+        async run(capability: CapabilityName, ctx: RouterContext, input?: unknown, approval?: Approval): Promise<unknown> {
+            return runInternal(capability, ctx, input, approval);
         }
+    };
+}

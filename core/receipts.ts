@@ -63,7 +63,8 @@ export function createReceiptWriter(repoRoot: string, options: { receiptsEnabled
         try {
             const filePath = path.join(baseDir, name);
             ensureParentDir(filePath);
-            const body = (value ?? "") + (value.endsWith("\n") ? "" : "\n");
+            const safeValue = value ?? "";
+            const body = safeValue + (safeValue.endsWith("\n") ? "" : "\n");
             fs.writeFileSync(filePath, body, "utf8");
             const hash = sha256Hex(body);
             fs.writeFileSync(filePath + ".sha256", hash + "\n", "utf8");

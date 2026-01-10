@@ -66,10 +66,9 @@ export function getCapabilityMeta(name: CapabilityName): CapabilityMeta {
     return CAPABILITY_META[name];
 }
 
-export function capabilityRequiresApproval(name: CapabilityName): boolean {
+export function capabilityRequiresApproval(_name: CapabilityName): boolean {
     // Human-in-the-loop for all operations (no exceptions).
     // Tiers still exist for classification/risk, but do not bypass approvals.
-    void name;
     return true;
 }
 

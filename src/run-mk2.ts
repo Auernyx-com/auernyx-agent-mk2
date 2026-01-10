@@ -6,10 +6,19 @@ import { createPlan } from "./core/planner.js";
 import { loadActivePolicy, snapshotPolicy, evaluatePlan } from "./core/policy.js";
 import { runPlan } from "./core/router.js";
 
+const EXIT_CODE_FATAL_ERROR = 99;
+
+// Centralized evidence collection for the current run. This can be
+// extended or made configurable without changing the main flow.
+function collectEvidence(): Set<string> {
+  // For now, simulate WORKSPACE_OPEN for demo purposes.
+  return new Set<string>(["WORKSPACE_OPEN"]);
+}
+
 async function main() {
   const args = process.argv.slice(2);
   if (!args.length) {
-    console.error("Usage: node run-mk2.js \"intent string\"");
+    console.error("Usage: node dist/run-mk2.js \"intent string\"");
     process.exit(1);
   }
   const rawInput = args.join(" ");
@@ -29,8 +38,8 @@ async function main() {
   const policy = loadActivePolicy();
   const snapshot = snapshotPolicy(policy);
 
-  // 4. Collect evidence (simulate WORKSPACE_OPEN for demo)
-  const evidence = new Set<string>(["WORKSPACE_OPEN"]);
+  // 4. Collect evidence
+  const evidence = collectEvidence();
 
   // 5. Evaluate plan
   const verdicts = evaluatePlan(plan, snapshot, evidence);
@@ -60,10 +69,11 @@ async function main() {
     if (r.output) console.log(`    Output: ${JSON.stringify(r.output)}`);
     if (r.reasons) console.log(`    Reasons: ${r.reasons.join("; ")}`);
   });
-  console.log("\nLedger head hash:", result.results.length ? result.results[result.results.length - 1].ledgerHash : "none");
+  const lastResult = result.results.at(-1);
+  console.log("\nLedger head hash:", lastResult?.ledgerHash ?? "none");
 }
 
 main().catch((err) => {
   console.error("Fatal error:", err);
-  process.exit(99);
+  process.exit(EXIT_CODE_FATAL_ERROR);
 });
