@@ -1,0 +1,31 @@
+{
+  "intentId": "1768046318448-be720843",
+  "title": "Add hostile digest fuzzer stress test",
+  "system": "auernyx-agent-mk2",
+  "changeClass": "leaf",
+  "scope": {
+    "in": [
+      "Kotlin consumer hostile test coverage"
+    ],
+    "out": [
+      "No contract, policy, or receipt format changes"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "ghostwolf101",
+  "createdAt": "2026-01-10T11:58:39.360066Z",
+  "status": "draft",
+  "verification": {
+    "plan": "Run mk2-alteration-gate and the Kotlin proof battery for hostile consumer branch.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": false,
+    "receiptRefs": [],
+    "notes": ""
+  },
+  "amendments": []
+}
