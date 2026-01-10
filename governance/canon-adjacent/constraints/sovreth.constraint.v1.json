@@ -1,0 +1,24 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "sovreth-invariants",
+  "applies_to": "sovreth",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "SOVRETH.CANON.APPEND_ONLY", "enforcement": "hard_refusal" },
+    { "rule": "SOVRETH.CANON.NO_REWRITE", "enforcement": "hard_refusal" },
+    { "rule": "SOVRETH.CANON.RECEIPTS_REQUIRED", "enforcement": "hard_refusal" },
+    { "rule": "SOVRETH.CANON.HITL_REQUIRED_FOR_CANON_CHANGES", "enforcement": "hard_refusal" },
+
+    { "rule": "SOVRETH.VAULT.ACCESS_CONTROLLED", "enforcement": "hard_refusal" },
+    { "rule": "SOVRETH.VAULT.NO_HIDDEN_SIDE_EFFECTS", "enforcement": "hard_refusal" },
+    { "rule": "SOVRETH.VAULT.PROVENANCE_REQUIRED", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "approval_schema_ref": "schemas/aesir.governance.approval.v1.json",
+    "infraction_schema_ref": "schemas/aesir.governance.infraction.v1.json",
+    "judgment_schema_ref": "schemas/aesir.governance.judgment.v1.json",
+    "notes": "TRUNK contract. Sovreth controls Canon Vault rules and prevents canon rewrite. Canon changes require HITL approval and receipted provenance."
+  }
+}

@@ -8,7 +8,8 @@ import { recordKnownGoodSnapshot } from "../core/kintsugi/knownGood";
 function readLedgerTailHash(repoRoot: string): string | undefined {
     const ledgerPath = path.join(repoRoot, "logs", "ledger.ndjson");
     if (!fs.existsSync(ledgerPath)) return undefined;
-    const tail = fs.readFileSync(ledgerPath, "utf8").trim().split(/\r?\n/).at(-1);
+    const lines = fs.readFileSync(ledgerPath, "utf8").trim().split(/\r?\n/);
+    const tail = lines.length ? lines[lines.length - 1] : undefined;
     if (!tail) return undefined;
     try {
         const parsed = JSON.parse(tail) as any;

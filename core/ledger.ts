@@ -40,7 +40,8 @@ export class Ledger {
         this.lockPath = path.join(logsDir, "ledger.ndjson.lock");
 
         if (fs.existsSync(this.ledgerPath)) {
-            const tail = fs.readFileSync(this.ledgerPath, "utf8").trim().split(/\r?\n/).at(-1);
+            const lines = fs.readFileSync(this.ledgerPath, "utf8").trim().split(/\r?\n/);
+            const tail = lines.length ? lines[lines.length - 1] : undefined;
             if (tail) {
                 try {
                     const parsed = JSON.parse(tail) as Partial<LedgerEntry>;
@@ -54,7 +55,8 @@ export class Ledger {
 
     private getTailHashFromFile(): string | undefined {
         if (!fs.existsSync(this.ledgerPath)) return undefined;
-        const tail = fs.readFileSync(this.ledgerPath, "utf8").trim().split(/\r?\n/).at(-1);
+        const lines = fs.readFileSync(this.ledgerPath, "utf8").trim().split(/\r?\n/);
+        const tail = lines.length ? lines[lines.length - 1] : undefined;
         if (!tail) return undefined;
         try {
             const parsed = JSON.parse(tail) as Partial<LedgerEntry>;

@@ -1,0 +1,34 @@
+name: Platform Canary Gate
+
+on:
+  push:
+    branches:
+      - "staging/platform-canary"
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout (full history for merges)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Generate matrix (auto-discovery)
+        run: node tools/volatility/generate-matrix.mjs
+
+      - name: Run volatility matrix
+        run: node tools/volatility/run-matrix.mjs branches/compat-matrix.generated.json

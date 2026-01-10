@@ -1,0 +1,7 @@
+{
+  "stagingBranch": "staging/platform-canary",
+  "defaults": {
+    "excludeLifecycles": ["BROKEN", "QUARANTINED", "RETIRED", "PRUNED"],
+    "includeOnlyWithHandshake": true
+  }
+}

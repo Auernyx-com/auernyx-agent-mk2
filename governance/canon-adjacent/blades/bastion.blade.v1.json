@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "bastion",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Scope Gate and Permissions Firewall",
+    "description": "Determines whether an action is allowed, allowed only with HITL approval, or forbidden."
+  },
+  "capabilities": [
+    "classify_action_risk",
+    "enforce_scope_guards",
+    "gate_privileged_actions",
+    "require_human_approval_for_privileged_actions",
+    "refuse_forbidden_actions"
+  ],
+  "constraints_ref": [
+    "constraints/bastion.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Governance law artifact only; runtime may consult but must not redefine."
+  }
+}

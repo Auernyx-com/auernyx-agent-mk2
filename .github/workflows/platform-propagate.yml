@@ -1,0 +1,48 @@
+name: Platform Propagation PRs
+
+on:
+  workflow_run:
+    workflows: ["Platform Canary Gate"]
+    types:
+      - completed
+
+jobs:
+  propagate:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout (full history for merges)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install gh
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Auth gh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh auth status
+
+      - name: Generate matrix (auto-discovery)
+        run: node tools/volatility/generate-matrix.mjs
+
+      - name: Open propagation PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/volatility/open-propagation-prs.mjs branches/compat-matrix.generated.json

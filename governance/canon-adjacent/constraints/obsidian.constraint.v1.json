@@ -1,0 +1,25 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "obsidian-invariants",
+  "applies_to": "obsidian",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "OBSIDIAN.JUDGMENT.APPEND_ONLY", "enforcement": "hard_refusal" },
+    { "rule": "OBSIDIAN.JUDGMENT.EVIDENCE_REQUIRED", "enforcement": "hard_refusal" },
+    { "rule": "OBSIDIAN.PREVENTIVE_DAMAGE.REQUIRES_FULL_PROOF", "enforcement": "hard_refusal" },
+
+    { "rule": "OBSIDIAN.ONLY_STOP_PAUSE_WITHOUT_HITL", "enforcement": "hard_refusal" },
+    { "rule": "OBSIDIAN.HITL_REQUIRED_FOR_NON_STOP_DECISIONS", "enforcement": "hard_refusal" },
+
+    { "rule": "OBSIDIAN.TAMPER.AUTHOR_OR_CORE.HARD_STOP", "enforcement": "hard_refusal" },
+    { "rule": "OBSIDIAN.TAMPER.RESTORE_REQUIRED_BEFORE_RESUME", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "approval_schema_ref": "schemas/aesir.governance.approval.v1.json",
+    "infraction_schema_ref": "schemas/aesir.governance.infraction.v1.json",
+    "judgment_schema_ref": "schemas/aesir.governance.judgment.v1.json",
+    "notes": "TRUNK contract. Obsidian may issue STOP/PAUSE judgments. Any non-stop decision requires HITL approval. Tamper of author/core triggers hard stop until restoration proof is recorded."
+  }
+}

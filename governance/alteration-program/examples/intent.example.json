@@ -1,0 +1,62 @@
+{
+  "intentId": "1768000626919-692cfcd58b7f",
+  "createdAt": "2026-01-09T23:17:06.919413+00:00",
+  "actorId": "<editor-id>",
+  "system": "skjaldr",
+  "title": "Example: tighten allowlist semantics",
+  "description": "Demonstration intent file for the alteration program.",
+  "changeClass": "leaf",
+  "riskClass": "high",
+  "governanceImpact": true,
+  "scope": {
+    "inScope": [
+      "Allowlist evaluation order",
+      "Input normalization"
+    ],
+    "outOfScope": [
+      "New features",
+      "Network configuration"
+    ],
+    "touchPoints": [
+      "src/allowlist/*",
+      "docs/allowlist.md"
+    ]
+  },
+  "verification": {
+    "requiredChecks": [
+      "unit-tests",
+      "receipt-generation",
+      "schema-validation"
+    ],
+    "commandHint": "npm test && python scripts/mk2_alter.py verify",
+    "expectedArtifacts": [
+      "receipts/<receiptId>/receipt.json"
+    ]
+  },
+  "evidence": {
+    "required": [
+      "receipt.json",
+      "hash-manifest"
+    ],
+    "paths": [
+      "receipts/"
+    ],
+    "notes": "Attach any additional evidence required by Trunk policy."
+  },
+  "deferral": {
+    "allowed": false,
+    "reason": "Leaf changes may not defer proof."
+  },
+  "rollback": {
+    "plan": "Revert commit(s) and re-run verify.",
+    "blastRadius": "Allowlist enforcement behavior."
+  },
+  "approvals": {
+    "requiredReviewers": [
+      "varsity-reviewer-1"
+    ],
+    "signoff": []
+  },
+  "amendments": [],
+  "receiptRefs": []
+}

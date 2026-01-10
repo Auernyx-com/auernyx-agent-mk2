@@ -1,0 +1,60 @@
+name: Branch Prune (Receipt-Gated)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 2 * * *"
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all
+        run: git fetch --all --prune
+
+      - name: Find RETIRED branches with handshake
+        run: |
+          set -e
+          mkdir -p .tmp_prune
+          git for-each-ref --format="%(refname:short)" refs/remotes/origin \
+            | sed 's#^origin/##' \
+            | grep -v '^HEAD$' > .tmp_prune/branches.txt
+
+          echo "Candidate scan list:"
+          cat .tmp_prune/branches.txt
+
+      - name: Prune eligible branches (requires receipt approval)
+        run: |
+          set -e
+          while read -r BR; do
+            # checkout branch to inspect handshake
+            rm -rf .tmp_prune/wt || true
+            git worktree add .tmp_prune/wt "origin/$BR" >/dev/null 2>&1 || continue
+
+            if [ ! -f ".tmp_prune/wt/.mk2/handshake.json" ]; then
+              git worktree remove --force .tmp_prune/wt >/dev/null 2>&1 || true
+              continue
+            fi
+
+            LIFECYCLE=$(node -e "const h=require('./.tmp_prune/wt/.mk2/handshake.json'); console.log(h.lifecycle||'');")
+            if [ "$LIFECYCLE" != "RETIRED" ]; then
+              git worktree remove --force .tmp_prune/wt >/dev/null 2>&1 || true
+              continue
+            fi
+
+            # receipt gate
+            node tools/receipts/assert-prune-receipt.mjs .mk2/prune-approvals.json "$BR"
+
+            echo "Deleting remote branch: $BR"
+            git push origin --delete "$BR"
+
+            git worktree remove --force .tmp_prune/wt >/dev/null 2>&1 || true
+          done < .tmp_prune/branches.txt

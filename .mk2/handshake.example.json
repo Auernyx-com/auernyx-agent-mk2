@@ -1,0 +1,10 @@
+{
+  "schema": "mk2.handshake.v1",
+  "branchRole": "CONNECTED",
+  "lifecycle": "ACTIVE",
+  "requires": ["install", "build", "test", "baseline"],
+  "baseline": true,
+  "owner": "mk2",
+  "prunePolicy": "REQUIRES_RECEIPT",
+  "notes": "Default connected branch profile"
+}

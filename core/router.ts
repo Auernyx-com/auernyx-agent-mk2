@@ -1,3 +1,6 @@
+// Router module for Mk2
+// Executes approved steps only, never thinks
+
 import { capabilityRequiresApproval, CapabilityName, getCapabilityMeta, Policy } from "./policy";
 import { Approval, ApprovalRequiredError, approvalIdentity, isValidApproval, isValidStepApproval, StepApproval } from "./approvals";
 import { loadConfig } from "./config";
@@ -93,6 +96,16 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
 
     return {
         route(intent: Intent): CapabilityName | null {
+            /**
+             * Extracts and normalizes the raw text from the intent by trimming whitespace
+             * and converting it to lowercase.
+             *
+             * @remarks
+             * This ensures consistent text processing for downstream logic, such as intent matching.
+             *
+             * @param intent - The intent object containing the raw text to be processed.
+             * @returns The normalized text string.
+             */
             const text = intent.raw.trim().toLowerCase();
             if (text.startsWith("scan")) return "scanRepo";
             if (text.startsWith("search doc")) return "searchDocApply";
@@ -150,8 +163,8 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             return runInternal(step.tool.name, ctx, step.input, approval);
         },
 
-        async run(capability: CapabilityName, ctx: RouterContext, input?: unknown, approval?: Approval): Promise<unknown> {
-            return runInternal(capability, ctx, input, approval);
+                async run(capability: CapabilityName, ctx: RouterContext, input?: unknown, approval?: Approval): Promise<unknown> {
+                    return runInternal(capability, ctx, input, approval);
+                }
+            };
         }
-    };
-}

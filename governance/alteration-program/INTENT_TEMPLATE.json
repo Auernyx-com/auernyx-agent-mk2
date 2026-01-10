@@ -1,0 +1,40 @@
+{
+  "intentId": "<13digitms-12hex>",
+  "createdAt": "<utc-iso8601>",
+  "actorId": "<varsity-editor-id>",
+  "system": "<target-system>",
+  "title": "<short-title>",
+  "description": "<optional>",
+  "changeClass": "leaf",
+  "riskClass": "high",
+  "governanceImpact": true,
+  "scope": {
+    "inScope": ["<item>"],
+    "outOfScope": ["<item>"],
+    "touchPoints": ["<path-or-area>"]
+  },
+  "verification": {
+    "requiredChecks": ["schema-validation", "<project-check>"],
+    "commandHint": "<how-to-run>",
+    "expectedArtifacts": ["receipts/<receiptId>/receipt.json"]
+  },
+  "evidence": {
+    "required": ["receipt.json", "hash-manifest"],
+    "paths": ["receipts/"],
+    "notes": ""
+  },
+  "deferral": {
+    "allowed": false,
+    "reason": "No proof deferrals for this class by default."
+  },
+  "rollback": {
+    "plan": "<how-to-rollback>",
+    "blastRadius": "<what-could-break>"
+  },
+  "approvals": {
+    "requiredReviewers": ["<varsity-reviewer>"],
+    "signoff": []
+  },
+  "amendments": [],
+  "receiptRefs": []
+}

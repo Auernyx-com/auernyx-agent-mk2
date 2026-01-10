@@ -1,0 +1,56 @@
+name: Branch Registry Update
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Generate matrix
+        run: node tools/volatility/generate-matrix.mjs
+
+      - name: Create PR if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+          if git diff --quiet; then
+            echo "No registry changes."
+            exit 0
+          fi
+
+          BR="ci/registry-update"
+          git checkout -B "$BR"
+          git add branches/compat-matrix.generated.json
+          git commit -m "Update connected branch registry (auto-discovery)"
+
+          git push -u origin "$BR" --force-with-lease
+
+          gh pr create \
+            --base "${{ github.ref_name }}" \
+            --head "$BR" \
+            --title "Update connected branch registry (auto-discovery)" \
+            --body "Automated update of branches/compat-matrix.generated.json from handshake discovery."

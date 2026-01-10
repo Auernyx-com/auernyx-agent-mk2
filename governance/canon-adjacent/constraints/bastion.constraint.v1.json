@@ -1,0 +1,16 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "bastion-invariants",
+  "applies_to": "bastion",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "BASTION.HITL.REQUIRED", "enforcement": "hard_refusal" },
+    { "rule": "BASTION.HITL.APPROVAL_RECEIPTED", "enforcement": "hard_refusal" },
+    { "rule": "BASTION.NO_HIDDEN_SIDE_EFFECTS", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "approval_schema_ref": "schemas/aesir.governance.approval.v1.json"
+  }
+}

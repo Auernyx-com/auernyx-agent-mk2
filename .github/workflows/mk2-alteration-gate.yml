@@ -1,0 +1,26 @@
+name: mk2-alteration-gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base
+        run: |
+          echo "MK2_BASE_REF=origin/${{ github.base_ref }}" >> $GITHUB_ENV
+          git fetch origin ${{ github.base_ref }} --depth=1
+
+      - name: Run alteration gate (fail-closed)
+        run: |
+          python3 tools/ci_gate.py

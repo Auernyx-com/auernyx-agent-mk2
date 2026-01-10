@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mk2 Alteration Assistant (Local)</title>
+    <link rel="stylesheet" href="/ui/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Mk2 Alteration Assistant</h1>
+      <p class="sub">Local-only. Token required. Not a bypass: all actions call the existing fail-closed tools.</p>
+    </header>
+
+    <main>
+      <section aria-labelledby="authTitle" class="card">
+        <h2 id="authTitle">Access</h2>
+        <div class="grid">
+          <label>
+            <span>Token</span>
+            <input id="token" type="password" autocomplete="off" placeholder="MK2_UI_TOKEN" />
+            <span class="inline small">
+              <input id="showToken" type="checkbox" />
+              Show token
+            </span>
+          </label>
+          <label>
+            <span>Actor ID</span>
+            <input id="actorId" type="text" autocomplete="off" placeholder="jhugh" />
+          </label>
+          <label class="wide">
+            <span>Typed confirmation (required for Apply/Record)</span>
+            <input id="confirm" type="text" autocomplete="off" placeholder="APPLY <Actor ID>" />
+          </label>
+        </div>
+        <div class="row">
+          <button id="refresh">Refresh status</button>
+          <span id="authHint" class="hint"></span>
+        </div>
+      </section>
+
+      <section aria-labelledby="statusTitle" class="card">
+        <h2 id="statusTitle">Status</h2>
+        <pre id="status" class="pre">No status yet.</pre>
+      </section>
+
+      <section aria-labelledby="actionsTitle" class="card">
+        <h2 id="actionsTitle">Actions</h2>
+        <div class="row">
+          <button id="runGate">Run Mk2 Gate</button>
+          <label class="inline">
+            <input id="requirePayload" type="checkbox" />
+            Require payload present
+          </label>
+        </div>
+        <div class="row">
+          <button id="runMomentum">Run Momentum (apply→gate→record)</button>
+          <button id="runBastion">Run Bastion Secondary (record)</button>
+        </div>
+        <pre id="output" class="pre" aria-live="polite"></pre>
+      </section>
+    </main>
+
+    <footer>
+      <p>Audit log: <code>governance/alteration-program/logs/ui_actions.ndjson</code></p>
+    </footer>
+
+    <script src="/ui/app.js"></script>
+  </body>
+</html>

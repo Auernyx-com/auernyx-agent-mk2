@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mk2.handshake.v1",
+  "title": "Mk2 Branch Handshake",
+  "type": "object",
+  "required": ["schema", "branchRole", "lifecycle", "requires"],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "mk2.handshake.v1"
+    },
+    "branchRole": {
+      "type": "string",
+      "enum": ["CONNECTED"]
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": ["ACTIVE", "BROKEN", "QUARANTINED", "RETIRED", "PRUNED"]
+    },
+    "requires": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["install", "build", "test", "baseline"]
+      },
+      "minItems": 1
+    },
+    "baseline": { "type": "boolean", "default": false },
+    "owner": { "type": "string" },
+    "prunePolicy": {
+      "type": "string",
+      "enum": ["REQUIRES_RECEIPT", "NEVER_AUTO"]
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

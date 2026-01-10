@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "mnema",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Verification and Memory Canon",
+    "description": "Defines what counts as provable and receipted enough to be considered valid."
+  },
+  "capabilities": [
+    "require_receipt_bundle_completeness",
+    "require_plan_reference",
+    "require_approval_record_when_required",
+    "enforce_append_only_memory_rules",
+    "refuse_on_unverifiable_action"
+  ],
+  "constraints_ref": [
+    "constraints/mnema.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Mnēma blocks unverifiable actions, not merely dangerous ones."
+  }
+}

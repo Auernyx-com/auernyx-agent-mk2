@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mk2 Alteration Intent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "intentId",
+    "title",
+    "system",
+    "changeClass",
+    "scope",
+    "riskClass",
+    "governanceImpact",
+    "actorId",
+    "createdAt",
+    "status",
+    "verification",
+    "evidence"
+  ],
+  "properties": {
+    "intentId": {
+      "type": "string",
+      "pattern": "^[0-9]{13}-[a-f0-9]{8}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 160
+    },
+    "system": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "changeClass": {
+      "type": "string",
+      "enum": [
+        "root",
+        "trunk",
+        "branch",
+        "leaf"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "in",
+        "out"
+      ],
+      "properties": {
+        "in": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "out": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      }
+    },
+    "riskClass": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "governanceImpact": {
+      "type": "boolean"
+    },
+    "actorId": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_review",
+        "approved",
+        "closed",
+        "deferred"
+      ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan",
+        "requiredChecks"
+      ],
+      "properties": {
+        "plan": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 2000
+        },
+        "requiredChecks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "receiptRefs",
+        "notes"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "receiptRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "amendments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "amendedAt",
+          "actorId",
+          "reason",
+          "fieldsChanged"
+        ],
+        "properties": {
+          "amendedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actorId": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 500
+          },
+          "fieldsChanged": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        }
+      }
+    }
+  }
+}

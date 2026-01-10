@@ -1,0 +1,26 @@
+{
+  "schema": "aesir.governance.blade.v1",
+  "id": "ghost",
+  "type": "authority_descriptor",
+  "scope": "trunk",
+  "status": "active",
+  "role": {
+    "title": "Watcher and Drift Observer",
+    "description": "Observes system state for drift, baseline mismatches, and provenance violations. Detects and raises OPEN infractions with evidence. Never mutates state."
+  },
+  "capabilities": [
+    "observe_system_state",
+    "require_pre_post_baseline_presence",
+    "detect_drift_and_mismatch",
+    "emit_open_infraction_with_evidence",
+    "refuse_on_side_effect_attempt"
+  ],
+  "constraints_ref": [
+    "constraints/ghost.constraint.v1.json"
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "notes": "TRUNK contract. Ghost may observe and report only. No verdicts. No side effects."
+  }
+}

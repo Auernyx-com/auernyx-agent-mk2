@@ -1,0 +1,58 @@
+{
+    "schema":  "aesir.codex.canon.v1",
+    "id":  "mnema",
+    "title":  "Mnēma Canon",
+    "scope":  "codex",
+    "purpose":  [
+                    "Define how memory, record integrity, and continuity are handled in the system.",
+                    "Provide human-readable intent for audit and operator understanding.",
+                    "Separate human-facing meaning from enforceable governance contracts."
+                ],
+    "principles":  [
+                       {
+                           "name":  "Record is care",
+                           "definition":  "A record is created to preserve truth and continuity, not to control outcomes."
+                       },
+                       {
+                           "name":  "Repair with record",
+                           "definition":  "Changes are captured as new records. Existing records are not rewritten or erased."
+                       },
+                       {
+                           "name":  "No hidden actions",
+                           "definition":  "Privileged or side-effect actions require explicit operator approval and a recorded plan."
+                       },
+                       {
+                           "name":  "Integrity first",
+                           "definition":  "Hash and manifest validation is required before records are treated as authoritative."
+                       }
+                   ],
+    "roles":  {
+                  "mnema":  {
+                                "description":  "Record Authority. Defines and enforces the integrity rules for record sets."
+                            },
+                  "ueden":  {
+                                "description":  "Capture. Produces new records and receipts. Append-only."
+                            },
+                  "mueden":  {
+                                 "description":  "Verification + Recall. Validates hashes/manifests and provides read-only record recall."
+                             }
+              },
+    "non_goals":  [
+                      "This artifact does not authorize execution, changes, or privileged actions.",
+                      "This artifact is not used directly for enforcement. Enforcement lives in TRUNK contracts."
+                  ],
+    "references":  {
+                       "trunk_contracts":  [
+                                               "governance/canon-adjacent/blades/mnema.blade.v1.json",
+                                               "governance/canon-adjacent/constraints/mnema.constraint.v1.json",
+                                               "governance/canon-adjacent/blades/ueden.blade.v1.json",
+                                               "governance/canon-adjacent/constraints/ueden.constraint.v1.json",
+                                               "governance/canon-adjacent/blades/mueden.blade.v1.json",
+                                               "governance/canon-adjacent/constraints/mueden.constraint.v1.json"
+                                           ]
+                   },
+    "metadata":  {
+                     "created_utc":  "2026-01-05T23:20:54Z",
+                     "notes":  "Sanitized canonical description. No myth-language. No personal content."
+                 }
+}

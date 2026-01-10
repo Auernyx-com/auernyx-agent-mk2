@@ -1,0 +1,31 @@
+{
+  "intentId": "1768032935724-c35091bb",
+  "title": "Adopt Mk2 Alteration Program into auernyx-agent-mk2",
+  "system": "auernyx-agent-mk2",
+  "changeClass": "trunk",
+  "scope": {
+    "in": [
+      "CI gate + schema + PR template"
+    ],
+    "out": [
+      "runtime behavior"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "jhugh",
+  "createdAt": "2026-01-10T08:15:35.724402Z",
+  "status": "draft",
+  "verification": {
+    "plan": "Run project verify battery; attach receipts if required.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": false,
+    "receiptRefs": [],
+    "notes": ""
+  },
+  "amendments": []
+}

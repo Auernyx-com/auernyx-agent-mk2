@@ -1,0 +1,18 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "ueden-invariants",
+  "applies_to": "ueden",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "writes_are_new_records_only", "enforcement": "hard_refusal" },
+    { "rule": "no_record_mutation", "enforcement": "hard_refusal" },
+    { "rule": "every_record_requires_hash", "enforcement": "hard_refusal" },
+    { "rule": "receipt_bundle_required_for_side_effect_actions", "enforcement": "hard_refusal" },
+    { "rule": "receipt_bundle_must_include_plan_reference", "enforcement": "hard_refusal" },
+    { "rule": "receipt_bundle_must_include_trunk_head", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true
+  }
+}

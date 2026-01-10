@@ -1,0 +1,14 @@
+{
+  "branches": {
+    "skjoldr": {
+      "entry": "",
+      "type": "powershell",
+      "notes": "Standalone Skjoldr branch entry path."
+    },
+    "aesir": {
+      "entry": "",
+      "type": "powershell",
+      "notes": "Standalone AEsir branch entry path."
+    }
+  }
+}

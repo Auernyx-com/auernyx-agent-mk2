@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mk2.local/schema/intent.schema.json",
+  "title": "Mk2 Alteration Intent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "intentId",
+    "createdAt",
+    "actorId",
+    "system",
+    "title",
+    "changeClass",
+    "riskClass",
+    "governanceImpact",
+    "scope",
+    "verification",
+    "evidence",
+    "deferral",
+    "rollback",
+    "approvals"
+  ],
+  "properties": {
+    "intentId": {
+      "type": "string",
+      "pattern": "^[0-9]{13}-[a-f0-9]{12}$"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "actorId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "system": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 4
+    },
+    "description": {
+      "type": "string"
+    },
+    "changeClass": {
+      "type": "string",
+      "enum": [
+        "root",
+        "trunk",
+        "branch",
+        "leaf"
+      ]
+    },
+    "riskClass": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "governanceImpact": {
+      "type": "boolean"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inScope",
+        "outOfScope",
+        "touchPoints"
+      ],
+      "properties": {
+        "inScope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "outOfScope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "touchPoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredChecks",
+        "commandHint",
+        "expectedArtifacts"
+      ],
+      "properties": {
+        "requiredChecks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "commandHint": {
+          "type": "string"
+        },
+        "expectedArtifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "paths",
+        "notes"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "deferral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed",
+        "reason"
+      ],
+      "properties": {
+        "allowed": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan",
+        "blastRadius"
+      ],
+      "properties": {
+        "plan": {
+          "type": "string",
+          "minLength": 3
+        },
+        "blastRadius": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredReviewers",
+        "signoff"
+      ],
+      "properties": {
+        "requiredReviewers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "signoff": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reviewerId",
+              "status",
+              "at"
+            ],
+            "properties": {
+              "reviewerId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "approved",
+                  "rejected",
+                  "changes_requested"
+                ]
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "amendments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "at",
+          "actorId",
+          "reason",
+          "deltaSummary"
+        ],
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "deltaSummary": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "receiptRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

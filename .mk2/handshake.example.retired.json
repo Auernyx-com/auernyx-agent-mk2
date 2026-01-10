@@ -1,0 +1,10 @@
+{
+  "schema": "mk2.handshake.v1",
+  "branchRole": "CONNECTED",
+  "lifecycle": "RETIRED",
+  "requires": ["install", "build"],
+  "baseline": false,
+  "owner": "legacy",
+  "prunePolicy": "REQUIRES_RECEIPT",
+  "notes": "Eligible for pruning only with TRUNK prune receipt"
+}

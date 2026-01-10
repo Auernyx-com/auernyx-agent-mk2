@@ -1,0 +1,22 @@
+{
+  "schema": "aesir.governance.constraint.v1",
+  "id": "feneris-invariants",
+  "applies_to": "feneris",
+  "scope": "trunk",
+  "invariants": [
+    { "rule": "FENERIS.MONITOR.ONLY", "enforcement": "hard_refusal" },
+    { "rule": "FENERIS.NO_SIDE_EFFECTS", "enforcement": "hard_refusal" },
+    { "rule": "FENERIS.NO_AUTONOMOUS_ENFORCEMENT", "enforcement": "hard_refusal" },
+    { "rule": "FENERIS.NO_NETWORK_SIDE_EFFECTS", "enforcement": "hard_refusal" },
+
+    { "rule": "FENERIS.INFRACTION.RAISE_OPEN_ONLY", "enforcement": "hard_refusal" },
+    { "rule": "FENERIS.NO_VERDICT", "enforcement": "hard_refusal" },
+    { "rule": "FENERIS.EVIDENCE.REQUIRED", "enforcement": "hard_refusal" }
+  ],
+  "metadata": {
+    "parent_authority": "mnema",
+    "authoritative": true,
+    "approval_schema_ref": "schemas/aesir.governance.approval.v1.json",
+    "infraction_schema_ref": "schemas/aesir.governance.infraction.v1.json"
+  }
+}

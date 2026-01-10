@@ -1,0 +1,10 @@
+{
+  "schema": "mk2.handshake.v1",
+  "branchRole": "CONNECTED",
+  "lifecycle": "BROKEN",
+  "requires": ["install", "build"],
+  "baseline": false,
+  "owner": "squad",
+  "prunePolicy": "REQUIRES_RECEIPT",
+  "notes": "Excluded from propagation until repaired"
+}

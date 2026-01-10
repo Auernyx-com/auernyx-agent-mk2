@@ -1,5 +1,7 @@
 # Auernyx Agent
 
+[![Branch Registry Update](https://github.com/Auernyx-com/auernyx-agent-mk2/actions/workflows/branch-registry-update.yml/badge.svg)](https://github.com/Auernyx-com/auernyx-agent-mk2/actions/workflows/branch-registry-update.yml)
+
 Embedded assistant persona for guidance, analysis, and tooling inside VS Code.
 
 ## Structure
@@ -50,6 +52,12 @@ auernyx-agent/
 
 This repo also supports running Auernyx outside VS Code via a local daemon and a CLI client.
 
+## Trunk vs canary
+
+- `main` is the trunk line.
+- `staging/platform-canary` is the canary line.
+- They may temporarily point at the same commit; tags define trunk law.
+- Canary promotion into trunk is explicit.
 
 Windows convenience launchers:
 

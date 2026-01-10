@@ -28,3 +28,36 @@ Artifacts:
 Regression guard / sanity-check entrypoint:
 - file: `tools/smoke-topdown.ps1`
 - sha256: `51BA06443FAAC6A7682DDA57B3F9949D113106A4E665653D8AA4EDB6EB1B25D7`
+
+## 2026-01-05 - Closeout baseline POST
+
+Context:
+- Code state: `branches/kotlin-consumer` (Kotlin consumer milestone)
+- Sequence requested: baseline POST at end of work
+
+Artifacts:
+- Baseline POST receipt
+  - runId: `1767603147424-74211fa116dd`
+  - file: `.auernyx/receipts/1767603147424-74211fa116dd/final.json`
+  - sha256: `51E376540267D4A0B2416C0C6EF14794672A6B69290070367D40DD94415869C6`
+
+## 2026-01-09 - Closeout baseline POST + Kotlin proof battery
+
+Context:
+- Code state: `main` (commit `51b63ef`)
+- Sequence requested: end-of-day closeout (verify + Kotlin proof battery + baseline POST)
+
+Artifacts:
+- Baseline POST receipt
+  - runId: `1767952245529-ac0ccb807407`
+  - file: `.auernyx/receipts/1767952245529-ac0ccb807407/final.json`
+  - sha256: `7C5DED094793CB22E4B100E4411ECEB9EAB63A31F1BB98077EF0759F809F21FE`
+
+- Kotlin proof battery evidence (archived; do not commit build outputs)
+  - dir: `artifacts/kotlin_evidence/20260109T094041Z/`
+  - `ProofBatteryTest.xml` sha256: `47D1A8A90B96A9AF5343D844EC6EA8BA85C9C98C646B672982BE18903D59DE39`
+  - `index.html` sha256: `7338DB59EDA2AA2CD1CC1893007695C1523397C3D5EE3CF89451F106A366BD0F`
+
+- Smoke Topdown script hash (entrypoint integrity)
+  - file: `tools/smoke-topdown.ps1`
+  - sha256: `350371E89440F041A9273DA0C3F527E1C5CC5BF83EED7953C61E8058E5D0BDE3`

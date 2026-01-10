@@ -1,3 +1,10 @@
+// Policy module for Mk2
+// Provides policy.load(), policy.evaluate(step), policy.refuse(reason, evidenceMissing[])
+
+export type PolicySnapshot = {
+  rules: any[];
+};
+
 import * as fs from "fs";
 import * as path from "path";
 
@@ -70,8 +77,23 @@ export interface AllowlistConfig {
     allowedCapabilities: CapabilityName[];
 }
 
-export interface Policy {
-    isAllowed(capability: CapabilityName): boolean;
+// Mk2 Policy class implements all required methods and allowlist logic
+export class Policy {
+    private allowedSet: Set<CapabilityName>;
+
+    constructor(allowedCapabilities: CapabilityName[]) {
+        this.allowedSet = new Set(allowedCapabilities);
+    }
+
+    // Refuse with reason and missing evidence
+    refuse(reason: string, evidenceMissing: string[]): { refused: true; reason: string; evidenceMissing: string[] } {
+        return { refused: true, reason, evidenceMissing };
+    }
+
+    // Allowlist check for capabilities
+    isAllowed(capability: CapabilityName): boolean {
+        return this.allowedSet.has(capability);
+    }
 }
 
 const DEFAULT_ALLOWLIST: AllowlistConfig = {
@@ -113,11 +135,5 @@ export function loadAllowlist(repoRoot: string): AllowlistConfig {
 
 export function createPolicy(repoRoot: string): Policy {
     const allowlist = loadAllowlist(repoRoot);
-    const allowedSet = new Set(allowlist.allowedCapabilities);
-
-    return {
-        isAllowed(capability: CapabilityName) {
-            return allowedSet.has(capability);
-        }
-    };
+    return new Policy(allowlist.allowedCapabilities);
 }
