@@ -20,6 +20,30 @@ type RefusalCode =
     | "REFUSE_AUDIT_WEAKENING"
     | "REFUSE_AMBIGUOUS_REQUEST";
 
+// Move stableStringify outside the function to avoid recreation on every call
+function stableStringify(value: unknown): string {
+    const seen = new WeakSet<object>();
+    const normalize = (v: any): any => {
+        if (v === null || v === undefined) return v;
+        const t = typeof v;
+        if (t === "number" || t === "string" || t === "boolean") return v;
+        if (Array.isArray(v)) return v.map(normalize);
+        if (t === "object") {
+            if (seen.has(v)) return "[Circular]";
+            seen.add(v);
+            const out: Record<string, any> = {};
+            for (const k of Object.keys(v).sort()) out[k] = normalize(v[k]);
+            return out;
+        }
+        return String(v);
+    };
+    return JSON.stringify(normalize(value));
+}
+
+function sha256Hex(buf: Buffer | string): string {
+    return crypto.createHash("sha256").update(buf).digest("hex");
+}
+
 export type RunLifecycleResult = {
     ok: boolean;
     capability?: string;
@@ -60,25 +84,6 @@ export async function runLifecycle(args: {
     // Receipts are always-on for audit cleanliness.
     const receipt = createReceiptWriter(args.ctx.repoRoot, { receiptsEnabled: true });
 
-    const sha256Hex = (buf: Buffer | string) => crypto.createHash("sha256").update(buf).digest("hex");
-    const stableStringify = (value: unknown): string => {
-        const seen = new WeakSet<object>();
-        const normalize = (v: any): any => {
-            if (v === null || v === undefined) return v;
-            const t = typeof v;
-            if (t === "number" || t === "string" || t === "boolean") return v;
-            if (Array.isArray(v)) return v.map(normalize);
-            if (t === "object") {
-                if (seen.has(v)) return "[Circular]";
-                seen.add(v);
-                const out: Record<string, any> = {};
-                for (const k of Object.keys(v).sort()) out[k] = normalize(v[k]);
-                return out;
-            }
-            return String(v);
-        };
-        return JSON.stringify(normalize(value));
-    };
 
     const classifyToCanonicalRefusal = (err: unknown): { code: RefusalCode; message: string; protectedPathViolation: boolean } => {
         // Protected path violations must be hard-coded to the canonical refusal code.

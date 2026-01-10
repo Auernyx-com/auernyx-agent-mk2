@@ -1,6 +1,26 @@
 import * as fs from "fs";
 import * as path from "path";
 
+// Add a simple cache to avoid repeated file reads
+const configCache = new Map<string, { config: any; mtime: number }>();
+
+function getCachedConfig(filePath: string): any | null {
+    try {
+        const stat = fs.statSync(filePath);
+        const cached = configCache.get(filePath);
+        if (cached && cached.mtime === stat.mtimeMs) {
+            return cached.config;
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+function setCachedConfig(filePath: string, config: any, mtime: number): void {
+    configCache.set(filePath, { config, mtime });
+}
+
 export interface DaemonConfig {
     host: string;
     port: number;
@@ -99,10 +119,22 @@ export function loadConfig(repoRoot: string): {
     writeEnabled: boolean;
     receiptsEnabled: boolean;
 } {
+    const filePath = path.join(repoRoot, "config", "auernyx.config.json");
+    
+    // Check cache first
+    const cached = getCachedConfig(filePath);
+    if (cached) {
+        return cached;
+    }
+    
     try {
-        const filePath = path.join(repoRoot, "config", "auernyx.config.json");
-        if (!fs.existsSync(filePath)) {
-            return {
+        let stat: fs.Stats;
+        let raw: string;
+        try {
+            stat = fs.statSync(filePath);
+            raw = fs.readFileSync(filePath, "utf8");
+        } catch {
+            const defaultConfig = {
                 daemon: DEFAULT_DAEMON,
                 paths: { scanAllowedRoots: [] },
                 governance: DEFAULT_GOVERNANCE,
@@ -110,9 +142,9 @@ export function loadConfig(repoRoot: string): {
                 writeEnabled: process.env.AUERNYX_WRITE_ENABLED === "1",
                 receiptsEnabled: process.env.AUERNYX_RECEIPTS_ENABLED === "0" ? false : true
             };
+            return defaultConfig;
         }
 
-        const raw = fs.readFileSync(filePath, "utf8");
         const parsed = JSON.parse(raw) as AuernyxConfig;
 
         const writeEnabled =
@@ -228,6 +260,53 @@ export function loadConfig(repoRoot: string): {
             writeEnabled,
             receiptsEnabled
         };
+
+        // Cache the result with file mtime
+        const result = {
+            daemon: {
+                host,
+                port: Number.isFinite(port) && port > 0 ? port : DEFAULT_DAEMON.port,
+                secret,
+                maxBodyBytes: Number.isFinite(maxBodyBytes) && maxBodyBytes > 0 ? maxBodyBytes : DEFAULT_DAEMON.maxBodyBytes,
+                rateLimit: {
+                    windowMs: Number.isFinite(windowMs) && windowMs > 0 ? windowMs : DEFAULT_DAEMON.rateLimit.windowMs,
+                    maxRequests: Number.isFinite(maxRequests) && maxRequests > 0 ? maxRequests : DEFAULT_DAEMON.rateLimit.maxRequests
+                }
+            },
+            paths: {
+                scanAllowedRoots
+            },
+            governance: {
+                ...governance,
+                approverIdentity: String(governance.approverIdentity ?? "").trim(),
+                protectedPaths: Array.isArray(governance.protectedPaths)
+                    ? governance.protectedPaths.map((p) => String(p).replace(/\\/g, "/").trim()).filter((p) => p.length > 0)
+                    : DEFAULT_GOVERNANCE.protectedPaths,
+                rollback: {
+                    allowRollback: Boolean(governance.rollback?.allowRollback),
+                    rollbackWindowDays:
+                        Number.isFinite(governance.rollback?.rollbackWindowDays) && (governance.rollback!.rollbackWindowDays as number) > 0
+                            ? (governance.rollback!.rollbackWindowDays as number)
+                            : DEFAULT_GOVERNANCE.rollback.rollbackWindowDays,
+                    rollbackMaxDepth:
+                        Number.isFinite(governance.rollback?.rollbackMaxDepth) && (governance.rollback!.rollbackMaxDepth as number) > 0
+                            ? (governance.rollback!.rollbackMaxDepth as number)
+                            : DEFAULT_GOVERNANCE.rollback.rollbackMaxDepth,
+                    rollbackRequiresIntegrityPass: Boolean(governance.rollback?.rollbackRequiresIntegrityPass ?? DEFAULT_GOVERNANCE.rollback.rollbackRequiresIntegrityPass)
+                }
+            },
+            addons: {
+                skjoldrFirewall: {
+                    ...skjoldr,
+                    timeoutMs: Number.isFinite(skjoldr.timeoutMs) && skjoldr.timeoutMs > 0 ? skjoldr.timeoutMs : DEFAULT_SKJOLDR.timeoutMs,
+                }
+            },
+            writeEnabled,
+            receiptsEnabled
+        };
+        
+        setCachedConfig(filePath, result, stat.mtimeMs);
+        return result;
     } catch {
         return {
             daemon: DEFAULT_DAEMON,

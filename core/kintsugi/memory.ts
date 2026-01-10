@@ -257,14 +257,19 @@ export async function verifyKintsugiIntegrity(
 
 export async function readFailures(repoRoot: string): Promise<KintsugiLedgerRecord[]> {
     const recordsDir = path.join(repoRoot, LEDGER_RECORDS_DIR);
-    if (!fs.existsSync(recordsDir)) return [];
-    const files = fs
-        .readdirSync(recordsDir)
-        .filter((f) => f.endsWith(".json"))
-        .sort();
+    // Combine existsSync with readdirSync error handling to avoid double filesystem check
+    let files: string[];
+    try {
+        files = fs.readdirSync(recordsDir);
+    } catch {
+        return [];
+    }
+    
+    // Filter and sort in one pass
+    const jsonFiles = files.filter((f) => f.endsWith(".json")).sort();
 
     const out: KintsugiLedgerRecord[] = [];
-    for (const file of files) {
+    for (const file of jsonFiles) {
         try {
             const raw = fs.readFileSync(path.join(recordsDir, file), { encoding: "utf8" });
             out.push(JSON.parse(raw) as KintsugiLedgerRecord);
@@ -277,15 +282,26 @@ export async function readFailures(repoRoot: string): Promise<KintsugiLedgerReco
 
 export async function getLastLedgerRecord(repoRoot: string): Promise<KintsugiLedgerRecord | undefined> {
     const recordsDir = path.join(repoRoot, LEDGER_RECORDS_DIR);
-    if (!fs.existsSync(recordsDir)) return undefined;
-    const files = fs
-        .readdirSync(recordsDir)
-        .filter((f) => f.endsWith(".json"))
-        .sort();
-    const last = files[files.length - 1];
-    if (!last) return undefined;
+    let files: string[];
     try {
-        const raw = fs.readFileSync(path.join(recordsDir, last), { encoding: "utf8" });
+        files = fs.readdirSync(recordsDir);
+    } catch {
+        return undefined;
+    }
+    
+    // Optimize: find max instead of full sort when only need last element
+    let lastFile: string | undefined;
+    for (const f of files) {
+        if (f.endsWith(".json")) {
+            if (!lastFile || f > lastFile) {
+                lastFile = f;
+            }
+        }
+    }
+    
+    if (!lastFile) return undefined;
+    try {
+        const raw = fs.readFileSync(path.join(recordsDir, lastFile), { encoding: "utf8" });
         return JSON.parse(raw) as KintsugiLedgerRecord;
     } catch {
         return undefined;
@@ -354,7 +370,11 @@ function sortKeysDeep(input: unknown): unknown {
     if (input && typeof input === "object") {
         const obj = input as Record<string, unknown>;
         const out: Record<string, unknown> = {};
-        for (const key of Object.keys(obj).sort()) {
+        // Optimize: get keys once and cache the sorted result
+        const keys = Object.keys(obj);
+        if (keys.length === 0) return out;
+        keys.sort();
+        for (const key of keys) {
             const value = obj[key];
             if (value === undefined) continue;
             out[key] = sortKeysDeep(value);
@@ -508,12 +528,13 @@ async function validatePolicySnapshots(
 
     const historyDir = path.join(repoRoot, POLICY_HISTORY_DIR);
     const snapshotHashes = new Map<string, string>();
-    if (fs.existsSync(historyDir)) {
-        const files = fs
-            .readdirSync(historyDir)
-            .filter((f) => f.endsWith(".policy.json"))
-            .sort();
-        for (const file of files) {
+    
+    // Optimize: avoid existsSync, just try to read and catch error
+    try {
+        const files = fs.readdirSync(historyDir);
+        const policyFiles = files.filter((f) => f.endsWith(".policy.json")).sort();
+        
+        for (const file of policyFiles) {
             const full = path.join(historyDir, file);
             try {
                 const payload = JSON.parse(fs.readFileSync(full, { encoding: "utf8" })) as any;
@@ -527,6 +548,8 @@ async function validatePolicySnapshots(
                 warnings.push(`Failed to parse policy snapshot: ${file}`);
             }
         }
+    } catch {
+        // Directory doesn't exist, skip
     }
 
     const policyRecords = records.filter(

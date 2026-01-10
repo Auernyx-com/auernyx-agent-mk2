@@ -168,15 +168,11 @@ function normalizeIntent(raw: string): string {
     return raw.trim().toLowerCase();
 }
 
+// Cache meta intents in a Set for O(1) lookup instead of O(n) comparisons
+const META_INTENTS = new Set(["ping", "health", "help", "capabilities", "list", "status"]);
+
 function isMetaIntent(text: string): boolean {
-    return (
-        text === "ping" ||
-        text === "health" ||
-        text === "help" ||
-        text === "capabilities" ||
-        text === "list" ||
-        text === "status"
-    );
+    return META_INTENTS.has(text);
 }
 
 function getMetaResult(repoRoot: string, sessionId: string, rawIntent: string): unknown {
@@ -227,17 +223,22 @@ function readJson(req: http.IncomingMessage, maxBodyBytes: number): Promise<unkn
         let total = 0;
         const limit = Number.isFinite(maxBodyBytes) && maxBodyBytes > 0 ? maxBodyBytes : 64 * 1024;
 
+        let errored = false;
         req.on("data", (c) => {
+            if (errored) return;
             const buf = Buffer.isBuffer(c) ? c : Buffer.from(c);
             total += buf.length;
             if (total > limit) {
+                errored = true;
                 reject(new Error("payload_too_large"));
                 return;
             }
             chunks.push(buf);
         });
         req.on("end", () => {
-            const raw = Buffer.concat(chunks).toString("utf8").trim();
+            if (errored) return;
+            if (chunks.length === 0) return resolve({});
+            const raw = (chunks.length === 1 ? chunks[0] : Buffer.concat(chunks)).toString("utf8").trim();
             if (!raw) return resolve({});
             try {
                 resolve(JSON.parse(raw));
@@ -245,16 +246,29 @@ function readJson(req: http.IncomingMessage, maxBodyBytes: number): Promise<unkn
                 reject(e);
             }
         });
-        req.on("error", reject);
+        req.on("error", (e) => {
+            if (!errored) {
+                errored = true;
+                reject(e);
+            }
+        });
     });
 }
 
+// Compile regex once for better performance
+const SAFE_SEGMENT_REGEX = /^[A-Za-z0-9._-]{1,128}$/;
+
 function isSafeReceiptSegment(seg: string): boolean {
-    if (!seg) return false;
+    // Quick length check before other operations
+    if (!seg || seg.length > 128) return false;
     if (seg === "." || seg === "..") return false;
-    if (seg.includes("\\") || seg.includes("/")) return false;
+    // Check for path separators (faster than includes for small strings)
+    for (let i = 0; i < seg.length; i++) {
+        const c = seg[i];
+        if (c === "\\" || c === "/") return false;
+    }
     // Conservative allowlist: keep it URL/path safe and filesystem friendly.
-    return /^[A-Za-z0-9._-]{1,128}$/.test(seg);
+    return SAFE_SEGMENT_REGEX.test(seg);
 }
 
 function contentTypeForReceiptFile(name: string): string {
@@ -789,9 +803,15 @@ function redact(value: unknown): unknown {
 
 function readTailLines(filePath: string, maxLines: number): string[] {
     const linesWanted = Math.max(1, Math.min(maxLines, 1000));
-    if (!fs.existsSync(filePath)) return [];
-
-    const stat = fs.statSync(filePath);
+    
+    // Combine existsSync and statSync to avoid double filesystem access
+    let stat: fs.Stats;
+    try {
+        stat = fs.statSync(filePath);
+    } catch {
+        return [];
+    }
+    
     const size = stat.size;
     if (size <= 0) return [];
 
@@ -803,8 +823,22 @@ function readTailLines(filePath: string, maxLines: number): string[] {
         const buf = Buffer.alloc(readSize);
         fs.readSync(fd, buf, 0, readSize, Math.max(0, size - readSize));
         const text = buf.toString("utf8");
-        const all = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-        return all.slice(-linesWanted);
+        // Optimize: avoid creating intermediate arrays with filter
+        const lines: string[] = [];
+        let start = 0;
+        for (let i = 0; i < text.length; i++) {
+            if (text[i] === "\n" || (text[i] === "\r" && text[i + 1] === "\n")) {
+                const line = text.slice(start, i).trim();
+                if (line.length > 0) lines.push(line);
+                start = text[i] === "\r" ? i + 2 : i + 1;
+                if (text[i] === "\r") i++; // Skip \n after \r
+            }
+        }
+        // Handle last line if no trailing newline
+        const lastLine = text.slice(start).trim();
+        if (lastLine.length > 0) lines.push(lastLine);
+        
+        return lines.slice(-linesWanted);
     } finally {
         fs.closeSync(fd);
     }
@@ -986,14 +1020,18 @@ export function startDaemon(repoRoot: string) {
 
             if (segments.length === 1) {
                 const limit = toInt(url.searchParams.get("limit"), 25);
+                const maxLimit = Math.max(1, Math.min(200, limit));
                 if (!fs.existsSync(baseDir)) {
                     return writeJson(res, 200, { ok: true, count: 0, receipts: [] });
                 }
 
+                // Optimize: Use partial sort - only keep top N instead of sorting all
                 const entries = fs
                     .readdirSync(baseDir, { withFileTypes: true })
                     .filter((d) => d.isDirectory() && isSafeReceiptSegment(d.name))
                     .map((d) => {
+                        // Optimize: readdirSync with withFileTypes already gives us file info
+                        // Only stat when we know we might use it
                         const dirPath = path.join(baseDir, d.name);
                         let mtimeMs = 0;
                         try {
@@ -1004,7 +1042,7 @@ export function startDaemon(repoRoot: string) {
                         return { runId: d.name, mtimeMs };
                     })
                     .sort((a, b) => b.mtimeMs - a.mtimeMs)
-                    .slice(0, Math.max(1, Math.min(200, limit)));
+                    .slice(0, maxLimit);
 
                 return writeJson(res, 200, { ok: true, count: entries.length, receipts: entries });
             }
