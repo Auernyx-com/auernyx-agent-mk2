@@ -41,7 +41,9 @@ echo -e "   ${GREEN}✓ CLI successfully delegates to daemon${NC}"
 echo ""
 
 echo "   Stopping daemon..."
-kill $DAEMON_PID 2>/dev/null || true
+if ! kill $DAEMON_PID 2>/dev/null; then
+    echo "   Warning: Daemon process $DAEMON_PID not found or already stopped"
+fi
 sleep 1
 
 echo -e "${BLUE}4. Testing CLI fallback (daemon stopped)${NC}"
