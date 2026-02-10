@@ -15,7 +15,7 @@
 ### Prerequisites (ALWAYS verify first)
 1. Node.js v20+ and npm v11+ installed
 2. Python 3.10+ available for CI gate scripts
-3. Clean working tree for governed operations (use `--allow-dirty` flag only when explicitly needed)
+3. Clean working tree for governed operations (**NEVER** use `--allow-dirty` in production; see security warning below)
 
 ### Build Commands (run in order)
 ```bash
@@ -60,10 +60,13 @@ AUERNYX_WRITE_ENABLED=1 node dist/clients/cli/auernyx.js baseline pre --reason "
 - `--reason <TEXT>`: Required for non-interactive approval (always provide this)
 - `--apply`: Required to enable mutating operations
 - `--no-daemon`: Force local execution (skip daemon), use for testing
-- `--allow-dirty`: Permit operations on dirty working tree (use cautiously)
+- `--allow-dirty`: **⚠️ SECURITY RISK** - Bypasses working tree cleanliness check. ONLY use in isolated test/sandbox environments with no access to production data. This flag can compromise governance integrity if misused.
 
 ### Environment Variables
-- `AUERNYX_WRITE_ENABLED=1`: Required to enable any disk writes
+- `AUERNYX_WRITE_ENABLED`: Controls write operations (env var takes precedence over config)
+  - Set to `1` to enable writes (overrides config file)
+  - Set to `0` to disable writes (overrides config file)
+  - If unset, falls back to `config/auernyx.config.json` `writeEnabled` field (default: false)
 - `AUERNYX_SECRET`: Daemon authentication secret (optional, for production)
 - `AUERNYX_RECEIPTS_ENABLED`: Enable/disable receipt generation (default: enabled)
 - `AUERNYX_PORT`: Daemon port (default: 43117)
@@ -198,6 +201,16 @@ During comprehensive code review, NO malicious patterns were found:
 - ✅ Git operations use execFileSync with explicit arguments
 - ✅ Environment-based secrets (AUERNYX_SECRET) properly handled
 - ✅ All write operations are write-gated: `AUERNYX_WRITE_ENABLED` (env) takes precedence, otherwise `config/auernyx.config.json` must set `writeEnabled: true`
+
+### Security Warning: `--allow-dirty` Flag
+**⚠️ CRITICAL SECURITY NOTICE**: The `--allow-dirty` flag bypasses the working tree cleanliness check that is a core governance safeguard. This flag:
+- Allows mutating operations on repositories with uncommitted changes
+- Can compromise audit trail integrity by mixing governed changes with ungoverned modifications
+- Should **ONLY** be used in isolated sandbox/test environments
+- Must **NEVER** be used in production or on repositories with real operational data
+- Is logged in receipts but remains a governance bypass mechanism
+
+**Recommended usage**: Restrict `--allow-dirty` to ephemeral CI test environments or local sandboxes where the working tree state is intentionally dirty for testing purposes.
 
 ## Common Issues & Workarounds
 
