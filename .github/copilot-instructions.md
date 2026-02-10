@@ -197,7 +197,7 @@ During comprehensive code review, NO malicious patterns were found:
 - ✅ Controlled use of child_process (only in skjoldrFirewall.ts with validated paths)
 - ✅ Git operations use execFileSync with explicit arguments
 - ✅ Environment-based secrets (AUERNYX_SECRET) properly handled
-- ✅ All write operations gated by `AUERNYX_WRITE_ENABLED` flag
+- ✅ All write operations are write-gated: `AUERNYX_WRITE_ENABLED` (env) takes precedence, otherwise `config/auernyx.config.json` must set `writeEnabled: true`
 
 ## Common Issues & Workarounds
 
