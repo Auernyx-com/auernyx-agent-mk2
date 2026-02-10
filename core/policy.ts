@@ -21,6 +21,7 @@ export type CapabilityName =
     | "governanceSelfTest"
     | "governanceUnlock"
     | "rollbackKnownGood"
+    | "intentGenerator"
     | "skjoldrFirewallStatus"
     | "skjoldrFirewallApplyProfile"
     | "skjoldrFirewallApplyRulesetFile"
@@ -42,6 +43,7 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
 
     memoryCheck: { name: "memoryCheck", readOnly: true, tier: 0 },
     governanceSelfTest: { name: "governanceSelfTest", readOnly: false, tier: 1 },
+    intentGenerator: { name: "intentGenerator", readOnly: false, tier: 1 },
 
     // Tier 1+: mutating / privileged (approval required)
     searchDocApply: { name: "searchDocApply", readOnly: false, tier: 1 },

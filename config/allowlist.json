@@ -11,6 +11,7 @@
     "governanceSelfTest",
     "governanceUnlock",
     "rollbackKnownGood",
+    "intentGenerator",
     "skjoldrFirewallStatus",
     "skjoldrFirewallApplyProfile",
     "skjoldrFirewallApplyRulesetFile",

@@ -21,6 +21,7 @@ import { proposeFixes } from "../capabilities/proposeFixes";
 import { governanceSelfTest } from "../capabilities/governanceSelfTest";
 import { governanceUnlock } from "../capabilities/governanceUnlock";
 import { rollbackKnownGood } from "../capabilities/rollbackKnownGood";
+import { intentGenerator } from "../capabilities/intentGenerator";
 import { skjoldrFirewallStatus } from "../capabilities/skjoldrFirewallStatus";
 import { skjoldrFirewallApplyProfile } from "../capabilities/skjoldrFirewallApplyProfile";
 import { skjoldrFirewallApplyRulesetFile } from "../capabilities/skjoldrFirewallApplyRulesetFile";
@@ -131,6 +132,7 @@ export function createCore(repoRoot: string): AuernyxCore {
         governanceSelfTest,
         governanceUnlock,
         rollbackKnownGood,
+        intentGenerator,
 
         skjoldrFirewallStatus,
         skjoldrFirewallApplyProfile,
