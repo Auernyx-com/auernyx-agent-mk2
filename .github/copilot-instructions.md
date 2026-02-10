@@ -7,14 +7,14 @@
 - **Type**: Governed control plane with MCP execution architecture
 - **Size**: ~270 source files, ~4,658 lines in core modules
 - **Languages**: TypeScript (primary), Python (CI scripts), PowerShell (Windows launchers)
-- **Runtime**: Node.js v20+ (tested with v24.13.0), npm 11+, Python 3.12+
+- **Runtime**: Node.js v20+ (tested with v24.13.0), npm 11+, Python 3.10+
 - **Architecture**: Policy-first, plan-based execution with receipts, NO direct capability execution
 
 ## Critical Build & Validation Workflow
 
 ### Prerequisites (ALWAYS verify first)
 1. Node.js v20+ and npm v11+ installed
-2. Python 3.12+ available for CI gate scripts
+2. Python 3.10+ available for CI gate scripts
 3. Clean working tree for governed operations (use `--allow-dirty` flag only when explicitly needed)
 
 ### Build Commands (run in order)
