@@ -111,6 +111,7 @@ const DEFAULT_ALLOWLIST: AllowlistConfig = {
         "governanceSelfTest",
         "governanceUnlock",
         "rollbackKnownGood",
+        "intentGenerator",
         "skjoldrFirewallStatus",
         "skjoldrFirewallApplyProfile",
         "skjoldrFirewallApplyRulesetFile",

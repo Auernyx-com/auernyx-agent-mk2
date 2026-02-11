@@ -16,7 +16,7 @@ Usage:
 
 import argparse
 import json
-import os
+import os  # Reserved for future cross-platform path operations
 import re
 import subprocess
 import sys
@@ -107,10 +107,15 @@ def classify_change(commit_info: Dict) -> Tuple[str, str]:
     
     changeClass: root, trunk, branch, leaf
     riskClass: low, medium, high
+    
+    Note: Classification uses precedence order (root > trunk > branch > leaf).
+    Files are checked against root patterns first, then trunk, then branch.
+    If classification is unclear, the change is demoted to the next lower layer
+    until a clear match is found or it defaults to leaf.
     """
     files = commit_info.get("changed_files", [])
     
-    # Root changes: governance, core policy, schema
+    # Root changes: governance, core policy, schema (highest precedence)
     root_patterns = [
         "governance/alteration-program/schema/",
         "governance/contracts/",
@@ -120,7 +125,7 @@ def classify_change(commit_info: Dict) -> Tuple[str, str]:
         "core/runLifecycle.ts"
     ]
     
-    # Trunk changes: core modules, capabilities
+    # Trunk changes: core modules, capabilities (exclude root files)
     trunk_patterns = [
         "core/",
         "capabilities/",
@@ -128,26 +133,38 @@ def classify_change(commit_info: Dict) -> Tuple[str, str]:
         "config/auernyx.config.json"
     ]
     
-    # Branch changes: clients, workflows
+    # Branch changes: clients, workflows (exclude trunk/root)
     branch_patterns = [
         "clients/",
         ".github/workflows/",
         "tools/ci_gate.py"
     ]
     
-    # Check patterns
+    # Check patterns with precedence: root first (explicit files), then trunk, then branch
+    # Root patterns are checked first and take precedence over broader patterns
     has_root = any(any(f.startswith(p) for p in root_patterns) for f in files)
-    has_trunk = any(any(f.startswith(p) for p in trunk_patterns) for f in files)
-    has_branch = any(any(f.startswith(p) for p in branch_patterns) for f in files)
-    
     if has_root:
+        # Clear root classification - governance schema, core policy/router
         return "root", "high"
-    elif has_trunk:
+    
+    # Check trunk patterns (exclude already-classified root files)
+    has_trunk = any(
+        any(f.startswith(p) for p in trunk_patterns) and 
+        not any(f.startswith(rp) for rp in root_patterns)
+        for f in files
+    )
+    if has_trunk:
+        # Clear trunk classification - core modules, capabilities
         return "trunk", "medium"
-    elif has_branch:
+    
+    # Check branch patterns
+    has_branch = any(any(f.startswith(p) for p in branch_patterns) for f in files)
+    if has_branch:
+        # Clear branch classification - clients, CI workflows
         return "branch", "medium"
-    else:
-        return "leaf", "low"
+    
+    # Default to leaf for unclear cases (documentation, tests, etc.)
+    return "leaf", "low"
 
 
 def infer_scope_from_commit(commit_info: Dict) -> Dict[str, List[str]]:
@@ -299,8 +316,10 @@ def scan_for_missing_intents() -> List[str]:
                 # Extract commit SHAs from notes (simple pattern matching)
                 matches = re.findall(r'\b[0-9a-f]{40}\b', evidence_notes)
                 referenced_commits.update(matches)
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+            # Skip unreadable or invalid intent files but continue scanning.
+            # All file operations must be documented and never silently pass.
+            print(f"Warning: Failed to read intent file {intent_file}: {exc}", file=sys.stderr)
     
     # Simplified check: look for significant commits without intents
     # This is a heuristic - in practice, you'd have more sophisticated logic

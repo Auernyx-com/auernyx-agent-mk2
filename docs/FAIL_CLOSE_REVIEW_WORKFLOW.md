@@ -213,9 +213,18 @@ The intent generator is also available as a governed capability:
 
 ```bash
 # Through the CLI (requires write-gate enabled)
+# NOTE: The commit SHA must be passed via --input; it is not parsed from the intent text.
 AUERNYX_WRITE_ENABLED=1 node dist/clients/cli/auernyx.js \
-  "generate intent for commit abc123" \
+  "generate intent" \
+  --input '{"commitSha": "abc123"}' \
   --reason "prep intent for failed commit" \
+  --apply --no-daemon
+
+# For scanning mode
+AUERNYX_WRITE_ENABLED=1 node dist/clients/cli/auernyx.js \
+  "generate intent" \
+  --input '{"scan": true}' \
+  --reason "scan for missing intents" \
   --apply --no-daemon
 ```
 

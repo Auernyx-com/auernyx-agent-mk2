@@ -36,6 +36,30 @@ export async function intentGenerator(ctx: RouterContext, input?: unknown): Prom
     const scan = params.scan;
     const actorId = params.actorId || "intent-generator";
     
+    // Validate commitSha format if provided (defense in depth)
+    if (commitSha) {
+        // Git SHA: 40 hex chars (full) or 7-40 hex chars (short)
+        const shaPattern = /^[0-9a-f]{7,40}$/i;
+        if (!shaPattern.test(commitSha)) {
+            return {
+                ok: false,
+                error: "Invalid commitSha format. Expected 7-40 hexadecimal characters."
+            };
+        }
+    }
+    
+    // Validate actorId contains only safe characters
+    if (actorId) {
+        // Allow alphanumeric, dash, underscore, and dot (common in usernames)
+        const actorPattern = /^[a-zA-Z0-9._-]+$/;
+        if (!actorPattern.test(actorId)) {
+            return {
+                ok: false,
+                error: "Invalid actorId format. Only alphanumeric characters, dash, underscore, and dot are allowed."
+            };
+        }
+    }
+    
     const args: string[] = [scriptPath];
     
     if (scan) {
