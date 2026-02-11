@@ -188,10 +188,18 @@ python3 tools/process_failed_runs.py --generate
 ### Through Auernyx CLI
 
 ```bash
-# With governance (requires approval)
+# Scan for missing intents (read-only)
+node dist/clients/cli/auernyx.js \
+  "scan for missing intents" \
+  --input '{"mode":"scan","limit":50}' \
+  --reason "identify commits missing intents" \
+  --no-daemon
+
+# Generate intent for a specific commit (requires approval)
 AUERNYX_WRITE_ENABLED=1 node dist/clients/cli/auernyx.js \
-  "generate intent for commit abc123" \
-  --reason "prep intent for failed commit" \
+  "generate intent for commit" \
+  --input '{"commitSha":"abc123"}' \
+  --reason "prep intent for failed commit abc123" \
   --apply --no-daemon
 ```
 
