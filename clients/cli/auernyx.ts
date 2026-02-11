@@ -1,5 +1,20 @@
 #!/usr/bin/env node
 
+/**
+ * Auernyx Mk2 - Headless CLI Client
+ * 
+ * This is one of two independent agents in Mk2:
+ * 1. VS Code Extension (clients/vscode/extension.ts) - for VS Code users
+ * 2. Headless Agent (this file + auernyx-daemon.ts) - for CLI and browser UI users
+ * 
+ * The headless agent operates independently and does not require VS Code.
+ * 
+ * Execution flow:
+ * - First attempts to delegate to daemon (if running) for shared state
+ * - Falls back to local execution if daemon unavailable
+ * - No VS Code dependencies - uses readline for interactive approval
+ */
+
 import { createCore } from "../../core/server";
 import { tryRunViaDaemon } from "../../core/daemonClient";
 import { createHumanApproval } from "../../core/approvals";

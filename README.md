@@ -1,8 +1,20 @@
-# Auernyx Agent
+# Auernyx Agent Mk2
 
 [![Branch Registry Update](https://github.com/Auernyx-com/auernyx-agent-mk2/actions/workflows/branch-registry-update.yml/badge.svg)](https://github.com/Auernyx-com/auernyx-agent-mk2/actions/workflows/branch-registry-update.yml)
 
-Embedded assistant persona for guidance, analysis, and tooling inside VS Code.
+Governed AI orchestrator with policy-first execution, modular design, and receipt-backed operations.
+
+## Two Independent Agents
+
+Mk2 provides **two independent agents** that work separately and do not require each other to run:
+
+1. **VS Code Extension** (`clients/vscode/extension.ts`) — Embedded assistant for guidance, analysis, and tooling inside VS Code
+2. **Headless Agent** (`clients/cli/auernyx-daemon.ts` + `clients/cli/auernyx.ts`) — Standalone daemon with CLI and browser UI for operation outside VS Code
+
+Both agents share the same governance core and capabilities but operate independently. You can:
+- Run only the VS Code extension (no daemon required)
+- Run only the headless daemon + CLI (no VS Code required)
+- Run both simultaneously (optional: VS Code can delegate to daemon for shared state)
 
 ## Structure
 
@@ -40,17 +52,27 @@ auernyx-agent/
 1. Clone this repo
 2. `npm install`
 3. `npm run compile`
-4. Open in VS Code and press F5 to debug
 
-## Commands
+## Usage Options
 
+### Option 1: VS Code Extension Only
+
+Open in VS Code and press F5 to debug, or install the extension.
+
+**Commands:**
 - **Ask Auernyx** — Direct interaction with the agent
 - **Scan Repo (Auernyx)** — Index and analyze workspace structure
 - **Prepare Feneris Port** — Generate Windows Feneris scaffolding
 
-## Non-VS Code usage
+The VS Code extension operates independently and does not require the daemon to be running. It can optionally delegate to a running daemon for shared state.
 
-This repo also supports running Auernyx outside VS Code via a local daemon and a CLI client.
+### Option 2: Headless Agent (Daemon + CLI or Browser UI)
+
+Run the headless agent without VS Code using either:
+- **CLI**: `npm run cli -- <intent>` (e.g., `npm run cli -- scan`)
+- **Daemon + Browser UI**: `npm run daemon` then open `http://127.0.0.1:43117/ui`
+
+The headless agent operates independently and does not require VS Code.
 
 ## Trunk vs canary
 
@@ -156,11 +178,27 @@ Note: `.auernyx/kintsugi/` is a protected path; governed mutations must refuse w
 
 ## Architecture
 
-- `core/` — routing, policy, state, and ledger
-- `capabilities/` — action modules (scan, prep, baseline, etc.)
-- `clients/vscode/extension.ts` — VS Code integration only (thin wrapper)
+Mk2 has a modular, decoupled architecture with two independent execution paths:
 
-The VS Code client routes intents into allowlisted capabilities.
+### Shared Core
+- `core/` — routing, policy, state, ledger (shared by both agents)
+- `capabilities/` — action modules (scan, prep, baseline, etc.)
+
+### Independent Agents
+
+1. **VS Code Extension** (`clients/vscode/extension.ts`)
+   - Thin wrapper for VS Code integration
+   - Optional: can delegate to daemon if running
+   - Fallback: executes capabilities locally if daemon unavailable
+   - Independent: Does not require daemon to function
+
+2. **Headless Agent**
+   - **Daemon** (`clients/cli/auernyx-daemon.ts`) — HTTP JSON API server
+   - **CLI** (`clients/cli/auernyx.ts`) — Command-line client
+   - **Browser UI** — Web interface at `/ui` endpoint
+   - Independent: Does not require VS Code to function
+
+Both agents route intents into allowlisted capabilities and enforce the same governance policies.
 
 ---
 

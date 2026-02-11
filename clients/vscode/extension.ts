@@ -6,6 +6,21 @@ import { capabilityRequiresApproval, CapabilityName } from "../../core/policy";
 import { runLifecycle } from "../../core/runLifecycle";
 import { isJudgmentActive } from "../../core/provenance";
 
+/**
+ * Auernyx Mk2 - VS Code Extension
+ * 
+ * This is one of two independent agents in Mk2:
+ * 1. VS Code Extension (this file) - for VS Code users
+ * 2. Headless Agent (clients/cli/*) - for CLI and browser UI users
+ * 
+ * The VS Code extension operates independently and does not require the daemon.
+ * 
+ * Execution flow:
+ * - First attempts to delegate to daemon (if running) for optional shared state
+ * - Falls back to local execution if daemon unavailable
+ * - Uses VS Code APIs for UI (input boxes, dialogs, status bar)
+ */
+
 function getJudgmentClipArtLines(): string[] {
     // CLIP ART DROP-IN SECTION
     // Paste ASCII art lines here later to visually enhance the Judgment banner.

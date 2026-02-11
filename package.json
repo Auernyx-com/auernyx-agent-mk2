@@ -1,7 +1,7 @@
 {
   "name": "auernyx-agent",
   "displayName": "Auernyx Agent",
-  "description": "Embedded assistant persona for guidance, analysis, and tooling inside VS Code.",
+  "description": "Governed AI orchestrator with two independent agents: VS Code extension and headless daemon with CLI/browser UI.",
   "version": "0.0.2",
   "engines": {
     "vscode": "^1.85.0"
