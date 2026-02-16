@@ -25,12 +25,9 @@
     ]
   },
   "verification": {
+    "plan": "Run mk2-alteration-gate and manually review the updated documentation to confirm clear separation between build artifacts (dist/ output) and runtime execution states (daemon vs local), ensuring no behavior or build changes were introduced.",
     "requiredChecks": [
       "mk2-alteration-gate"
-    ],
-    "commandHint": "Review markdown files to ensure clear separation between build output documentation and runtime execution state documentation",
-    "expectedArtifacts": [
-      "Updated documentation with clarified sections"
     ]
   },
   "evidence": {
