@@ -54,21 +54,33 @@ def generate_intent_id() -> str:
 def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[str, str]:
     """
     Classify dependency changes.
-    
+
     Returns (changeClass, riskClass)
-    
+
     Dependency updates are typically leaf changes (they don't modify architecture),
-    but major version bumps carry higher risk.
+    but major version bumps or updates impacting runtime paths carry higher risk.
     """
     # Check if this is a dev dependency or production dependency
     is_dev_dep = "@types" in package or package in ["typescript", "eslint", "prettier"]
-    
+
     # Dependency updates are leaf changes (don't affect architecture)
     # unless they're core runtime dependencies
     if is_dev_dep:
         return "leaf", "low"
-    
-    # Production dependencies have slightly higher risk
+
+    # For production dependencies, raise risk if the change appears to touch runtime code.
+    # We intentionally use a simple heuristic based on common runtime directories so we
+    # don't need to know the full project layout.
+    runtime_prefixes = ("src/", "core/", "capabilities/", "clients/")
+    touches_runtime = any(
+        any(path.startswith(prefix) for prefix in runtime_prefixes)
+        for path in changed_files or []
+    )
+
+    if touches_runtime:
+        return "leaf", "medium"
+
+    # Production dependencies that only touch non-runtime files (e.g. lockfiles) stay low risk
     return "leaf", "low"
 
 
