@@ -19,11 +19,18 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             const title = (pr.title || '').toLowerCase();
+            const labels = (pr.labels || []).map(label => (label.name || '').toLowerCase());
+            const hasDependenciesLabel = labels.includes('dependencies');
+            const hasPatchLabel = labels.includes('semver:patch');
+            const hasSecurityLabel = labels.includes('security');
             const isPatchSignal = title.includes(' bump ') && title.includes(' from ') && title.includes(' to ');
-            const isSecuritySignal = title.includes('security') || title.includes('vulnerability');
+            const isSecuritySignal =
+              title.includes('security') ||
+              title.includes('vulnerability') ||
+              hasSecurityLabel;
 
-            if (!isPatchSignal || isSecuritySignal) {
-              core.info('Skipping auto-merge: not a plain patch-style bump title or indicates security escalation requiring review.');
+            if (!isPatchSignal || !hasDependenciesLabel || !hasPatchLabel || isSecuritySignal) {
+              core.info('Skipping auto-merge: requires Dependabot semver:patch dependency label set and no security escalation indicators.');
               return;
             }
 
