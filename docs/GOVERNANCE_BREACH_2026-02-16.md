@@ -60,7 +60,9 @@ Based on audit findings (`tools/audit-dependabot.py`):
    - Version: 1.108.1 → 1.109.0
    - Risk: LOW (dev dependency, minor version bump)
    - Files Changed: package.json, package-lock.json (plus initial repository setup)
-   - Status: Governance restored via retroactive intent
+   - Status: Governance restored via retroactive intent (pending separate PR)
+
+**Note:** Retroactive intent files will be generated and committed in a follow-up PR to comply with the "one intent per PR" governance rule.
 
 **Note:** The problem statement mentioned additional PRs (#15, #6, #25, #26), but these are not visible in the current repository clone due to shallow history. If these PRs exist in the full GitHub history, they should also be audited and remediated.
 
@@ -123,9 +125,9 @@ This breach violated multiple core governance principles:
    - Ensures future Dependabot PRs include required governance documentation
 
 6. ✅ **Retroactive Intents Generated**
-   - Intent files created for all ungoverned Dependabot commits
+   - Intent files CAN BE created for all ungoverned Dependabot commits
    - Marked with `governanceBreach: true` in amendments
-   - Audit trail restored
+   - Audit trail CAN BE restored (pending follow-up PR)
 
 #### Documentation Updates
 
@@ -159,9 +161,11 @@ To prevent similar breaches in the future:
 
 ### Open Items
 
-1. **Full History Audit:** The current repository clone is shallow (grafted). A full audit should be performed against the complete GitHub history to identify any other ungoverned Dependabot PRs (specifically PRs #15, #6, #25, #26 mentioned in the problem statement).
+1. **Retroactive Intent Files:** The restoration script `tools/restore-dependabot-governance.py` can generate retroactive intent files for ungoverned commits. However, due to the governance requirement of exactly ONE intent file per PR, these retroactive intents should be added in a separate follow-up PR after this remediation is merged.
 
-2. **Open PRs:** If PRs #25 and #26 are currently open:
+2. **Full History Audit:** The current repository clone is shallow (grafted). A full audit should be performed against the complete GitHub history to identify any other ungoverned Dependabot PRs (specifically PRs #15, #6, #25, #26 mentioned in the problem statement).
+
+3. **Open PRs:** If PRs #25 and #26 are currently open:
    - Close them
    - Reopen with intent files
    - OR add intent files before merge
@@ -190,8 +194,10 @@ This breach, while serious, was discovered quickly and remediated thoroughly. Th
 The retroactive intent files restore the audit trail, and the removal of the bypass ensures this specific vulnerability cannot recur.
 
 **Status:** REMEDIATED  
-**Audit Trail:** RESTORED  
+**Audit Trail:** RESTORATION TOOLING AVAILABLE  
 **Prevention:** AUTOMATED
+
+**Follow-up Required:** Generate and commit retroactive intent files using `tools/restore-dependabot-governance.py` in a separate PR.
 
 ---
 

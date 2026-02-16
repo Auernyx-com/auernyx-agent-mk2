@@ -10,7 +10,7 @@
       "Create restoration tooling to generate retroactive intent files",
       "Add automated intent generation workflow for future Dependabot PRs",
       "Document governance breach with forensic investigation",
-      "Restore governance for PR #17 with retroactive intent file"
+      "Provide tooling to restore governance for past PRs (retroactive intents in follow-up PR)"
     ],
     "out": [
       "No changes to core governance logic or policy enforcement",
@@ -33,7 +33,7 @@
   "evidence": {
     "required": true,
     "receiptRefs": [],
-    "notes": "CRITICAL GOVERNANCE BREACH REMEDIATION\n\nThis intent documents the discovery and remediation of a critical governance bypass that allowed Dependabot to merge PRs without any governance oversight.\n\nBreach Details:\n- Bypass condition: if: ${{ github.actor != 'dependabot[bot]' }}\n- Location: .github/workflows/mk2-alteration-gate.yml line 12\n- Introduced: commit b57661ca on 2026-02-16\n- Impact: 1+ Dependabot PRs merged without intent files\n\nRemediation Actions:\n1. Created tools/audit-dependabot.py (audit tooling)\n2. Created tools/restore-dependabot-governance.py (restoration tooling)\n3. Created tools/find-dependabot-origin.sh (forensic investigation)\n4. Removed bypass from mk2-alteration-gate.yml\n5. Created .github/workflows/dependabot-gate.yml (automated compliance)\n6. Generated retroactive intent for PR #17\n7. Documented breach in docs/GOVERNANCE_BREACH_2026-02-16.md\n\nThis is a ROOT-level change because it:\n- Modifies governance enforcement workflows\n- Restores governance integrity\n- Establishes new governance automation\n- Documents systemic governance failure\n\nSee docs/GOVERNANCE_BREACH_2026-02-16.md for complete breach report."
+    "notes": "CRITICAL GOVERNANCE BREACH REMEDIATION\n\nThis intent documents the discovery and remediation of a critical governance bypass that allowed Dependabot to merge PRs without any governance oversight.\n\nBreach Details:\n- Bypass condition: if: ${{ github.actor != 'dependabot[bot]' }}\n- Location: .github/workflows/mk2-alteration-gate.yml line 12\n- Introduced: commit b57661ca on 2026-02-16\n- Impact: 1+ Dependabot PRs merged without intent files\n\nRemediation Actions:\n1. Created tools/audit-dependabot.py (audit tooling)\n2. Created tools/restore-dependabot-governance.py (restoration tooling)\n3. Created tools/find-dependabot-origin.sh (forensic investigation)\n4. Removed bypass from mk2-alteration-gate.yml\n5. Created .github/workflows/dependabot-gate.yml (automated compliance)\n6. Prepared tooling for retroactive intent generation (separate PR)\n7. Documented breach in docs/GOVERNANCE_BREACH_2026-02-16.md\n\nThis is a ROOT-level change because it:\n- Modifies governance enforcement workflows\n- Restores governance integrity\n- Establishes new governance automation\n- Documents systemic governance failure\n\nNote: Retroactive intent files will be generated in follow-up PR.\nSee docs/GOVERNANCE_BREACH_2026-02-16.md for complete breach report."
   },
   "amendments": []
 }

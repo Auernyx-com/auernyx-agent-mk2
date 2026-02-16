@@ -18,11 +18,11 @@ A critical governance breach was discovered where the `mk2-alteration-gate` work
 - ✅ Created audit tooling (`tools/audit-dependabot.py`) to discover ungoverned commits
 - ✅ Created restoration tooling (`tools/restore-dependabot-governance.py`) to generate retroactive intents
 - ✅ Added forensic investigation script (`tools/find-dependabot-origin.sh`)
-- ✅ Generated retroactive intent file for PR #17 with governance breach documentation
 - ✅ Created automated Dependabot gate workflow (`.github/workflows/dependabot-gate.yml`) for future compliance
 - ✅ Full breach documentation in `docs/GOVERNANCE_BREACH_2026-02-16.md`
+- 📋 Retroactive intent files for past PRs will be added in follow-up PR
 
-**Status:** REMEDIATED - Governance integrity restored, audit trail complete, prevention automated.
+**Status:** REMEDIATED - Governance integrity restored, tooling available for audit trail restoration, prevention automated.
 
 See `docs/GOVERNANCE_BREACH_2026-02-16.md` for complete details.
 
