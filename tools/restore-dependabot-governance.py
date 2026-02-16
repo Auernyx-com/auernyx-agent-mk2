@@ -132,6 +132,9 @@ def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[
 def generate_retroactive_intent(commit_sha: str, commit_info: Dict, dep_info: Dict) -> Dict:
     """Generate a retroactive intent file for a Dependabot commit."""
     intent_id = generate_intent_id()
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    now_date_iso = now.date().isoformat()
     
     # Classify the change
     change_class, risk_class = classify_dependency_change(
@@ -193,7 +196,7 @@ Files Changed:
         "riskClass": risk_class,
         "governanceImpact": False,  # Dependency updates don't change governance
         "actorId": "dependabot-restoration",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": now_iso,
         "status": "closed",  # Mark as closed since it's already merged
         "verification": {
             "plan": f"Retroactive intent for merged Dependabot PR #{dep_info['pr_number']}. Dependency update was reviewed and merged.",
@@ -208,8 +211,8 @@ Files Changed:
         },
         "amendments": [
             {
-                "amendedAt": datetime.now(timezone.utc).isoformat(),
-                "actorId": f"governance-restoration-{datetime.now(timezone.utc).date().isoformat()}",
+                "amendedAt": now_iso,
+                "actorId": f"governance-restoration-{now_date_iso}",
                 "reason": "Retroactive intent creation due to governance breach. Dependabot bypass removed from alteration gate.",
                 "fieldsChanged": ["status", "createdAt", "evidence.notes"]
             }
