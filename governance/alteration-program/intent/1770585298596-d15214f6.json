@@ -31,8 +31,8 @@
     ]
   },
   "evidence": {
-    "required": [],
-    "paths": [],
+    "required": false,
+    "receiptRefs": [],
     "notes": "Documentation-only change to clarify distinction between build artifacts (dist/ output from npm run compile) and runtime execution states (daemon vs local fallback). This addresses confusion about 'built states' by separating these two distinct concepts in the documentation."
   },
   "deferral": {
