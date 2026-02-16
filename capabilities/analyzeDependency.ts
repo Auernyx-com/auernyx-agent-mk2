@@ -36,7 +36,66 @@ export interface AnalyzeDependencyResult {
 
 function parseInput(input: unknown): AnalyzeDependencyInput {
     if (!input || typeof input !== "object") return {};
-    return input as AnalyzeDependencyInput;
+
+    const raw = input as Record<string, unknown>;
+    const result: AnalyzeDependencyInput = {};
+
+    // packageManager: "npm" | "pnpm" | "yarn"
+    if (typeof raw.packageManager === "string") {
+        if (raw.packageManager === "npm" || raw.packageManager === "pnpm" || raw.packageManager === "yarn") {
+            result.packageManager = raw.packageManager;
+        }
+    }
+
+    // packageName, fromVersion, toVersion: string
+    if (typeof raw.packageName === "string") {
+        result.packageName = raw.packageName;
+    }
+    if (typeof raw.fromVersion === "string") {
+        result.fromVersion = raw.fromVersion;
+    }
+    if (typeof raw.toVersion === "string") {
+        result.toVersion = raw.toVersion;
+    }
+
+    // pullRequest: nested object with optional fields
+    const pr = raw.pullRequest;
+    if (pr && typeof pr === "object") {
+        const prRaw = pr as Record<string, unknown>;
+        const pullRequest: NonNullable<AnalyzeDependencyInput["pullRequest"]> = {};
+
+        if (typeof prRaw.number === "number") {
+            pullRequest.number = prRaw.number;
+        }
+        if (typeof prRaw.title === "string") {
+            pullRequest.title = prRaw.title;
+        }
+        if (typeof prRaw.body === "string") {
+            pullRequest.body = prRaw.body;
+        }
+        if (Array.isArray(prRaw.files)) {
+            const files: string[] = [];
+            for (const f of prRaw.files) {
+                if (typeof f === "string") {
+                    files.push(f);
+                }
+            }
+            if (files.length > 0) {
+                pullRequest.files = files;
+            }
+        }
+
+        if (
+            pullRequest.number !== undefined ||
+            pullRequest.title !== undefined ||
+            pullRequest.body !== undefined ||
+            pullRequest.files !== undefined
+        ) {
+            result.pullRequest = pullRequest;
+        }
+    }
+
+    return result;
 }
 
 // Auernyx Mk2 - Dependency Analysis Capability scaffold
