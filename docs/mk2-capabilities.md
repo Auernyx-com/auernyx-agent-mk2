@@ -96,6 +96,9 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
 - `skjoldrFirewallExportBaseline` — export baseline
 - `skjoldrFirewallRestoreBaseline` — restore baseline
 - `analyzeDependency` — dependency risk analysis scaffold (read-only)
+  - This capability is read-only, but changes to Mk2 itself (including this capability and its configuration) are governed by the alteration program.
+  - Every non-Dependabot PR must include **exactly one** intent JSON file under `governance/alteration-program/intent/` with filename `<intentId>.json` where `<intentId>` has the form `13digits-8hex` and matches the `intentId` field inside the file.
+  - You can generate an intent file for a commit with: `python3 tools/intent_generator.py --commit <sha>`, then add the resulting file to `governance/alteration-program/intent/` as part of your PR.
 
 ---
 
