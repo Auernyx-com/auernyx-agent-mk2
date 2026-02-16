@@ -81,6 +81,7 @@ def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[
         "@types/",
         "eslint-config-",
         "eslint-plugin-",
+        "babel-",
     )
     dev_dep_names = {
         "typescript",
@@ -98,16 +99,12 @@ def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[
         "rollup",
         "vite",
         "babel",
-        "babel-cli",
-        "babel-core",
-        "babel-loader",
         "lint-staged",
         "husky",
         "nodemon",
     }
     is_dev_dep = (
-        "@types" in package
-        or package in dev_dep_names
+        package in dev_dep_names
         or any(package.startswith(prefix) for prefix in dev_dep_prefixes)
     )
 
