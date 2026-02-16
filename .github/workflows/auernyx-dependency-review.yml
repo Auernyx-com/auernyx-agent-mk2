@@ -41,7 +41,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const exitCode = '${{ steps.auernyx-analysis.outputs.exit_code }}';
+            const exitCode = '${{ steps.auernyx-analysis.outputs.exit_code }}' || 'unknown';
             const analysisStatus = exitCode === '0' ? '✅ Success' : `⚠️ Failed (exit code: ${exitCode})`;
 
             const body = [
