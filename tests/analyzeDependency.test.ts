@@ -3,7 +3,16 @@ import test from "node:test";
 import { analyzeDependency } from "../capabilities/analyzeDependency";
 import type { RouterContext } from "../core/router";
 
-const mockContext = {} as RouterContext;
+function createMockRouterContext(): RouterContext {
+  // Provide a minimal but realistic mock implementation of RouterContext.
+  // Adjust properties here as RouterContext evolves to keep tests representative.
+  return {
+    repoRoot: "/mock/repo/root",
+    sessionId: "mock-session-id"
+  } as RouterContext;
+}
+
+const mockContext = createMockRouterContext();
 
 type MockResponse = { ok: boolean; status: number; body: unknown };
 
@@ -107,6 +116,7 @@ test("major update is high risk", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.versionJump, "major");
   assert.equal(result.riskLevel, "high");
+  assert.equal(result.recommendation, "review");
 });
 
 test("security fixes in patch stay low risk", async () => {
@@ -240,11 +250,25 @@ test("analysisHash is deterministic for identical input and data", async () => {
   });
   firstRestore();
 
+  const secondRestore = mockFetchSequence([
+    {
+      ok: true,
+      status: 200,
+      body: {
+        time: { "1.0.1": "2023-01-01T00:00:00.000Z" },
+        versions: { "1.0.1": { description: "stable patch" } }
+      }
+    },
+    { ok: true, status: 200, body: { pkghash: [] } },
+    { ok: true, status: 200, body: { pkghash: [] } }
+  ]);
+
   const second = await analyzeDependency(mockContext, {
     packageName: "pkghash",
     oldVersion: "1.0.0",
     newVersion: "1.0.1"
   });
+  secondRestore();
 
   assert.equal(first.analysisHash, second.analysisHash);
 });
