@@ -263,14 +263,8 @@ function readJson(req: http.IncomingMessage, maxBodyBytes: number): Promise<unkn
 const SAFE_SEGMENT_REGEX = /^[A-Za-z0-9._-]{1,128}$/;
 
 function isSafeReceiptSegment(seg: string): boolean {
-    // Quick length check before other operations
-    if (!seg || seg.length > 128) return false;
+    // Reject special path segments explicitly.
     if (seg === "." || seg === "..") return false;
-    // Check for path separators (faster than includes for small strings)
-    for (let i = 0; i < seg.length; i++) {
-        const c = seg[i];
-        if (c === "\\" || c === "/") return false;
-    }
     // Conservative allowlist: keep it URL/path safe and filesystem friendly.
     return SAFE_SEGMENT_REGEX.test(seg);
 }
@@ -827,21 +821,17 @@ function readTailLines(filePath: string, maxLines: number): string[] {
         const buf = Buffer.alloc(readSize);
         fs.readSync(fd, buf, 0, readSize, Math.max(0, size - readSize));
         const text = buf.toString("utf8");
-        // Optimize: avoid creating intermediate arrays with filter
+
+        // Use built-in string splitting for simpler and optimized line parsing.
+        const allLines = text.split(/\r?\n/);
         const lines: string[] = [];
-        let start = 0;
-        for (let i = 0; i < text.length; i++) {
-            if (text[i] === "\n" || (text[i] === "\r" && text[i + 1] === "\n")) {
-                const line = text.slice(start, i).trim();
-                if (line.length > 0) lines.push(line);
-                start = text[i] === "\r" ? i + 2 : i + 1;
-                if (text[i] === "\r") i++; // Skip \n after \r
+        for (const rawLine of allLines) {
+            const line = rawLine.trim();
+            if (line.length > 0) {
+                lines.push(line);
             }
         }
-        // Handle last line if no trailing newline
-        const lastLine = text.slice(start).trim();
-        if (lastLine.length > 0) lines.push(lastLine);
-        
+
         return lines.slice(-linesWanted);
     } finally {
         fs.closeSync(fd);
@@ -1029,24 +1019,58 @@ export function startDaemon(repoRoot: string) {
                     return writeJson(res, 200, { ok: true, count: 0, receipts: [] });
                 }
 
-                // Optimize: Use partial sort - only keep top N instead of sorting all
-                const entries = fs
+                // Optimize: Use partial selection - only keep top N instead of sorting all
+                const dirEntries = fs
                     .readdirSync(baseDir, { withFileTypes: true })
-                    .filter((d) => d.isDirectory() && isSafeReceiptSegment(d.name))
-                    .map((d) => {
-                        // Optimize: readdirSync with withFileTypes already gives us file info
-                        // Only stat when we know we might use it
-                        const dirPath = path.join(baseDir, d.name);
-                        let mtimeMs = 0;
-                        try {
-                            mtimeMs = fs.statSync(dirPath).mtimeMs;
-                        } catch {
-                            // ignore
+                    .filter((d) => d.isDirectory() && isSafeReceiptSegment(d.name));
+
+                type ReceiptEntry = { runId: string; mtimeMs: number };
+                const top: ReceiptEntry[] = [];
+
+                for (const d of dirEntries) {
+                    const dirPath = path.join(baseDir, d.name);
+                    let mtimeMs = 0;
+                    try {
+                        mtimeMs = fs.statSync(dirPath).mtimeMs;
+                    } catch {
+                        // ignore stat errors; treat as very old (mtimeMs = 0)
+                    }
+
+                    const entry: ReceiptEntry = { runId: d.name, mtimeMs };
+
+                    // Maintain 'top' sorted ascending by mtimeMs (oldest first)
+                    if (top.length < maxLimit) {
+                        // Insert in sorted position
+                        let inserted = false;
+                        for (let i = 0; i < top.length; i++) {
+                            if (entry.mtimeMs < top[i].mtimeMs) {
+                                top.splice(i, 0, entry);
+                                inserted = true;
+                                break;
+                            }
                         }
-                        return { runId: d.name, mtimeMs };
-                    })
-                    .sort((a, b) => b.mtimeMs - a.mtimeMs)
-                    .slice(0, maxLimit);
+                        if (!inserted) {
+                            top.push(entry);
+                        }
+                    } else if (maxLimit > 0 && entry.mtimeMs > top[0].mtimeMs) {
+                        // Replace the smallest and reinsert to keep ascending order
+                        top.shift();
+                        let inserted = false;
+                        for (let i = 0; i < top.length; i++) {
+                            if (entry.mtimeMs < top[i].mtimeMs) {
+                                top.splice(i, 0, entry);
+                                inserted = true;
+                                break;
+                            }
+                        }
+                        if (!inserted) {
+                            top.push(entry);
+                        }
+                    }
+                }
+
+                // Now sort descending by mtimeMs (newest first), as in the original code
+                const entries = top.sort((a, b) => b.mtimeMs - a.mtimeMs);
 
                 return writeJson(res, 200, { ok: true, count: entries.length, receipts: entries });
             }

@@ -1,0 +1,35 @@
+{
+  "intentId": "1771263965553-a65c5cd0",
+  "title": "Optimize server.ts performance: line parsing, receipt listing, and path validation",
+  "system": "core/server.ts",
+  "changeClass": "leaf",
+  "scope": {
+    "in": [
+      "core/server.ts"
+    ],
+    "out": [
+      "No changes to API contracts or external interfaces",
+      "No changes to governance logic or policy enforcement",
+      "No changes to ledger format or receipt structure",
+      "No changes to capability registration"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "github-copilot-agent",
+  "createdAt": "2026-02-16T17:46:05.553Z",
+  "status": "in_review",
+  "verification": {
+    "plan": "1. Apply three performance optimization diffs to core/server.ts. 2. Verify TypeScript compilation succeeds with npm run compile. 3. Run npm run verify to check basic functionality. 4. Verify code compiles without introducing regressions. 5. Ensure CI alteration gate passes with exactly one intent file.",
+    "requiredChecks": [
+      "mk2-alteration-gate",
+      "typescript-compile"
+    ]
+  },
+  "evidence": {
+    "required": true,
+    "receiptRefs": [],
+    "notes": "This intent applies three performance optimizations to core/server.ts:\n\n1. Line parsing optimization (readTailLines function, ~line 827): Replace manual character-by-character loop with built-in string.split(/\\r?\\n/) for simpler and more efficient line parsing. This reduces code complexity from 15 lines to 7 lines while maintaining identical functionality.\n\n2. Receipt listing optimization (~line 1029): Replace full-array sort-and-slice with a priority queue-like partial selection algorithm. Instead of sorting ALL receipts and taking top N, maintain a sorted array of only the top N entries during iteration. This changes O(M log M) to O(M log N) where M is total receipts and N is the limit (typically 25-200). For large receipt directories, this significantly reduces both time and memory.\n\n3. Path validation simplification (isSafeReceiptSegment function, ~line 265): Remove redundant manual character loop checking for path separators, as the SAFE_SEGMENT_REGEX already validates the allowed character set [A-Za-z0-9._-]. The regex test inherently rejects slashes and backslashes. This reduces code from 13 lines to 5 lines with no behavior change.\n\nAll three changes are:\n- Functionally equivalent to existing code (preserve exact behavior)\n- Performance improvements with no user-facing changes\n- Internal implementation details only\n- Low risk (pure refactoring with no API changes)\n\nThis is a LEAF-level change because:\n- No external contracts modified\n- No governance logic touched\n- Pure performance optimization\n- Maintains exact same behavior and error handling"
+  },
+  "amendments": []
+}
