@@ -104,10 +104,11 @@ function classifyJump(oldVersion: string, newVersion: string): "patch" | "minor"
     if (!oldP || !newP) return "unknown";
 
     if (newP[0] !== oldP[0]) return "major";
-    if (newP[1] < oldP[1]) return "major";
+    if (newP[1] < oldP[1]) return "unknown"; // downgrade
     if (newP[1] > oldP[1]) return "minor";
-    if (newP[2] < oldP[2]) return "minor";
-    return "patch";
+    if (newP[2] < oldP[2]) return "unknown"; // downgrade
+    if (newP[2] > oldP[2]) return "patch";
+    return "patch"; // same version
 }
 
 function parseInput(input?: unknown): AnalyzeDependencyInput {
@@ -427,7 +428,7 @@ export async function analyzeDependency(_ctx: RouterContext, input?: unknown): P
         parsed = parseInput(input);
     } catch (err) {
         const reason = err instanceof Error ? err.message : "invalid_input";
-        return failClosedOutput({ packageName: "unknown", oldVersion: "unknown", newVersion: "unknown", ecosystem: "npm" }, `Invalid input: ${reason}`, timestamp);
+        return failClosedOutput(safeParseForFailure(input), `Invalid input: ${reason}`, timestamp);
     }
 
     if (parsed.ecosystem !== "npm") {
