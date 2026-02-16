@@ -1,0 +1,39 @@
+{
+  "intentId": "1771239423000-dbf82a10",
+  "title": "Remediate Dependabot governance bypass and restore audit trail",
+  "system": "auernyx-agent-mk2",
+  "changeClass": "root",
+  "scope": {
+    "in": [
+      "Remove Dependabot bypass from mk2-alteration-gate workflow",
+      "Create audit tooling to discover ungoverned Dependabot commits",
+      "Create restoration tooling to generate retroactive intent files",
+      "Add automated intent generation workflow for future Dependabot PRs",
+      "Document governance breach with forensic investigation",
+      "Provide tooling to restore governance for past PRs (retroactive intents in follow-up PR)"
+    ],
+    "out": [
+      "No changes to core governance logic or policy enforcement",
+      "No changes to receipt format or ledger structure",
+      "No changes to capability implementations",
+      "No changes to existing intent files (except adding retroactive ones)"
+    ]
+  },
+  "riskClass": "high",
+  "governanceImpact": true,
+  "actorId": "copilot-agent",
+  "createdAt": "2026-02-16T10:57:03.000000+00:00",
+  "status": "in_review",
+  "verification": {
+    "plan": "1. Run audit-dependabot.py to verify it detects the breach. 2. Run restore-dependabot-governance.py to verify it generates retroactive intents. 3. Run find-dependabot-origin.sh to verify forensic tracing. 4. Verify mk2-alteration-gate.yml no longer has bypass. 5. Verify dependabot-gate.yml workflow is valid. 6. Run CI gate to ensure exactly one intent file changed. 7. Verify documentation is complete.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": true,
+    "receiptRefs": [],
+    "notes": "CRITICAL GOVERNANCE BREACH REMEDIATION\n\nThis intent documents the discovery and remediation of a critical governance bypass that allowed Dependabot to merge PRs without any governance oversight.\n\nBreach Details:\n- Bypass condition: if: ${{ github.actor != 'dependabot[bot]' }}\n- Location: .github/workflows/mk2-alteration-gate.yml (mk2-alteration-gate job guard)\n- Introduced: commit b57661ca on 2026-02-16\n- Impact: 1 confirmed ungoverned Dependabot commit (PR #17)\n\nRemediation Actions:\n1. Created tools/audit-dependabot.py (audit tooling)\n2. Created tools/restore-dependabot-governance.py (restoration tooling)\n3. Created tools/find-dependabot-origin.sh (forensic investigation)\n4. Removed bypass from mk2-alteration-gate.yml\n5. Created .github/workflows/dependabot-gate.yml (automated compliance)\n6. Prepared tooling for retroactive intent generation (separate PR)\n7. Documented breach in docs/GOVERNANCE_BREACH_2026-02-16.md\n\nThis is a ROOT-level change because it:\n- Modifies governance enforcement workflows\n- Restores governance integrity\n- Establishes new governance automation\n- Documents systemic governance failure\n\nNote: Retroactive intent files will be generated in follow-up PR.\nSee docs/GOVERNANCE_BREACH_2026-02-16.md for complete breach report."
+  },
+  "amendments": []
+}

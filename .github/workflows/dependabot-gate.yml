@@ -1,0 +1,108 @@
+name: dependabot-gate
+
+# This workflow runs when Dependabot opens a PR to automatically generate
+# an intent file for the dependency update. This ensures Dependabot PRs
+# comply with governance requirements before they can be merged.
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-intent:
+    # Only run for Dependabot PRs from this repository (not forks)
+    # Skip if the last commit was made by github-actions[bot] to prevent infinite loops
+    if: |
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.user.login != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Checkout PR head branch
+        run: |
+          git fetch origin "${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}"
+          git checkout "${{ github.event.pull_request.head.ref }}"
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Check if intent already exists
+        id: check-intent
+        run: |
+          # Check if this PR already has an intent file
+          INTENT_COUNT=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -c "governance/alteration-program/intent/.*\.json" || true)
+          echo "intent_count=$INTENT_COUNT" >> $GITHUB_OUTPUT
+          
+          if [ "$INTENT_COUNT" -gt 0 ]; then
+            echo "Intent file already exists in this PR"
+            exit 0
+          fi
+      
+      - name: Generate intent file
+        if: steps.check-intent.outputs.intent_count == '0'
+        run: |
+          # Get the HEAD commit SHA (the Dependabot commit)
+          HEAD_SHA=$(git rev-parse HEAD)
+          
+          # Generate intent file for this commit
+          python3 tools/intent_generator.py \
+            --commit "$HEAD_SHA" \
+            --actor-id "dependabot-automation"
+          
+          # Update intent status from "draft" to "in_review" for automated processing
+          INTENT_FILE=$(ls governance/alteration-program/intent/*.json | tail -1)
+          if [ -f "$INTENT_FILE" ]; then
+            sed -i 's/"status": "draft"/"status": "in_review"/' "$INTENT_FILE"
+            echo "Intent file generated and updated to in_review status: $INTENT_FILE"
+          else
+            echo "Intent file generated for commit $HEAD_SHA"
+          fi
+      
+      - name: Commit intent file
+        if: steps.check-intent.outputs.intent_count == '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Add the new intent file
+          git add governance/alteration-program/intent/*.json
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No intent file changes to commit"
+            exit 0
+          fi
+          
+          git commit -m "chore: add governance intent for Dependabot update"
+          git push
+      
+      - name: Comment on PR
+        if: steps.check-intent.outputs.intent_count == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🤖 **Governance Intent Generated**\n\n' +
+                    'An intent file has been automatically generated for this Dependabot update. ' +
+                    'The intent status has been set to `in_review` and the PR now includes the required governance documentation.\n\n' +
+                    '**Next Steps:**\n' +
+                    '- Review the generated intent file\n' +
+                    '- Update status to `approved` if changes look good\n' +
+                    '- Ensure the mk2-alteration-gate check passes\n' +
+                    '- Merge when all checks are green'
+            })

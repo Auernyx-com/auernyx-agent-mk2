@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-02-16
+
+### CRITICAL: Governance Breach Remediation
+
+**⚠️ SECURITY NOTICE: Dependabot Governance Bypass Discovered and Remediated**
+
+A critical governance breach was discovered where the `mk2-alteration-gate` workflow contained an explicit bypass for Dependabot (`if: ${{ github.actor != 'dependabot[bot]' }}`), allowing automated dependency updates to merge without human-in-the-loop approval, intent files, or governance oversight.
+
+**Impact:**
+- 1 Dependabot PR (#17) confirmed merged without governance records
+- Violated fail-closed governance model
+- Created gap in audit trail
+
+**Remediation Actions:**
+- ✅ Removed Dependabot bypass from mk2-alteration-gate.yml
+- ✅ Created audit tooling (`tools/audit-dependabot.py`) to discover ungoverned commits
+- ✅ Created restoration tooling (`tools/restore-dependabot-governance.py`) to generate retroactive intents
+- ✅ Added forensic investigation script (`tools/find-dependabot-origin.sh`)
+- ✅ Created automated Dependabot gate workflow (`.github/workflows/dependabot-gate.yml`) for future compliance
+- ✅ Full breach documentation in `docs/GOVERNANCE_BREACH_2026-02-16.md`
+- 📋 Retroactive intent files for past PRs will be added in follow-up PR
+
+**Status:** REMEDIATED - Governance integrity restored, tooling available for audit trail restoration, prevention automated.
+
+See `docs/GOVERNANCE_BREACH_2026-02-16.md` for complete details.
+
 ## 2026-01-10
 
 ### Performance Optimizations
