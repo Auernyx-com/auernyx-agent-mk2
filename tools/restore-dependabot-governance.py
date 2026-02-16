@@ -20,10 +20,24 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+import os
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INTENT_DIR = REPO_ROOT / "governance" / "alteration-program" / "intent"
+
+# Default runtime path prefixes for this repository's layout.
+# These are intentionally project-specific but can be overridden by setting
+# the DEPENDABOT_RUNTIME_PREFIXES environment variable to a comma-separated list,
+# e.g. "src/,core/,capabilities/,clients/".
+_default_runtime_prefixes: Tuple[str, ...] = ("src/", "core/", "capabilities/", "clients/")
+_env_runtime_prefixes = os.getenv("DEPENDABOT_RUNTIME_PREFIXES")
+if _env_runtime_prefixes:
+    RUNTIME_PREFIXES: Tuple[str, ...] = tuple(
+        prefix.strip() for prefix in _env_runtime_prefixes.split(",") if prefix.strip()
+    )
+else:
+    RUNTIME_PREFIXES = _default_runtime_prefixes
 
 
 def run_cmd(cmd: List[str], cwd: Optional[Path] = None, check: bool = True) -> Tuple[str, int]:
@@ -60,8 +74,42 @@ def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[
     Dependency updates are typically leaf changes (they don't modify architecture),
     but major version bumps or updates impacting runtime paths carry higher risk.
     """
-    # Check if this is a dev dependency or production dependency
-    is_dev_dep = "@types" in package or package in ["typescript", "eslint", "prettier"]
+    # Check if this is a dev dependency or production dependency.
+    # We intentionally use a heuristic based on common JS/TS tooling packages so we
+    # don't need to parse package.json but still avoid hardcoding a tiny list.
+    dev_dep_prefixes = (
+        "@types/",
+        "eslint-config-",
+        "eslint-plugin-",
+    )
+    dev_dep_names = {
+        "typescript",
+        "ts-node",
+        "ts-jest",
+        "ts-loader",
+        "eslint",
+        "prettier",
+        "jest",
+        "vitest",
+        "mocha",
+        "chai",
+        "nyc",
+        "webpack",
+        "rollup",
+        "vite",
+        "babel",
+        "babel-cli",
+        "babel-core",
+        "babel-loader",
+        "lint-staged",
+        "husky",
+        "nodemon",
+    }
+    is_dev_dep = (
+        "@types" in package
+        or package in dev_dep_names
+        or any(package.startswith(prefix) for prefix in dev_dep_prefixes)
+    )
 
     # Dependency updates are leaf changes (don't affect architecture)
     # unless they're core runtime dependencies
@@ -70,10 +118,10 @@ def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[
 
     # For production dependencies, raise risk if the change appears to touch runtime code.
     # We intentionally use a simple heuristic based on common runtime directories so we
-    # don't need to know the full project layout.
-    runtime_prefixes = ("src/", "core/", "capabilities/", "clients/")
+    # don't need to know the full project layout. The prefixes are defined at module
+    # level (RUNTIME_PREFIXES) and are specific to this repository's structure.
     touches_runtime = any(
-        any(path.startswith(prefix) for prefix in runtime_prefixes)
+        any(path.startswith(prefix) for prefix in RUNTIME_PREFIXES)
         for path in changed_files or []
     )
 
@@ -93,10 +141,6 @@ def generate_retroactive_intent(commit_sha: str, commit_info: Dict, dep_info: Di
         dep_info.get("package", ""),
         commit_info.get("changed_files", [])
     )
-    
-    # Override risk for major version bumps
-    if dep_info.get("risk") == "high":
-        risk_class = "medium"
     
     # Build scope
     scope = {
@@ -138,7 +182,7 @@ Files Changed:
         evidence_notes += f"\n... and {len(commit_info['changed_files']) - 20} more files"
     
     # Truncate if too long (max 2000 chars per schema)
-    # Check after all content is added
+    # Check length after all evidence_notes content is added
     if len(evidence_notes) > 2000:
         evidence_notes = evidence_notes[:1997] + "..."
     
@@ -168,7 +212,7 @@ Files Changed:
         "amendments": [
             {
                 "amendedAt": datetime.now(timezone.utc).isoformat(),
-                "actorId": "governance-restoration-2026-02-16",
+                "actorId": f"governance-restoration-{datetime.now(timezone.utc).date().isoformat()}",
                 "reason": "Retroactive intent creation due to governance breach. Dependabot bypass removed from alteration gate.",
                 "fieldsChanged": ["status", "createdAt", "evidence.notes"]
             }
