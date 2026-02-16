@@ -143,7 +143,8 @@ def extract_dependency_info(commit_info: Dict) -> Dict[str, str]:
     subject = commit_info.get("subject", "")
     
     # Try to parse "bump X from Y to Z" pattern
-    match = re.search(r"bump\s+(.+?)\s+from\s+(.+?)\s+to\s+(.+?)(?:\s+\(#(\d+)\))?$", subject, re.IGNORECASE)
+    # Use non-space character class for package and version to handle PR numbers correctly
+    match = re.search(r"bump\s+(.+?)\s+from\s+(\S+)\s+to\s+(\S+)(?:\s+\(#(\d+)\))?", subject, re.IGNORECASE)
     if match:
         return {
             "package": match.group(1).strip(),
@@ -153,7 +154,8 @@ def extract_dependency_info(commit_info: Dict) -> Dict[str, str]:
         }
     
     # Try to parse "update X requirement" pattern
-    match = re.search(r"update\s+(.+?)\s+requirement\s+from\s+(.+?)\s+to\s+(.+?)(?:\s+\(#(\d+)\))?$", subject, re.IGNORECASE)
+    # Use non-space character class for versions
+    match = re.search(r"update\s+(.+?)\s+requirement\s+from\s+(\S+)\s+to\s+(\S+)(?:\s+\(#(\d+)\))?", subject, re.IGNORECASE)
     if match:
         return {
             "package": match.group(1).strip(),

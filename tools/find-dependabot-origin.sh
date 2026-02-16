@@ -59,7 +59,7 @@ if [ -f .github/workflows/mk2-alteration-gate.yml ]; then
         
         # Find when this line was added
         echo "Git blame for the bypass line:"
-        git blame -L "/github.actor != 'dependabot/,+1" .github/workflows/mk2-alteration-gate.yml 2>/dev/null | sed 's/^/  /' || echo "  (Could not determine)"
+        git blame -L "/github.actor.*dependabot/,+1" .github/workflows/mk2-alteration-gate.yml 2>/dev/null | sed 's/^/  /' || echo "  (Could not determine)"
         
         echo ""
         
