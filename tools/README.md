@@ -1,24 +1,5 @@
 # Tools
 
-## Intent Generator
-
-The **Intent Generator** tool helps generate governance intent JSON files for commits that failed the alteration gate due to missing intent preparation.
-
-### Quick Usage
-
-```bash
-# Scan for missing intents
-python3 tools/intent_generator.py --scan
-
-# Generate intent for a commit
-python3 tools/intent_generator.py --commit <sha>
-
-# Dry run (print without saving)
-python3 tools/intent_generator.py --commit <sha> --dry-run
-```
-
-See dedicated documentation for more details (workflow, classification, integration).
-
 ## Icon pipeline
 
 - Primary command: `npm run assets:icon`

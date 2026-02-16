@@ -116,10 +116,6 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             if (text.includes("memory")) return "memoryCheck";
             if (text.includes("propose fixes") || text.startsWith("fix") || text.includes("suggest fix")) return "proposeFixes";
 
-            if (text.includes("intent") && (text.includes("generate") || text.includes("generator") || text.includes("prep") || text.includes("prepare"))) {
-                return "intentGenerator";
-            }
-
             if (text.includes("governance") && (text.includes("self") || text.includes("selftest") || text.includes("self-test"))) {
                 return "governanceSelfTest";
             }
