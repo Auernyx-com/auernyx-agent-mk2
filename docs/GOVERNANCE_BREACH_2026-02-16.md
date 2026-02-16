@@ -35,18 +35,18 @@ This condition caused the entire governance gate to be skipped whenever Dependab
 
 Based on git forensics (`tools/find-dependabot-origin.sh`):
 
-1. **Bypass Introduction:**
+1. **Bypass Status at Time of PR #17:**
    - Commit: `b57661cae9488d69a91da8d7cfe52e986c8c5450`
    - Author: Auernyx <214086463+Ghostwolf101@users.noreply.github.com>
    - Date: 2026-02-16 09:27:13 +0000
-   - PR: #17
+   - PR: #17 (Dependabot `@types/vscode` update)
 
 2. **Dependabot Configuration:**
-   - Added in the same commit as the bypass
+   - Present and active at the time PR #17 was opened
    - Configured for weekly npm dependency updates
    - Set to open up to 5 PRs at a time
 
-**Analysis:** The bypass was introduced in the same commit that added Dependabot configuration and the alteration gate workflow itself. This suggests the bypass was intentional at the time of implementation, possibly as a perceived convenience feature.
+**Analysis:** Commit `b57661ca` is the first confirmed Dependabot PR that merged while the alteration gate workflow contained a full Dependabot bypass. This report treats `b57661ca` as the first *observed exploitation* of the bypass, not necessarily the commit that originally introduced the workflow or the bypass condition—those introduction points are subject to separate, more granular forensic timeline reconstruction.
 
 ### Affected Pull Requests
 
