@@ -9,7 +9,7 @@
 A critical governance breach was discovered where the `mk2-alteration-gate` workflow contained an explicit bypass for Dependabot (`if: ${{ github.actor != 'dependabot[bot]' }}`), allowing automated dependency updates to merge without human-in-the-loop approval, intent files, or governance oversight.
 
 **Impact:**
-- At least 1 Dependabot PR (#17) merged without governance records
+- 1 Dependabot PR (#17) confirmed merged without governance records
 - Violated fail-closed governance model
 - Created gap in audit trail
 
