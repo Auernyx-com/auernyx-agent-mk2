@@ -1,0 +1,39 @@
+{
+  "intentId": "1771254838213-72f736a6",
+  "title": "Implement production-ready analyzeDependency capability with npm registry integration",
+  "system": "capabilities/analyzeDependency.ts",
+  "changeClass": "trunk",
+  "scope": {
+    "in": [
+      "capabilities/analyzeDependency.ts",
+      "tests/analyzeDependency.test.ts",
+      "package.json"
+    ],
+    "out": [
+      "core/policy.ts",
+      "core/server.ts",
+      "core/router.ts",
+      "config/allowlist.json"
+    ]
+  },
+  "riskClass": "medium",
+  "governanceImpact": "none",
+  "actorId": "github-copilot-agent",
+  "createdAt": "2026-02-16T15:13:58.213Z",
+  "status": "in_review",
+  "verification": {
+    "plan": [
+      "Replace stub implementation with production code",
+      "Add npm registry API integration via https module",
+      "Implement security advisory checking",
+      "Add semver classification and breaking change detection",
+      "Create comprehensive test suite using node:test",
+      "Verify TypeScript compilation",
+      "Manual CLI testing"
+    ]
+  },
+  "evidence": {
+    "required": true,
+    "receiptRefs": []
+  }
+}
