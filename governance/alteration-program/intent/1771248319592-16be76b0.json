@@ -8,7 +8,7 @@
       "Add new capability skjoldrFirewallAdviseInboundRuleSets.ts in capabilities/",
       "Register capability in core/policy.ts (CapabilityName type, CAPABILITY_META, DEFAULT_ALLOWLIST)",
       "Import and register in core/server.ts createRouter call",
-      "Add routing logic in core/router.ts for advise/advice/recommend + inbound/ib/rule keywords",
+      "Add routing logic in core/router.ts for advise/advice/recommend + inbound/ib keywords",
       "Add capability to config/allowlist.json",
       "Document capability in docs/mk2-capabilities.md with usage examples"
     ],
@@ -33,7 +33,7 @@
   "evidence": {
     "required": true,
     "receiptRefs": [],
-    "notes": "This intent adds a new read-only capability for analyzing Skjoldr firewall inbound rules and providing security recommendations. The capability follows existing patterns (analyzeDependency, proposeFixes) and is tier-0 read-only, requiring no special privileges.\n\nCapability Details:\n- Name: skjoldrFirewallAdviseInboundRuleSets\n- Type: Read-only analysis (tier 0)\n- Purpose: Analyze current inbound firewall rules and provide security recommendations\n- Inputs: Optional currentProfile string\n- Outputs: Advice array with category, severity, title, detail, recommendation fields\n- Ledger: Emits skjoldr.advise.inbound.invoked event\n\nRouting:\n- Keywords: skjoldr/firewall + advise/advice/recommend + inbound/ib/rule\n- Examples: 'skjoldr advise inbound rules', 'firewall advice on ib'\n\nThis is a LEAF-level change because it:\n- Adds a new optional capability without modifying existing ones\n- Is read-only with no governance impact\n- Follows established patterns (no architectural changes)\n- Does not modify core governance logic\n\nThe capability provides a scaffold for future AI-assisted firewall rule optimization within the governed Auernyx framework."
+    "notes": "This intent adds a new read-only capability for analyzing Skjoldr firewall inbound rules and providing security recommendations. The capability follows existing patterns (analyzeDependency, proposeFixes) and is tier-0 read-only, requiring no special privileges.\n\nCapability Details:\n- Name: skjoldrFirewallAdviseInboundRuleSets\n- Type: Read-only analysis (tier 0)\n- Purpose: Analyze current inbound firewall rules and provide security recommendations\n- Inputs: Optional currentProfile string\n- Outputs: Advice array with category, severity, title, detail, recommendation fields\n- Ledger: Emits skjoldr.advise.inbound.invoked event\n\nRouting:\n- Keywords: skjoldr/firewall + advise/advice/recommend + inbound/ib\n- Examples: 'skjoldr advise inbound rules', 'firewall advice on ib'\n\nThis is a LEAF-level change because it:\n- Adds a new optional capability without modifying existing ones\n- Is read-only with no governance impact\n- Follows established patterns (no architectural changes)\n- Does not modify core governance logic\n\nThe capability provides a scaffold for future AI-assisted firewall rule optimization within the governed Auernyx framework."
   },
   "amendments": []
 }

@@ -122,7 +122,7 @@ Routing is simple and deterministic:
   - `restore baseline` → `skjoldrFirewallRestoreBaseline`
   - `apply profile` → `skjoldrFirewallApplyProfile`
   - `apply ruleset/file` → `skjoldrFirewallApplyRulesetFile`
-  - `advise/advice/recommend` + `inbound/ib/rule` → `skjoldrFirewallAdviseInboundRuleSets`
+  - `advise/advice/recommend` + `inbound/ib` → `skjoldrFirewallAdviseInboundRuleSets`
 - Contains both `analyze` and `dependency` → `analyzeDependency`
 - Contains `docker` → `docker`
 
