@@ -27,6 +27,7 @@ export type CapabilityName =
     | "skjoldrFirewallApplyRulesetFile"
     | "skjoldrFirewallExportBaseline"
     | "skjoldrFirewallRestoreBaseline"
+    | "skjoldrFirewallAdviseInboundRuleSets"
     | "analyzeDependency";
 
 export type CapabilityTier = 0 | 1 | 2;
@@ -63,6 +64,7 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
     skjoldrFirewallApplyRulesetFile: { name: "skjoldrFirewallApplyRulesetFile", readOnly: false, tier: 2 },
     skjoldrFirewallExportBaseline: { name: "skjoldrFirewallExportBaseline", readOnly: false, tier: 2 },
     skjoldrFirewallRestoreBaseline: { name: "skjoldrFirewallRestoreBaseline", readOnly: false, tier: 2 },
+    skjoldrFirewallAdviseInboundRuleSets: { name: "skjoldrFirewallAdviseInboundRuleSets", readOnly: true, tier: 0 },
 
     analyzeDependency: { name: "analyzeDependency", readOnly: true, tier: 0 }
 };
@@ -120,6 +122,7 @@ const DEFAULT_ALLOWLIST: AllowlistConfig = {
         "skjoldrFirewallApplyRulesetFile",
         "skjoldrFirewallExportBaseline",
         "skjoldrFirewallRestoreBaseline",
+        "skjoldrFirewallAdviseInboundRuleSets",
         "analyzeDependency",
         "docker"
     ]

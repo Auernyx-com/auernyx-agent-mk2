@@ -137,6 +137,11 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
                 if (text.includes("apply") && (text.includes("ruleset") || text.includes("rule set") || text.includes("file"))) {
                     return "skjoldrFirewallApplyRulesetFile";
                 }
+                if (text.includes("advise") || text.includes("advice") || text.includes("recommend")) {
+                    if (text.includes("inbound") || text.includes("ib")) {
+                        return "skjoldrFirewallAdviseInboundRuleSets";
+                    }
+                }
             }
 
             if (text.includes("analyze") && text.includes("dependency")) return "analyzeDependency";

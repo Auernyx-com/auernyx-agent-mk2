@@ -95,6 +95,7 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
 - `skjoldrFirewallApplyRulesetFile` — apply a ruleset file (mutating)
 - `skjoldrFirewallExportBaseline` — export baseline
 - `skjoldrFirewallRestoreBaseline` — restore baseline
+- `skjoldrFirewallAdviseInboundRuleSets` — analyze inbound rules and provide recommendations (read-only)
 - `analyzeDependency` — dependency risk analysis scaffold (read-only)
   - This capability is read-only, but changes to Mk2 itself (including this capability and its configuration) are governed by the alteration program.
   - Every non-Dependabot PR must include **exactly one** intent JSON file under `governance/alteration-program/intent/` with filename `<intentId>.json` where `<intentId>` has the form `13digits-8hex` and matches the `intentId` field inside the file.
@@ -115,7 +116,13 @@ Routing is simple and deterministic:
 - Contains `governance` + `self-test` → `governanceSelfTest`
 - Contains `governance` + `unlock` → `governanceUnlock`
 - Contains `rollback` / `known good` / `kgs` → `rollbackKnownGood`
-- Contains `skjoldr` or `firewall` → routes to the matching Skjoldr capability based on `status`/`apply`/`export baseline`/`restore baseline`
+- Contains `skjoldr` or `firewall` → routes to the matching Skjoldr capability based on keywords:
+  - `status` → `skjoldrFirewallStatus`
+  - `export baseline` → `skjoldrFirewallExportBaseline`
+  - `restore baseline` → `skjoldrFirewallRestoreBaseline`
+  - `apply profile` → `skjoldrFirewallApplyProfile`
+  - `apply ruleset/file` → `skjoldrFirewallApplyRulesetFile`
+  - `advise/advice/recommend` + `inbound/ib` → `skjoldrFirewallAdviseInboundRuleSets`
 - Contains both `analyze` and `dependency` → `analyzeDependency`
 - Contains `docker` → `docker`
 
@@ -327,6 +334,7 @@ More structured CLI inputs:
   - `node dist/clients/cli/auernyx.js skjoldr restore-baseline --snapshot <FILE> --hash <SHA256>`
   - `node dist/clients/cli/auernyx.js skjoldr apply-profile <NAME>`
   - `node dist/clients/cli/auernyx.js skjoldr apply-ruleset <FILE>`
+  - `node dist/clients/cli/auernyx.js skjoldr advise inbound rules`
 
 ### Option C — VS Code extension
 

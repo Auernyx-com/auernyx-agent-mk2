@@ -27,6 +27,7 @@ import { skjoldrFirewallApplyProfile } from "../capabilities/skjoldrFirewallAppl
 import { skjoldrFirewallApplyRulesetFile } from "../capabilities/skjoldrFirewallApplyRulesetFile";
 import { skjoldrFirewallExportBaseline } from "../capabilities/skjoldrFirewallExportBaseline";
 import { skjoldrFirewallRestoreBaseline } from "../capabilities/skjoldrFirewallRestoreBaseline";
+import { skjoldrFirewallAdviseInboundRuleSets } from "../capabilities/skjoldrFirewallAdviseInboundRuleSets";
 import { analyzeDependency } from "../capabilities/analyzeDependency";
 
 import * as fs from "fs";
@@ -140,6 +141,7 @@ export function createCore(repoRoot: string): AuernyxCore {
         skjoldrFirewallApplyRulesetFile,
         skjoldrFirewallExportBaseline,
         skjoldrFirewallRestoreBaseline,
+        skjoldrFirewallAdviseInboundRuleSets,
         analyzeDependency
     });
 

@@ -1,0 +1,39 @@
+{
+  "intentId": "1771248319592-16be76b0",
+  "title": "Add skjoldrFirewallAdviseInboundRuleSets capability for firewall rule analysis",
+  "system": "auernyx-agent-mk2",
+  "changeClass": "leaf",
+  "scope": {
+    "in": [
+      "Add new capability skjoldrFirewallAdviseInboundRuleSets.ts in capabilities/",
+      "Register capability in core/policy.ts (CapabilityName type, CAPABILITY_META, DEFAULT_ALLOWLIST)",
+      "Import and register in core/server.ts createRouter call",
+      "Add routing logic in core/router.ts for advise/advice/recommend + inbound/ib keywords",
+      "Add capability to config/allowlist.json",
+      "Document capability in docs/mk2-capabilities.md with usage examples"
+    ],
+    "out": [
+      "No changes to existing Skjoldr firewall capabilities",
+      "No changes to governance core logic or policy enforcement",
+      "No changes to ledger format or receipt structure",
+      "No changes to external configuration files beyond documented additions"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "copilot-agent",
+  "createdAt": "2026-02-16T13:25:19.592000+00:00",
+  "status": "in_review",
+  "verification": {
+    "plan": "1. Verify TypeScript compilation succeeds with npm run compile. 2. Verify routing logic maps advise+inbound keywords to new capability. 3. Verify capability is registered in all required files (policy.ts, server.ts, router.ts, allowlist.json). 4. Verify documentation is complete and accurate. 5. Run CI gate to ensure exactly one intent file changed.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": true,
+    "receiptRefs": [],
+    "notes": "This intent adds a new read-only capability for analyzing Skjoldr firewall inbound rules and providing security recommendations. The capability follows existing patterns (analyzeDependency, proposeFixes) and is tier-0 read-only, requiring no special privileges.\n\nCapability Details:\n- Name: skjoldrFirewallAdviseInboundRuleSets\n- Type: Read-only analysis (tier 0)\n- Purpose: Analyze current inbound firewall rules and provide security recommendations\n- Inputs: Optional currentProfile string\n- Outputs: Advice array with category, severity, title, detail, recommendation fields\n- Ledger: Emits skjoldr.advise.inbound.invoked event\n\nRouting:\n- Keywords: skjoldr/firewall + advise/advice/recommend + inbound/ib\n- Examples: 'skjoldr advise inbound rules', 'firewall advice on ib'\n\nThis is a LEAF-level change because it:\n- Adds a new optional capability without modifying existing ones\n- Is read-only with no governance impact\n- Follows established patterns (no architectural changes)\n- Does not modify core governance logic\n\nThe capability provides a scaffold for future AI-assisted firewall rule optimization within the governed Auernyx framework."
+  },
+  "amendments": []
+}
