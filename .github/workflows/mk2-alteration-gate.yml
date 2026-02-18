@@ -24,5 +24,3 @@ jobs:
       - name: Run alteration gate (fail-closed)
         run: |
           python3 tools/ci_gate.py
-     
-      - intent run:  
