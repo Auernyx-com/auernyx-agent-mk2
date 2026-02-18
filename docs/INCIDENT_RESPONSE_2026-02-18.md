@@ -17,7 +17,7 @@
 
 **Reporter:** Ghostwolf101 (User ID: 214086463)  
 **Report Date:** February 18, 2026  
-**Contact:** jhughes@auernyx.com
+**Contact:** Incident Response Desk (see internal ticket IR-2026-02-18)
 
 **Claimed Incident:**
 - Repository compromised on February 16, 2026
