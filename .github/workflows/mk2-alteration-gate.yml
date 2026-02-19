@@ -17,10 +17,9 @@ jobs:
           fetch-depth: 0
 
       - name: Fetch base
-        run: |
-          echo "MK2_BASE_REF=origin/${{ github.base_ref }}" >> $GITHUB_ENV
-          git fetch origin ${{ github.base_ref }} --depth=1
+        run: git fetch origin ${{ github.base_ref }} --depth=1
 
       - name: Run alteration gate (fail-closed)
-        run: |
-          python3 tools/ci_gate.py
+        env:
+          MK2_BASE_REF: origin/${{ github.base_ref }}
+        run: python3 tools/ci_gate.py

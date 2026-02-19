@@ -165,20 +165,37 @@ def main():
 
     # if closed intent existed at base, modifications require a new amendment entry
     if allow_closed_intent_check:
-        try:
-            base_blob = run(["git", "-C", str(GIT_ROOT), "show", f"{base_ref}:{intent_path}"])
-            base_intent = json.loads(base_blob)
+        p = subprocess.run(
+            ["git", "-C", str(GIT_ROOT), "show", f"{base_ref}:{intent_path}"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        if p.returncode != 0:
+            stderr_lower = p.stderr.lower()
+            if "does not exist" in stderr_lower or "exists on disk" in stderr_lower:
+                # New intent file — not present at base, allowed to proceed
+                pass
+            else:
+                fail(
+                    f"Could not retrieve base intent at '{base_ref}:{intent_path}' "
+                    f"(git exit {p.returncode}: {p.stderr.strip()}). "
+                    "Verify that MK2_BASE_REF is correct and the intent file path is valid."
+                )
+        else:
+            try:
+                base_intent = json.loads(p.stdout)
+            except json.JSONDecodeError as e:
+                fail(
+                    f"Failed to parse base intent JSON at '{base_ref}:{intent_path}': {e}. "
+                    "The intent file at the base ref must be valid JSON."
+                )
             if base_intent.get("status") == "closed":
                 base_am = base_intent.get("amendments", []) or []
                 new_am = intent.get("amendments", []) or []
                 if len(new_am) <= len(base_am):
-                    raise SystemExit("Fail-closed: modifying a closed intent requires adding an amendments[] entry.")
-        except (KeyboardInterrupt, SystemExit):
-            # Propagate interrupts and explicit exits
-            raise
-        except Exception:
-            # Best-effort: if base intent cannot be loaded or parsed, fall back to allowing change
-            pass
+                    fail(
+                        "Modifying a closed intent requires adding a new amendments[] entry. "
+                        "Add an entry to the amendments[] array in the intent file documenting this change."
+                    )
 
     print("Mk2 Alteration Gate: PASS")
 
