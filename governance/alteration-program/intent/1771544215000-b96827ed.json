@@ -1,0 +1,38 @@
+{
+  "intentId": "1771544215000-b96827ed",
+  "title": "Fix CI intent gate: fail-closed on JSON/git errors, explicit MK2_BASE_REF, PR template checklist",
+  "system": "tools/ci_gate.py",
+  "changeClass": "trunk",
+  "scope": {
+    "in": [
+      "tools/ci_gate.py",
+      ".github/workflows/mk2-alteration-gate.yml",
+      ".github/pull_request_template.md"
+    ],
+    "out": [
+      "capabilities/",
+      "core/",
+      "config/",
+      "clients/",
+      "tests/",
+      "governance/alteration-program/schema/"
+    ]
+  },
+  "riskClass": "medium",
+  "governanceImpact": true,
+  "actorId": "copilot-agent",
+  "createdAt": "2026-02-19T23:36:55.000Z",
+  "status": "in_review",
+  "verification": {
+    "plan": "1. Replace broad except Exception: pass in closed-intent amendment check with explicit subprocess.run() returncode inspection. 2. Allow only missing-path git errors (new intent files) to proceed; fail-closed on all other git/JSON failures. 3. Move MK2_BASE_REF to explicit env: key on gate step for clarity. 4. Add Governance Checklist to PR template with three checkboxes. 5. Verify gate passes locally with python3 tools/ci_gate.py. 6. Run CodeQL scan (0 alerts expected).",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": true,
+    "receiptRefs": [],
+    "notes": "Fixes silent fail-open bug in tools/ci_gate.py lines 166-181 where a bare except Exception: pass swallowed JSON parse errors and unexpected git failures, bypassing the closed-intent amendment requirement. Now uses subprocess.run() directly with explicit returncode check: missing-path errors (new intent files) are allowed; all other failures exit with actionable messages. Also moves MK2_BASE_REF assignment from $GITHUB_ENV indirection to explicit env: on the gate step, and adds a Governance Checklist section with three fail-closed checkboxes to the PR template."
+  },
+  "amendments": []
+}
