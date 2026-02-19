@@ -7,28 +7,9 @@ function createMockRouterContext(): RouterContext {
   // Provide a minimal but realistic mock implementation of RouterContext.
   // Adjust properties here as RouterContext evolves to keep tests representative.
   return {
-    // Common router context fields; unused ones will simply be ignored.
-    params: {},
-    query: {},
-    state: {},
-    request: {
-      method: "GET",
-      url: "https://example.com",
-      headers: new Headers(),
-      body: null
-    },
-    response: {
-      status: 200,
-      headers: new Headers(),
-      body: undefined
-    },
-    log: {
-      debug: () => {},
-      info: () => {},
-      warn: () => {},
-      error: () => {}
-    }
-  } as unknown as RouterContext;
+    repoRoot: "/mock/repo/root",
+    sessionId: "mock-session-id"
+  } as RouterContext;
 }
 
 const mockContext = createMockRouterContext();
