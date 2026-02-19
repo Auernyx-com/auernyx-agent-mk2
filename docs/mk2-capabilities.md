@@ -105,8 +105,9 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
 - `analyzeDependency` — dependency risk analysis scaffold (read-only)
 
 
-
 ---
+
+
 
 ## Intent Routing (What Text Triggers What)
 

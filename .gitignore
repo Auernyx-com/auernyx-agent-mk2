@@ -10,3 +10,5 @@ var/canon/
 !.vscode/tasks.json
 .auernyx/
 docs/SEARCH.md
+__pycache__/
+*.pyc

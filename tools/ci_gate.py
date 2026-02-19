@@ -173,7 +173,11 @@ def main():
                 new_am = intent.get("amendments", []) or []
                 if len(new_am) <= len(base_am):
                     raise SystemExit("Fail-closed: modifying a closed intent requires adding an amendments[] entry.")
-        except BaseException:
+        except (KeyboardInterrupt, SystemExit):
+            # Propagate interrupts and explicit exits
+            raise
+        except Exception:
+            # Best-effort: if base intent cannot be loaded or parsed, fall back to allowing change
             pass
 
     print("Mk2 Alteration Gate: PASS")
