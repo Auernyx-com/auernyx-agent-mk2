@@ -1,0 +1,37 @@
+{
+  "intentId": "1771550850201-d4e9f7c1",
+  "title": "Fix mk2-alteration-gate: remove shallow fetch depth=1 causing no-merge-base failure",
+  "system": ".github/workflows/mk2-alteration-gate.yml",
+  "changeClass": "trunk",
+  "scope": {
+    "in": [
+      ".github/workflows/mk2-alteration-gate.yml"
+    ],
+    "out": [
+      "capabilities/",
+      "core/",
+      "config/",
+      "clients/",
+      "tests/",
+      "tools/ci_gate.py",
+      "governance/alteration-program/schema/"
+    ]
+  },
+  "riskClass": "medium",
+  "governanceImpact": true,
+  "actorId": "copilot-agent",
+  "createdAt": "2026-02-20T01:24:49.918Z",
+  "status": "in_review",
+  "verification": {
+    "plan": "1. Remove --depth=1 from 'git fetch origin main' in the Fetch base step; the prior actions/checkout with fetch-depth: 0 already provides full history and the shallow re-fetch overwrites it, preventing merge-base computation. 2. Switch MK2_BASE_REF from origin/<branch-name> to github.event.pull_request.base.sha for a stable, immutable reference. 3. Emit debug logging (base ref/SHA, git rev-parse, git merge-base) before running the gate so future failures are easier to diagnose. 4. The merge-base command acts as a fail-closed guard: if no merge base is computable the step exits non-zero and the job fails. 5. Validate workflow YAML syntax. 6. Confirm the alteration gate self-check passes with the new workflow.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": true,
+    "receiptRefs": [],
+    "notes": "Root cause: actions/checkout fetches all branches with full history (fetch-depth: 0), but the subsequent 'git fetch origin main --depth=1' converts origin/main to a shallow commit, stripping its parent history. The three-dot diff 'origin/main...HEAD' requires git to walk back to find a common ancestor; with a shallow origin/main that walk terminates immediately at the shallow boundary, producing 'fatal: origin/main...HEAD: no merge base'. Fix: remove --depth=1 so the full-history fetch from checkout is preserved. Using the PR base SHA (github.event.pull_request.base.sha) instead of the branch name makes the diff stable even if the branch advances between checkout and gate execution."
+  },
+  "amendments": []
+}

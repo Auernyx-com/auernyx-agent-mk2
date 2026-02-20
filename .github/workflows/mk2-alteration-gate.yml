@@ -17,9 +17,13 @@ jobs:
           fetch-depth: 0
 
       - name: Fetch base
-        run: git fetch origin ${{ github.base_ref }} --depth=1
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          echo "Base ref: ${{ github.base_ref }}, SHA: ${BASE_SHA}"
+          git fetch origin ${{ github.base_ref }}
+          git rev-parse "${BASE_SHA}"
+          git merge-base "${BASE_SHA}" HEAD
+          echo "MK2_BASE_REF=${BASE_SHA}" >> $GITHUB_ENV
 
       - name: Run alteration gate (fail-closed)
-        env:
-          MK2_BASE_REF: origin/${{ github.base_ref }}
         run: python3 tools/ci_gate.py
