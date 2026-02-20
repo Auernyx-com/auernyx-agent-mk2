@@ -43,18 +43,22 @@ try {
 
   Write-Host "[WEEKLY_AUDIT] Step 1/4: Governance CI gate"
   python3 tools/ci_gate.py
+  if ($LASTEXITCODE -ne 0) { Fail "python3 tools/ci_gate.py failed with exit code $LASTEXITCODE" $LASTEXITCODE }
   Write-Host ""
 
   Write-Host "[WEEKLY_AUDIT] Step 2/4: npm verify"
   npm run verify
+  if ($LASTEXITCODE -ne 0) { Fail "npm run verify failed with exit code $LASTEXITCODE" $LASTEXITCODE }
   Write-Host ""
 
   Write-Host "[WEEKLY_AUDIT] Step 3/4: Mnēma cross-check (memory) [no-daemon]"
   node dist/clients/cli/auernyx.js memory --reason "weekly audit" --no-daemon
+  if ($LASTEXITCODE -ne 0) { Fail "auernyx memory check failed with exit code $LASTEXITCODE" $LASTEXITCODE }
   Write-Host ""
 
   Write-Host "[WEEKLY_AUDIT] Step 4/4: Git changes (last 7 days)"
   git log --since="7 days ago" --name-status
+  if ($LASTEXITCODE -ne 0) { Fail "git log failed with exit code $LASTEXITCODE" $LASTEXITCODE }
   Write-Host ""
 
   Write-Host "============================================================"

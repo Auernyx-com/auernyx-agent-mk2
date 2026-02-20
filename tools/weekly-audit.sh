@@ -24,10 +24,33 @@ if [ ! -f dist/clients/cli/auernyx.js ]; then
 fi
 
 # Existing steps
-python3 ci_gate.py | tee -a $LOG_FILE
-npm run verify | tee -a $LOG_FILE
-node dist/clients/cli/auernyx.js memory --reason "weekly audit" --no-daemon | tee -a $LOG_FILE
-git log --since "7 days ago" --name-status | tee -a $LOG_FILE
+python3 tools/ci_gate.py 2>&1 | tee -a "$LOG_FILE"
+status=${PIPESTATUS[0]}
+if [ "$status" -ne 0 ]; then
+    echo "[WEEKLY_AUDIT] Error: python3 tools/ci_gate.py failed with exit code $status" | tee -a "$LOG_FILE"
+    exit "$status"
+fi
+
+npm run verify 2>&1 | tee -a "$LOG_FILE"
+status=${PIPESTATUS[0]}
+if [ "$status" -ne 0 ]; then
+    echo "[WEEKLY_AUDIT] Error: npm run verify failed with exit code $status" | tee -a "$LOG_FILE"
+    exit "$status"
+fi
+
+node dist/clients/cli/auernyx.js memory --reason "weekly audit" --no-daemon 2>&1 | tee -a "$LOG_FILE"
+status=${PIPESTATUS[0]}
+if [ "$status" -ne 0 ]; then
+    echo "[WEEKLY_AUDIT] Error: auernyx memory check failed with exit code $status" | tee -a "$LOG_FILE"
+    exit "$status"
+fi
+
+git log --since "7 days ago" --name-status 2>&1 | tee -a "$LOG_FILE"
+status=${PIPESTATUS[0]}
+if [ "$status" -ne 0 ]; then
+    echo "[WEEKLY_AUDIT] Error: git log failed with exit code $status" | tee -a "$LOG_FILE"
+    exit "$status"
+fi
 
 # Print PASS footer
-echo "PASS" | tee -a $LOG_FILE
+echo "PASS" | tee -a "$LOG_FILE"
