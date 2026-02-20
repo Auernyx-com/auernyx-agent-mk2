@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-02-20",
+  "reason": "Authorize fix to weekly audit scripts: correct ci_gate.py path reference and add fail-closed exit code propagation in both bash (PIPESTATUS) and PowerShell ($LASTEXITCODE) implementations.",
+  "pullRequest": 59
+}

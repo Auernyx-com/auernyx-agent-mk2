@@ -1,0 +1,38 @@
+{
+  "intentId": "1771572784061-46e543a3",
+  "title": "Fix weekly audit scripts: fail-closed exit code propagation and correct ci_gate path",
+  "system": "tools/weekly-audit.sh",
+  "changeClass": "leaf",
+  "scope": {
+    "in": [
+      "tools/weekly-audit.sh",
+      "tools/weekly-audit.ps1",
+      "weekly-audit.ps1"
+    ],
+    "out": [
+      "core/",
+      "capabilities/",
+      "config/",
+      "governance/alteration-program/schema/",
+      "tests/",
+      ".github/workflows/"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "github-copilot-agent",
+  "createdAt": "2026-02-20T07:33:04.061Z",
+  "status": "in_review",
+  "verification": {
+    "plan": "1. Fix incorrect ci_gate.py path in tools/weekly-audit.sh (ci_gate.py -> tools/ci_gate.py). 2. Add PIPESTATUS-based exit code propagation in bash script so tee pipeline failures are not masked. 3. Add $LASTEXITCODE checks in PowerShell script after each external command. 4. Ensure PASS banner is only emitted when all steps succeed. 5. Validate changes with local ci_gate.py run.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": false,
+    "receiptRefs": [],
+    "notes": "Bug fixes to weekly audit scripts: corrected ci_gate.py path reference and added proper exit code propagation to enforce fail-closed behavior in both bash and PowerShell implementations."
+  },
+  "amendments": []
+}

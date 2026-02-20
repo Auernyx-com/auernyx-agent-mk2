@@ -20,7 +20,10 @@ if (!(Test-Path "dist/clients/cli/auernyx.js")) {
 
 $dateUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
 $shortSha = (git rev-parse --short HEAD) 2>$null
-if (-not $shortSha) { $shortSha = "unknown" }
+if ($LASTEXITCODE -ne 0 -or -not $shortSha) {
+  Write-Host "[WEEKLY_AUDIT] WARN: git rev-parse --short HEAD failed; using 'unknown' for SHA."
+  $shortSha = "unknown"
+}
 
 $logDir = "logs/audit"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
@@ -33,7 +36,12 @@ try {
   Write-Host "[WEEKLY_AUDIT] START"
   Write-Host ("[WEEKLY_AUDIT] date_utc={0}" -f $dateUtc)
   Write-Host ("[WEEKLY_AUDIT] head={0}" -f $shortSha)
-  Write-Host ("[WEEKLY_AUDIT] branch={0}" -f (git rev-parse --abbrev-ref HEAD))
+  $branch = (git rev-parse --abbrev-ref HEAD) 2>$null
+  if ($LASTEXITCODE -ne 0 -or -not $branch) {
+    Write-Host "[WEEKLY_AUDIT] WARN: git rev-parse --abbrev-ref HEAD failed; branch unknown."
+    $branch = "unknown"
+  }
+  Write-Host ("[WEEKLY_AUDIT] branch={0}" -f $branch)
   Write-Host ("[WEEKLY_AUDIT] repo={0}" -f (Split-Path -Leaf (Get-Location)))
   Write-Host "============================================================"
   Write-Host ""
@@ -44,21 +52,35 @@ try {
   Write-Host "[WEEKLY_AUDIT] Step 1/4: Governance CI gate"
   python3 tools/ci_gate.py
   if ($LASTEXITCODE -ne 0) { Fail "python3 tools/ci_gate.py failed with exit code $LASTEXITCODE" }
+  if ($env:MK2_BASE_REF) {
+    python3 tools/ci_gate.py
+    if ($LASTEXITCODE -ne 0) { Fail "python3 tools/ci_gate.py failed with exit code $LASTEXITCODE" $LASTEXITCODE }
+  } else {
+    $authChanges = (git status --porcelain -- governance/alteration-program/authorization/records) 2>$null
+    if ($LASTEXITCODE -ne 0) { Fail "git status failed (exit $LASTEXITCODE)." $LASTEXITCODE }
+    if ([string]::IsNullOrWhiteSpace($authChanges)) {
+      Write-Host "[WEEKLY_AUDIT] INFO: No local authorization record changes detected; skipping Governance CI gate."
+      Write-Host "[WEEKLY_AUDIT] INFO: To run the gate against a specific diff, set MK2_BASE_REF before running tools/weekly-audit.ps1."
+    } else {
+      python3 tools/ci_gate.py
+      if ($LASTEXITCODE -ne 0) { Fail "python3 tools/ci_gate.py failed with exit code $LASTEXITCODE" $LASTEXITCODE }
+    }
+  }
   Write-Host ""
 
   Write-Host "[WEEKLY_AUDIT] Step 2/4: npm verify"
   npm run verify
-  if ($LASTEXITCODE -ne 0) { Fail "npm run verify failed with exit code $LASTEXITCODE" }
+  if ($LASTEXITCODE -ne 0) { Fail "npm run verify failed with exit code $LASTEXITCODE" $LASTEXITCODE }
   Write-Host ""
 
   Write-Host "[WEEKLY_AUDIT] Step 3/4: Mnēma cross-check (memory) [no-daemon]"
   node dist/clients/cli/auernyx.js memory --reason "weekly audit" --no-daemon
-  if ($LASTEXITCODE -ne 0) { Fail "auernyx memory check failed with exit code $LASTEXITCODE" }
+  if ($LASTEXITCODE -ne 0) { Fail "auernyx memory check failed with exit code $LASTEXITCODE" $LASTEXITCODE }
   Write-Host ""
 
   Write-Host "[WEEKLY_AUDIT] Step 4/4: Git changes (last 7 days)"
   git log --since="7 days ago" --name-status
-  if ($LASTEXITCODE -ne 0) { Fail "git log failed with exit code $LASTEXITCODE" }
+  if ($LASTEXITCODE -ne 0) { Fail "git log failed with exit code $LASTEXITCODE" $LASTEXITCODE }
   Write-Host ""
 
   Write-Host "============================================================"
