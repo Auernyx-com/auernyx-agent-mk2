@@ -15,11 +15,11 @@ LOG_FILE="logs/audit/weekly-audit_${CURRENT_DATE}_${CURRENT_SHA}.txt"
 # Ensure log directory exists
 mkdir -p logs/audit
 # Print START header
-echo "START of Weekly Audit" | tee -a $LOG_FILE
+echo "START of Weekly Audit" | tee -a "$LOG_FILE"
 
 # Fail-closed if auernyx.js is missing
 if [ ! -f dist/clients/cli/auernyx.js ]; then
-    echo "Error: dist/clients/cli/auernyx.js is missing. Failing..." | tee -a $LOG_FILE
+    echo "Error: dist/clients/cli/auernyx.js is missing. Failing..." | tee -a "$LOG_FILE"
     exit 1
 fi
 
