@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-02-20",
+  "reason": "Replace intent-file gate with authorization-record gate to unblock PR workflows that don't require intent file changes.",
+  "pullRequest": 59
+}
