@@ -88,6 +88,10 @@ def validate_auth_record(record_path: str) -> None:
     if not isinstance(record.get("reason"), str) or not record["reason"].strip():
         fail(f"reason must be a non-empty string in {record_path}")
 
+    approvals = record.get("approvals", [])
+    if not isinstance(approvals, list) or "jason" not in approvals:
+        fail(f"authorization record must include approval by 'jason' in approvals list in {record_path}")
+
     if not ALLOWLIST_PATH.exists():
         fail(f"allowlist not found at {ALLOWLIST_PATH}")
     try:
@@ -168,6 +172,10 @@ def main():
         append_only_base = None
 
     assert_append_only_trace_files(files, append_only_base)
+
+    if not files:
+        print("Mk2 Alteration Gate: PASS (empty diff, no changes to validate)")
+        return
 
     auth_records = get_changed_auth_records(files)
     if len(auth_records) != 1:
