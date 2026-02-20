@@ -1,0 +1,35 @@
+{
+  "intentId": "1771574450169-d995244a",
+  "title": "Fix CLI argument parsing: guard positional args against flag values in buildStructuredInput",
+  "system": "clients/cli/auernyx.ts",
+  "changeClass": "leaf",
+  "scope": {
+    "in": [
+      "clients/cli/auernyx.ts"
+    ],
+    "out": [
+      "core/",
+      "capabilities/",
+      "config/",
+      ".github/",
+      "governance/alteration-program/schema/"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "copilot-agent",
+  "createdAt": "2026-02-20T07:54:59.172Z",
+  "status": "in_review",
+  "verification": {
+    "plan": "1. In buildStructuredInput, fix rollback action extraction: use !argv[1].startsWith('--') guard so flags are never misread as the subcommand name (defaults correctly to 'list'). 2. Fix rollback restore KGS_ID parsing: use !argv[2].startsWith('--') guard so flags cannot be silently used as the KGS_ID. 3. Fix propose apply SUGGESTION_ID parsing: same guard. 4. Fix skjoldr apply-profile NAME parsing: same guard. 5. Fix skjoldr apply-ruleset FILE parsing: same guard. This matches the existing guard pattern already used for the scan command's target argument. 6. Run npm run typecheck to verify no type errors. 7. Confirm npm run verify passes.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": false,
+    "receiptRefs": [],
+    "notes": "The scan command (argv[1]) already uses !argv[N].startsWith('--') to avoid misreading flags as positional arguments. The rollback restore, propose apply, skjoldr apply-profile, and skjoldr apply-ruleset commands read argv[2] without this guard, so running e.g. 'auernyx rollback restore --reason test' silently sets kgsId to '--reason' instead of emitting a missing-argument error. This fix applies the same guard pattern consistently across all positional argument reads in buildStructuredInput."
+  },
+  "amendments": []
+}

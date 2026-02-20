@@ -153,14 +153,14 @@ function buildStructuredInput(argv: string[]): { daemonInput: unknown; daemonInt
     }
 
     if (primary === "rollback") {
-        const action = (argv[1] ?? "list").toLowerCase();
+        const action = (typeof argv[1] === "string" && !argv[1].startsWith("--") ? argv[1] : "list").toLowerCase();
         if (action === "list") {
             const limit = parseIntFlag(argv, "--limit");
             daemonInput = { action: "list", ...(typeof limit === "number" ? { limit } : {}) };
             return { daemonInput, daemonIntent, controlled };
         }
         if (action === "restore") {
-            const kgsId = String(argv[2] ?? "").trim();
+            const kgsId = typeof argv[2] === "string" && !argv[2].startsWith("--") ? argv[2].trim() : "";
             if (!kgsId) {
                 // eslint-disable-next-line no-console
                 console.error("Missing KGS_ID for rollback restore");
@@ -178,7 +178,7 @@ function buildStructuredInput(argv: string[]): { daemonInput: unknown; daemonInt
         const limit = parseIntFlag(argv, "--limit");
 
         if (sub === "apply") {
-            const suggestionId = String(argv[2] ?? "").trim();
+            const suggestionId = typeof argv[2] === "string" && !argv[2].startsWith("--") ? argv[2].trim() : "";
             if (!suggestionId) {
                 // eslint-disable-next-line no-console
                 console.error("Missing SUGGESTION_ID for propose apply");
@@ -220,7 +220,7 @@ function buildStructuredInput(argv: string[]): { daemonInput: unknown; daemonInt
         }
 
         if (sub === "apply-profile") {
-            const profile = String(argv[2] ?? "").trim();
+            const profile = typeof argv[2] === "string" && !argv[2].startsWith("--") ? argv[2].trim() : "";
             if (!profile) {
                 // eslint-disable-next-line no-console
                 console.error("Missing profile name for skjoldr apply-profile");
@@ -233,7 +233,7 @@ function buildStructuredInput(argv: string[]): { daemonInput: unknown; daemonInt
         }
 
         if (sub === "apply-ruleset") {
-            const rulesetPath = String(argv[2] ?? "").trim();
+            const rulesetPath = typeof argv[2] === "string" && !argv[2].startsWith("--") ? argv[2].trim() : "";
             if (!rulesetPath) {
                 // eslint-disable-next-line no-console
                 console.error("Missing ruleset file path for skjoldr apply-ruleset");
