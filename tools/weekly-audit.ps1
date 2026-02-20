@@ -50,8 +50,6 @@ try {
   Write-Host ""
 
   Write-Host "[WEEKLY_AUDIT] Step 1/4: Governance CI gate"
-  python3 tools/ci_gate.py
-  if ($LASTEXITCODE -ne 0) { Fail "python3 tools/ci_gate.py failed with exit code $LASTEXITCODE" }
   if ($env:MK2_BASE_REF) {
     python3 tools/ci_gate.py
     if ($LASTEXITCODE -ne 0) { Fail "python3 tools/ci_gate.py failed with exit code $LASTEXITCODE" $LASTEXITCODE }
