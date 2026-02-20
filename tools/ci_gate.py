@@ -28,6 +28,7 @@ AUTH_RECORD_DIR = f"{PREFIX}governance/alteration-program/authorization/records"
 ALLOWLIST_PATH = REPO_ROOT / "governance/alteration-program/authorization/allowlist.json"
 
 GITHUB_LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
+REQUIRED_APPROVER = "jason"
 
 def fail(msg: str) -> None:
     raise SystemExit(f"Fail-closed: {msg}")
@@ -99,6 +100,9 @@ def validate_auth_record(record_path: str) -> None:
     if authorized_by not in allowed_logins:
         fail(f"authorizedBy '{authorized_by}' is not in the allowlist ({ALLOWLIST_PATH}). authorizedLogins: {allowed_logins}")
 
+    if authorized_by != REQUIRED_APPROVER:
+        fail(f"authorizedBy must be '{REQUIRED_APPROVER}' (got {authorized_by!r}) in {record_path}")
+
 def assert_updates_inbox_clean() -> None:
     inbox = REPO_ROOT / "updates" / "incoming"
     if not inbox.exists():
@@ -166,6 +170,10 @@ def main():
     else:
         files, source = get_working_files()
         append_only_base = None
+
+    if not files:
+        print("Mk2 Alteration Gate: PASS (no-op diff)")
+        return
 
     assert_append_only_trace_files(files, append_only_base)
 
