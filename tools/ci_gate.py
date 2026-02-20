@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json, os, re, subprocess
+from datetime import date
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -23,8 +24,10 @@ def repo_prefix(groot: Path) -> str:
 GIT_ROOT = git_root()
 PREFIX = repo_prefix(GIT_ROOT)
 
-INTENT_DIR = f"{PREFIX}governance/alteration-program/intent"
-SCHEMA_PATH = f"{PREFIX}governance/alteration-program/schema/intent.schema.json"
+AUTH_RECORD_DIR = f"{PREFIX}governance/alteration-program/authorization/records"
+ALLOWLIST_PATH = REPO_ROOT / "governance/alteration-program/authorization/allowlist.json"
+
+GITHUB_LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 
 def fail(msg: str) -> None:
     raise SystemExit(f"Fail-closed: {msg}")
@@ -53,25 +56,48 @@ def get_working_files():
     wt_files = [f.strip() for f in wt.splitlines() if f.strip()]
     return wt_files, "working"
 
-def get_changed_intents(files):
-    return [f for f in files if f.startswith(INTENT_DIR + "/") and f.endswith(".json")]
+def get_changed_auth_records(files):
+    prefix = AUTH_RECORD_DIR + "/"
+    return [f for f in files if f.startswith(prefix) and f.endswith(".json")]
 
-def invariant_checks(intent):
-    if not re.match(r"^[0-9]{13}-[a-f0-9]{8}$", intent.get("intentId","")):
-        raise SystemExit("Fail-closed: intentId must match 13digits-8hex.")
-    if intent.get("changeClass") not in {"root","trunk","branch","leaf"}:
-        raise SystemExit("Fail-closed: invalid changeClass.")
-    if intent.get("riskClass") not in {"low","medium","high"}:
-        raise SystemExit("Fail-closed: invalid riskClass.")
-    if intent.get("status") not in {"draft","in_review","approved","closed","deferred"}:
-        raise SystemExit("Fail-closed: invalid status.")
-    scope = intent.get("scope", {})
-    if not isinstance(scope.get("in"), list) or len(scope["in"]) < 1:
-        raise SystemExit("Fail-closed: scope.in must be non-empty.")
-    if not isinstance(scope.get("out"), list):
-        raise SystemExit("Fail-closed: scope.out must be a list.")
-    if intent.get("governanceImpact") is True and intent.get("evidence", {}).get("required") is not True:
-        raise SystemExit("Fail-closed: governanceImpact=true requires evidence.required=true.")
+def validate_auth_record(record_path: str) -> None:
+    full_path = GIT_ROOT / record_path
+    try:
+        record = load_json(full_path)
+    except Exception as e:
+        fail(f"could not parse authorization record {record_path}: {e}")
+
+    for field in ("authorizedBy", "authorizedAt", "reason"):
+        if field not in record:
+            fail(f"authorization record missing required field '{field}' in {record_path}")
+
+    authorized_by = record["authorizedBy"]
+    if not isinstance(authorized_by, str) or not GITHUB_LOGIN_RE.match(authorized_by):
+        fail(f"authorizedBy must be a valid GitHub login (got {authorized_by!r}) in {record_path}")
+
+    authorized_at = record["authorizedAt"]
+    if not isinstance(authorized_at, str):
+        fail(f"authorizedAt must be an ISO date string YYYY-MM-DD (got {authorized_at!r}) in {record_path}")
+    try:
+        parsed_date = date.fromisoformat(authorized_at)
+    except ValueError:
+        fail(f"authorizedAt must be a valid ISO date string YYYY-MM-DD (got {authorized_at!r}) in {record_path}")
+    if parsed_date > date.today():
+        fail(f"authorizedAt must not be a future date (got {authorized_at!r}) in {record_path}")
+
+    if not isinstance(record.get("reason"), str) or not record["reason"].strip():
+        fail(f"reason must be a non-empty string in {record_path}")
+
+    if not ALLOWLIST_PATH.exists():
+        fail(f"allowlist not found at {ALLOWLIST_PATH}")
+    try:
+        allowlist = load_json(ALLOWLIST_PATH)
+    except Exception as e:
+        fail(f"could not parse allowlist {ALLOWLIST_PATH}: {e}")
+
+    allowed_logins = allowlist.get("authorizedLogins", [])
+    if authorized_by not in allowed_logins:
+        fail(f"authorizedBy '{authorized_by}' is not in the allowlist ({ALLOWLIST_PATH}). authorizedLogins: {allowed_logins}")
 
 def assert_updates_inbox_clean() -> None:
     inbox = REPO_ROOT / "updates" / "incoming"
@@ -136,66 +162,22 @@ def main():
     if base_ref:
         files = get_changed_files(base_ref)
         source = f"commit-diff:{base_ref}...HEAD"
-        allow_closed_intent_check = True
         append_only_base = base_ref
     else:
         files, source = get_working_files()
-        allow_closed_intent_check = False
         append_only_base = None
 
     assert_append_only_trace_files(files, append_only_base)
 
-    intents = get_changed_intents(files)
-    if len(intents) != 1:
-        raise SystemExit(f"Fail-closed: must change/add exactly ONE intent under {INTENT_DIR} (from {source}). Found: {intents}")
-
-    intent_path = intents[0]
-    intent = load_json(GIT_ROOT / intent_path)
-
-    schema = load_json(GIT_ROOT / SCHEMA_PATH)
-    for k in schema.get("required", []):
-        if k not in intent:
-            raise SystemExit(f"Fail-closed: intent missing required field: {k}")
-
-    invariant_checks(intent)
-
-    expected = os.path.join(INTENT_DIR, f"{intent['intentId']}.json").replace("\\","/")
-    if intent_path.replace("\\","/") != expected:
-        raise SystemExit(f"Fail-closed: filename must match intentId. Expected {expected}, got {intent_path}")
-
-    # if closed intent existed at base, modifications require a new amendment entry
-    if allow_closed_intent_check:
-        p = subprocess.run(
-            ["git", "-C", str(GIT_ROOT), "show", f"{base_ref}:{intent_path}"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    auth_records = get_changed_auth_records(files)
+    if len(auth_records) != 1:
+        raise SystemExit(
+            f"Fail-closed: must change/add exactly ONE authorization record under "
+            f"{AUTH_RECORD_DIR}/ (from {source}). "
+            f"Found: {auth_records}"
         )
-        if p.returncode != 0:
-            stderr_lower = p.stderr.lower()
-            if "does not exist" in stderr_lower or "exists on disk" in stderr_lower:
-                # New intent file — not present at base, allowed to proceed
-                pass
-            else:
-                fail(
-                    f"Could not retrieve base intent at '{base_ref}:{intent_path}' "
-                    f"(git exit {p.returncode}: {p.stderr.strip()}). "
-                    "Verify that MK2_BASE_REF is correct and the intent file path is valid."
-                )
-        else:
-            try:
-                base_intent = json.loads(p.stdout)
-            except json.JSONDecodeError as e:
-                fail(
-                    f"Failed to parse base intent JSON at '{base_ref}:{intent_path}': {e}. "
-                    "The intent file at the base ref must be valid JSON."
-                )
-            if base_intent.get("status") == "closed":
-                base_am = base_intent.get("amendments", []) or []
-                new_am = intent.get("amendments", []) or []
-                if len(new_am) <= len(base_am):
-                    fail(
-                        "Modifying a closed intent requires adding a new amendments[] entry. "
-                        "Add an entry to the amendments[] array in the intent file documenting this change."
-                    )
+
+    validate_auth_record(auth_records[0])
 
     print("Mk2 Alteration Gate: PASS")
 
