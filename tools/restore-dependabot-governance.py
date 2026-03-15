@@ -215,8 +215,6 @@ Files Changed:
         },
         "amendments": [
             {
-                "amendedAt": datetime.now(timezone.utc).isoformat(),
-                "actorId": f"governance-restoration-{datetime.now(timezone.utc).date().isoformat()}",
                 "amendedAt": now_iso,
                 "actorId": f"governance-restoration-{now_date_iso}",
                 "reason": "Retroactive intent creation due to governance breach. Dependabot bypass removed from alteration gate.",
