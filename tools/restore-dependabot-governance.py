@@ -109,7 +109,6 @@ def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[
     is_dev_dep = (
         "@types" in package
         or package in dev_dep_names
-        package in dev_dep_names
         or any(package.startswith(prefix) for prefix in dev_dep_prefixes)
     )
 
