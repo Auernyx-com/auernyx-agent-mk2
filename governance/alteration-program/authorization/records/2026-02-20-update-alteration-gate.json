@@ -1,6 +1,0 @@
-{
-  "authorizedBy": "jason",
-  "authorizedAt": "2026-02-20",
-  "reason": "Authorize update to mk2-alteration-gate: no-op diff passes; changes require authorization approved by jason.",
-  "pullRequest": 66
-}

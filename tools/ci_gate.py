@@ -167,10 +167,6 @@ def main():
         files, source = get_working_files()
         append_only_base = None
 
-    if not files:
-        print("Mk2 Alteration Gate: PASS (no-op diff)")
-        return
-
     assert_append_only_trace_files(files, append_only_base)
 
     auth_records = get_changed_auth_records(files)
