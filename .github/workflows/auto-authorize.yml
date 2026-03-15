@@ -1,0 +1,152 @@
+name: auto-authorize
+
+# Automatically creates a governance authorization record when a PR is opened or
+# updated by an allowlisted user, so the mk2-alteration-gate passes without
+# requiring the author to manually create the record (important for mobile users).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-authorize:
+    # Only run for same-repo PRs (not forks) and skip commits made by this workflow
+    # (github.actor == 'github-actions[bot]') to prevent infinite loops.
+    if: |
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout PR head branch
+        run: |
+          git fetch origin "${{ github.event.pull_request.head.ref }}"
+          git checkout "${{ github.event.pull_request.head.ref }}"
+
+      - name: Fetch base ref for diff
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+
+      - name: Check if PR author is in allowlist
+        id: check-allowlist
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, sys
+
+          actor = os.environ["ACTOR"]
+          allowlist_path = "governance/alteration-program/authorization/allowlist.json"
+          try:
+              with open(allowlist_path, encoding="utf-8") as f:
+                  data = json.load(f)
+          except Exception as e:
+              print(f"WARNING: could not read allowlist: {e}", file=sys.stderr)
+              data = {}
+
+          logins = data.get("authorizedLogins", [])
+          is_allowed = actor in logins
+          print(f"Actor: {actor!r}, authorizedLogins: {logins}, allowed: {is_allowed}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"is_allowed={'true' if is_allowed else 'false'}\n")
+          PYEOF
+        env:
+          ACTOR: ${{ github.actor }}
+
+      - name: Check if authorization record already exists in this PR
+        id: check-record
+        if: steps.check-allowlist.outputs.is_allowed == 'true'
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          RECORD_COUNT=$(git diff --name-only "${BASE_SHA}...HEAD" \
+            | grep -cE "^governance/alteration-program/authorization/records/.*\.json$" || true)
+          echo "record_count=${RECORD_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "Authorization records in PR changeset: ${RECORD_COUNT}"
+
+      - name: Create authorization record
+        id: create-record
+        if: >
+          steps.check-allowlist.outputs.is_allowed == 'true' &&
+          steps.check-record.outputs.record_count == '0'
+        run: |
+          python3 - <<'PYEOF'
+          import json, os
+          from datetime import date
+
+          actor     = os.environ["ACTOR"]
+          pr_number = int(os.environ["PR_NUMBER"])
+          title     = os.environ["TITLE"]
+          today     = date.today().isoformat()
+
+          record_file = (
+              f"governance/alteration-program/authorization/records/"
+              f"{today}-pr-{pr_number}.json"
+          )
+
+          record = {
+              "authorizedBy": actor,
+              "authorizedAt": today,
+              "reason": f"PR #{pr_number}: {title}",
+              "pullRequest": pr_number,
+          }
+
+          os.makedirs(os.path.dirname(record_file), exist_ok=True)
+          with open(record_file, "w", encoding="utf-8") as f:
+              json.dump(record, f, indent=2)
+              f.write("\n")
+
+          print(f"Created authorization record: {record_file}")
+          print(json.dumps(record, indent=2))
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"record_file={record_file}\n")
+          PYEOF
+        env:
+          ACTOR:     ${{ github.actor }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TITLE:     ${{ github.event.pull_request.title }}
+
+      - name: Commit authorization record
+        if: >
+          steps.check-allowlist.outputs.is_allowed == 'true' &&
+          steps.check-record.outputs.record_count == '0'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add governance/alteration-program/authorization/records/
+
+          if git diff --staged --quiet; then
+            echo "No authorization record changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: add governance authorization for PR #${{ github.event.pull_request.number }}"
+          git push
+
+      - name: Comment on PR
+        if: >
+          steps.check-allowlist.outputs.is_allowed == 'true' &&
+          steps.check-record.outputs.record_count == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body:
+                '✅ **Authorization Record Auto-Created**\n\n' +
+                'A governance authorization record has been automatically created for this PR ' +
+                'because `' + context.actor + '` is in the authorized allowlist.\n\n' +
+                'The `mk2-alteration-gate` will re-run on the new commit and should pass. ' +
+                '**No further action is needed.**'
+            })
