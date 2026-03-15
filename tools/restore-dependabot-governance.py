@@ -99,12 +99,16 @@ def classify_dependency_change(package: str, changed_files: List[str]) -> Tuple[
         "rollup",
         "vite",
         "babel",
+        "babel-cli",
+        "babel-core",
+        "babel-loader",
         "lint-staged",
         "husky",
         "nodemon",
     }
     is_dev_dep = (
-        package in dev_dep_names
+        "@types" in package
+        or package in dev_dep_names
         or any(package.startswith(prefix) for prefix in dev_dep_prefixes)
     )
 
