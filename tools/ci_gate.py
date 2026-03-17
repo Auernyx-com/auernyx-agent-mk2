@@ -43,8 +43,16 @@ def load_json(path):
         return json.load(f)
 
 def get_changed_files(base_ref):
-    diff = run(["git", "-C", str(GIT_ROOT), "diff", "--name-only", f"{base_ref}...HEAD"])
-    return [f.strip() for f in diff.splitlines() if f.strip()]
+    # Resolve the actual merge-base so the diff covers only PR-specific commits,
+    # even if base_ref is a stale event SHA that predates recent commits on main.
+    try:
+        merge_base = run(
+            ["git", "-C", str(GIT_ROOT), "merge-base", base_ref, "HEAD"]
+        ).strip()
+    except SystemExit:
+        merge_base = base_ref
+    diff = run(["git", "-C", str(GIT_ROOT), "diff", "--name-only", f"{merge_base}..HEAD"])
+    return [f.strip() for f in diff.splitlines() if f.strip()], merge_base
 
 def get_working_files():
     staged = run(["git", "-C", str(GIT_ROOT), "diff", "--name-only", "--cached"])
@@ -56,9 +64,31 @@ def get_working_files():
     wt_files = [f.strip() for f in wt.splitlines() if f.strip()]
     return wt_files, "working"
 
-def get_changed_auth_records(files):
+def get_added_auth_records(base_ref=None):
+    """Return only auth record files that were *added* (not modified) in this diff.
+
+    Using --diff-filter=A ensures pre-existing records that appear in a wide diff
+    range (e.g. when base_ref is a stale SHA) are not mistakenly counted.
+    """
     prefix = AUTH_RECORD_DIR + "/"
-    return [f for f in files if f.startswith(prefix) and f.endswith(".json")]
+    if base_ref:
+        try:
+            merge_base = run(
+                ["git", "-C", str(GIT_ROOT), "merge-base", base_ref, "HEAD"]
+            ).strip()
+        except SystemExit:
+            merge_base = base_ref
+        diff = run(
+            ["git", "-C", str(GIT_ROOT), "diff", "--name-only", "--diff-filter=A",
+             f"{merge_base}..HEAD"]
+        )
+    else:
+        # Working-tree / staged mode: fall back to regular diff (no filter needed)
+        staged = run(["git", "-C", str(GIT_ROOT), "diff", "--name-only", "--cached", "--diff-filter=A"])
+        wt = run(["git", "-C", str(GIT_ROOT), "diff", "--name-only", "--diff-filter=A"])
+        diff = staged if staged.strip() else wt
+    return [f.strip() for f in diff.splitlines()
+            if f.strip().startswith(prefix) and f.strip().endswith(".json")]
 
 def validate_auth_record(record_path: str) -> None:
     full_path = GIT_ROOT / record_path
@@ -160,16 +190,23 @@ def main():
 
     base_ref = os.environ.get("MK2_BASE_REF", "").strip()
     if base_ref:
-        files = get_changed_files(base_ref)
-        source = f"commit-diff:{base_ref}...HEAD"
-        append_only_base = base_ref
+        files, merge_base = get_changed_files(base_ref)
+        source = f"commit-diff:{merge_base}..HEAD"
+        append_only_base = merge_base
     else:
         files, source = get_working_files()
         append_only_base = None
 
+    # Zero-change diffs (no files touched at all) pass immediately — nothing to gate.
+    if not files:
+        print("Mk2 Alteration Gate: PASS (no-op diff)")
+        return
+
     assert_append_only_trace_files(files, append_only_base)
 
-    auth_records = get_changed_auth_records(files)
+    # Only count *newly added* auth records; pre-existing records that appear in a
+    # wide diff range (stale base SHA) must not trigger a false multi-record failure.
+    auth_records = get_added_auth_records(base_ref if base_ref else None)
     if len(auth_records) != 1:
         raise SystemExit(
             f"Fail-closed: must change/add exactly ONE authorization record under "

@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-17",
+  "reason": "Fix mk2 alteration gate: compute diff from actual merge-base (not stale event SHA), add --diff-filter=A for auth-record counting, add zero-change diff pass, and fix workflow base-SHA resolution to use freshly-fetched branch tip.",
+  "pullRequest": 93
+}

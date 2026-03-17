@@ -18,10 +18,11 @@ jobs:
 
       - name: Fetch base
         run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          echo "Base ref: ${{ github.base_ref }}, SHA: ${BASE_SHA}"
+          # Always use the freshly-fetched base-branch tip so that auth records
+          # added to main after the PR was opened are not included in the PR diff.
           git fetch origin ${{ github.base_ref }}
-          git rev-parse "${BASE_SHA}"
+          BASE_SHA=$(git rev-parse FETCH_HEAD)
+          echo "Base ref: ${{ github.base_ref }}, SHA: ${BASE_SHA}"
           git merge-base "${BASE_SHA}" HEAD
           echo "MK2_BASE_REF=${BASE_SHA}" >> $GITHUB_ENV
 
