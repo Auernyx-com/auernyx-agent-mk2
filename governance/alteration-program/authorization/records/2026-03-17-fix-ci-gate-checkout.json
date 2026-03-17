@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-17",
+  "reason": "Fix mk2-alteration-gate: checkout PR head SHA instead of default merge commit so base-branch forward-progress auth records are not included in the PR diff, resolving the spurious 4-record failure on PR #76.",
+  "pullRequest": 76
+}
