@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-17",
+  "reason": "Fix redundant JSON file update pattern across backlogged PRs (#76, #82, #83): the 'Json authorized intent' file at repo root was never recognized by the alteration gate. Authorization records must live under governance/alteration-program/authorization/records/. Adds auto-authorize workflow so Ghostwolf101-authorized PRs no longer require manual record creation.",
+  "pullRequest": 83
+}
