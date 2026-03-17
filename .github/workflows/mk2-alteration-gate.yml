@@ -23,7 +23,7 @@ jobs:
           git fetch origin ${{ github.base_ref }}
           BASE_SHA=$(git rev-parse FETCH_HEAD)
           echo "Base ref: ${{ github.base_ref }}, SHA: ${BASE_SHA}"
-          git merge-base "${BASE_SHA}" HEAD
+          echo "Merge base: $(git merge-base "${BASE_SHA}" HEAD)"
           echo "MK2_BASE_REF=${BASE_SHA}" >> $GITHUB_ENV
 
       - name: Run alteration gate (fail-closed)

@@ -42,15 +42,27 @@ def load_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def resolve_merge_base(base_ref: str) -> str:
+    """Return the git merge-base between base_ref and HEAD.
+
+    Raises SystemExit with a clear message if the merge-base cannot be resolved
+    so callers get an explicit failure rather than a silently incorrect diff range.
+    """
+    p = subprocess.run(
+        ["git", "-C", str(GIT_ROOT), "merge-base", base_ref, "HEAD"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    )
+    if p.returncode != 0:
+        raise SystemExit(
+            f"Fail-closed: could not resolve merge-base for '{base_ref}': "
+            f"{p.stderr.strip()}"
+        )
+    return p.stdout.strip()
+
 def get_changed_files(base_ref):
     # Resolve the actual merge-base so the diff covers only PR-specific commits,
     # even if base_ref is a stale event SHA that predates recent commits on main.
-    try:
-        merge_base = run(
-            ["git", "-C", str(GIT_ROOT), "merge-base", base_ref, "HEAD"]
-        ).strip()
-    except SystemExit:
-        merge_base = base_ref
+    merge_base = resolve_merge_base(base_ref)
     diff = run(["git", "-C", str(GIT_ROOT), "diff", "--name-only", f"{merge_base}..HEAD"])
     return [f.strip() for f in diff.splitlines() if f.strip()], merge_base
 
@@ -72,12 +84,7 @@ def get_added_auth_records(base_ref=None):
     """
     prefix = AUTH_RECORD_DIR + "/"
     if base_ref:
-        try:
-            merge_base = run(
-                ["git", "-C", str(GIT_ROOT), "merge-base", base_ref, "HEAD"]
-            ).strip()
-        except SystemExit:
-            merge_base = base_ref
+        merge_base = resolve_merge_base(base_ref)
         diff = run(
             ["git", "-C", str(GIT_ROOT), "diff", "--name-only", "--diff-filter=A",
              f"{merge_base}..HEAD"]
