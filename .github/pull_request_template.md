@@ -1,15 +1,16 @@
-## Intent
-- Intent file: `governance/alteration-program/intent/<intentId>.json`
-- Intent ID: `<intentId>`
+## Authorization
+- Record file: `governance/alteration-program/authorization/records/<YYYY-MM-DD-slug>.json`
 
 ## Governance Checklist (CI gate enforced — fail-closed)
-- [ ] This PR changes or adds **exactly one** intent JSON under `governance/alteration-program/intent/`
-- [ ] The intent filename matches the `intentId` field (format: `<13-digit-timestamp>-<8-hex-chars>.json`)
-- [ ] If this modifies a **closed** intent, a new `amendments[]` entry has been added documenting the change
+- [ ] This PR changes or adds **exactly one** authorization record JSON under `governance/alteration-program/authorization/records/`
+- [ ] The authorization record contains all required fields: `authorizedBy`, `authorizedAt`, `reason`, and `approvals`
+- [ ] `authorizedBy` is a valid GitHub login present in `governance/alteration-program/authorization/allowlist.json`
+- [ ] `authorizedAt` is a valid ISO date (`YYYY-MM-DD`) that is not in the future
+- [ ] `approvals` list includes `"jason"`
 
 ## Scope (fail-closed)
-- [ ] scope.in and scope.out are complete and bounded
-- [ ] this PR changes/adds exactly one intent file
+- [ ] Changes are bounded to the declared scope
+- [ ] This PR changes/adds exactly one authorization record file
 
 ## Verification
 - Required checks per intent:
