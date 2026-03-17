@@ -27,8 +27,20 @@ PREFIX = repo_prefix(GIT_ROOT)
 AUTH_RECORD_DIR = f"{PREFIX}governance/alteration-program/authorization/records"
 ALLOWLIST_PATH = REPO_ROOT / "governance/alteration-program/authorization/allowlist.json"
 
+# Append-only git-tracked failure-record log (Kintsugi protocol).
+FAILURE_RECORDS_FILE = f"{PREFIX}docs/kintsugi-failure-records.md"
+
+# Governance-critical paths: changes to any of these require exactly one new
+# KFRID entry appended to FAILURE_RECORDS_FILE in the same PR.
+GOVERNANCE_CRITICAL_PREFIXES = [
+    f"{PREFIX}tools/ci_gate.py",
+    f"{PREFIX}.github/workflows/",
+    f"{PREFIX}core/kintsugi/",
+    f"{PREFIX}governance/alteration-program/",
+]
+
 GITHUB_LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
-REQUIRED_APPROVER = "jason"
+KFRID_HEADER_RE = re.compile(r"^## KFRID-\d{8}-\d{4}", re.MULTILINE)
 
 def fail(msg: str) -> None:
     raise SystemExit(f"Fail-closed: {msg}")
@@ -89,10 +101,6 @@ def validate_auth_record(record_path: str) -> None:
     if not isinstance(record.get("reason"), str) or not record["reason"].strip():
         fail(f"reason must be a non-empty string in {record_path}")
 
-    approvals = record.get("approvals", [])
-    if not isinstance(approvals, list) or "jason" not in approvals:
-        fail(f"authorization record must include approval by 'jason' in approvals list in {record_path}")
-
     if not ALLOWLIST_PATH.exists():
         fail(f"allowlist not found at {ALLOWLIST_PATH}")
     try:
@@ -103,9 +111,6 @@ def validate_auth_record(record_path: str) -> None:
     allowed_logins = allowlist.get("authorizedLogins", [])
     if authorized_by not in allowed_logins:
         fail(f"authorizedBy '{authorized_by}' is not in the allowlist ({ALLOWLIST_PATH}). authorizedLogins: {allowed_logins}")
-
-    if authorized_by != REQUIRED_APPROVER:
-        fail(f"authorizedBy must be '{REQUIRED_APPROVER}' (got {authorized_by!r}) in {record_path}")
 
 def assert_updates_inbox_clean() -> None:
     inbox = REPO_ROOT / "updates" / "incoming"
@@ -162,6 +167,64 @@ def assert_append_only_trace_files(changed_files: list[str], base_ref: str | Non
         if base_bytes and not new_bytes.startswith(base_bytes):
             fail(f"trace file must be append-only (base content must be a prefix): {rel_norm}")
 
+def has_governance_critical_changes(files: list[str]) -> bool:
+    """Return True if any changed file is under a governance-critical path."""
+    normalized = [f.replace("\\", "/") for f in files]
+    for f in normalized:
+        for crit in GOVERNANCE_CRITICAL_PREFIXES:
+            if f == crit or f.startswith(crit):
+                return True
+    return False
+
+def assert_failure_record_appended(files: list[str], base_ref: str | None) -> None:
+    """Enforce that exactly one new KFRID entry is appended to the failure-records file."""
+    def norm(s: str) -> str:
+        return s.replace("\r\n", "\n").replace("\r", "\n")
+
+    normalized = [f.replace("\\", "/") for f in files]
+    records_rel = FAILURE_RECORDS_FILE.replace("\\", "/")
+
+    if records_rel not in normalized:
+        fail(
+            f"governance-critical paths changed but '{records_rel}' was not updated. "
+            f"Append exactly one new KFRID entry (## KFRID-YYYYMMDD-NNNN ...) "
+            f"to {records_rel}."
+        )
+
+    records_path = GIT_ROOT / records_rel
+    if not records_path.exists():
+        fail(f"failure records file missing on disk: {records_rel}")
+
+    new_text = norm(records_path.read_text(encoding="utf-8"))
+
+    if base_ref:
+        try:
+            base_text = norm(run(["git", "-C", str(GIT_ROOT), "show", f"{base_ref}:{records_rel}"]))
+        except Exception:
+            base_text = ""
+    else:
+        try:
+            base_text = norm(run(["git", "-C", str(GIT_ROOT), "show", f"HEAD:{records_rel}"]))
+        except Exception:
+            base_text = ""
+
+    if base_text and not new_text.startswith(base_text):
+        fail(
+            f"failure records file must be append-only; existing content must not be "
+            f"modified or removed: {records_rel}"
+        )
+
+    new_count = len(KFRID_HEADER_RE.findall(new_text))
+    base_count = len(KFRID_HEADER_RE.findall(base_text))
+    added = new_count - base_count
+
+    if added != 1:
+        fail(
+            f"expected exactly 1 new KFRID entry appended to {records_rel}, "
+            f"found {added} new entries (base had {base_count}, new has {new_count}). "
+            f"Entries must use the heading format: ## KFRID-YYYYMMDD-NNNN"
+        )
+
 def main():
     assert_no_nested_updates_updates()
     assert_updates_inbox_clean()
@@ -194,6 +257,9 @@ def main():
         )
 
     validate_auth_record(auth_records[0])
+
+    if has_governance_critical_changes(files):
+        assert_failure_record_appended(files, append_only_base)
 
     print("Mk2 Alteration Gate: PASS")
 

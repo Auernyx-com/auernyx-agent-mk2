@@ -1,5 +1,21 @@
 name: mk2-alteration-gate
 
+# Fail-closed governance gate that runs on every PR.
+#
+# What this gate enforces (see tools/ci_gate.py for authoritative logic):
+#   1. Empty diff  → PASS immediately (no-op).
+#   2. Append-only trace files: governance/alteration-program/logs/*.ndjson
+#      must not have existing lines modified or removed.
+#   3. Exactly ONE authorization record (.json) must be changed/added under
+#      governance/alteration-program/authorization/records/.
+#      The record must contain: authorizedBy (GitHub login in allowlist),
+#      authorizedAt (YYYY-MM-DD, not future), and a non-empty reason.
+#   4. Kintsugi failure-record requirement: if any governance-critical path is
+#      changed (.github/workflows/, tools/ci_gate.py, core/kintsugi/,
+#      governance/alteration-program/), exactly ONE new KFRID entry must be
+#      appended to docs/kintsugi-failure-records.md in the same PR.
+#      The file must remain append-only (existing entries immutable).
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]

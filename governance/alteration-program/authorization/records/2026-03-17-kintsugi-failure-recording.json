@@ -1,0 +1,7 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-17",
+  "reason": "Implement Kintsugi failure-recording protocol: add docs/kintsugi-failure-records.md, enforce CI-gated append-only failure-record requirement for governance-critical path changes, remove hardcoded 'jason' REQUIRED_APPROVER from ci_gate.py and allowlist. This PR (#68) remediates the security/governance failure introduced in PR #67 (.json misread as 'jason' approver).",
+  "pullRequest": 68,
+  "remediates": 67
+}
