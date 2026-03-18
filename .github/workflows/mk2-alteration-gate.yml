@@ -7,12 +7,17 @@ on:
   push:
     branches: [ GhostValidation ]
 
+# Default to read-only; the audit-commit job overrides to write.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   gate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      gate_outcome: ${{ steps.gate_run.outcome }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,18 +30,51 @@ jobs:
       - name: Run Gate
         id: gate_run
         run: |
-          # Isolate ONLY branch changes to clear traffic jams
+          # Compute and export merge-base so ci_gate.py sees MK2_BASE_REF
+          # in the same shell session (GITHUB_ENV only takes effect in later steps).
           MK2_BASE_REF=$(git merge-base main HEAD)
-          echo "MK2_BASE_REF=${MK2_BASE_REF}" >> $GITHUB_ENV
+          export MK2_BASE_REF
           python3 tools/ci_gate.py
         continue-on-error: true
 
-      - name: Commit Logs
+      - name: Fail workflow if gate did not pass
         if: steps.gate_run.outcome == 'failure'
+        run: exit 1
+
+  audit-commit:
+    needs: [gate]
+    # Run only when gate failed, from same-repo branches (not forks),
+    # using always() so job is not skipped when needs.gate fails.
+    if: |
+      always() &&
+      needs.gate.result == 'failure' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Commit audit log to Audit-Logs branch
         run: |
-          git config --local user.email "gatekeeper@auernyx.com"
-          git config --local user.name "Gate-Audit-Bot"
+          # Use verified github-actions bot identity for all commits.
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Fetch existing Audit-Logs branch so we can fast-forward onto it;
+          # if the branch does not yet exist create an orphan to seed it.
+          if git fetch origin Audit-Logs:refs/remotes/origin/Audit-Logs 2>/dev/null; then
+            git checkout -b audit-work origin/Audit-Logs
+          else
+            git checkout --orphan audit-work
+            git reset --hard
+          fi
+
           git add governance/quarantine/
-          git commit -m "AUDIT: Gate failure [run=${{ github.run_id }}, event=${{ github.event_name }}, ref=${{ github.ref }}, sha=${{ github.sha }}]" --allow-empty
-          git push origin HEAD:Audit-Logs
-          exit 1
+          git commit --allow-empty -m "AUDIT: Gate failure [run=${{ github.run_id }}, event=${{ github.event_name }}, ref=${{ github.ref }}, sha=${{ github.sha }}]"
+          git push origin audit-work:Audit-Logs
