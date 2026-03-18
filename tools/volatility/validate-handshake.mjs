@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import Ajv from "ajv";
+import Ajv2020 from "ajv/dist/2020.js";
 
 export function validateHandshake(handshakeJson, schemaJson) {
-  const ajv = new Ajv({ allErrors: true });
+  const ajv = new Ajv2020({ allErrors: true });
   const validate = ajv.compile(schemaJson);
   const ok = validate(handshakeJson);
   return { ok: !!ok, errors: validate.errors || [] };
