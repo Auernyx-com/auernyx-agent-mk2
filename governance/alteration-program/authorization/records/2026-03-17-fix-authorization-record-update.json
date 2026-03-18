@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-17",
+  "reason": "Authorize fix for PR #89: add exactly one authorization record to satisfy the ci_gate.py fail-closed requirement (must change/add exactly ONE authorization record per PR diff).",
+  "pullRequest": 89
+}

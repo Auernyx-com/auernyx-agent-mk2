@@ -1,0 +1,36 @@
+{
+  "intentId": "1761268000000-47c0ffee",
+  "title": "Performance optimizations and documentation/test reliability fixes",
+  "system": "mk2",
+  "changeClass": "leaf",
+  "scope": {
+    "in": [
+      "core/server.ts",
+      "docs/mk2-capabilities.md",
+      "scripts/test-agent-independence.sh",
+      "tests/analyzeDependency.test.ts",
+      "tools/restore-dependabot-governance.py"
+    ],
+    "out": [
+      "No protocol/API breaking changes",
+      "No new dependencies",
+      "No changes to governance rules beyond documenting intent"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "Ghostwolf101",
+  "createdAt": "2026-02-19T00:00:00Z",
+  "status": "draft",
+  "verification": {
+    "plan": "Run CI for PR #47 and verify mk2-alteration-gate passes; run unit tests and the agent independence script; sanity-check docs rendering.",
+    "requiredChecks": [
+      "mk2-alteration-gate"
+    ]
+  },
+  "evidence": {
+    "required": false,
+    "receiptRefs": [],
+    "notes": "No governance-impacting behavior intended; changes are performance, documentation structure, and test reliability improvements."
+  }
+}
