@@ -92,6 +92,9 @@ jobs:
           )
 
           record = {
+              "governance_record": f"{today}-pr-{pr_number}",
+              "authorization_logic": f"{actor} authorized via allowlist for PR #{pr_number}: {title}",
+              "signature": f"{actor}-{today}-pr{pr_number}",
               "authorizedBy": actor,
               "authorizedAt": today,
               "reason": f"PR #{pr_number}: {title}",
