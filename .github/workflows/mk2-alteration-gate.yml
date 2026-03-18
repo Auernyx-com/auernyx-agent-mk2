@@ -3,28 +3,39 @@ name: mk2-alteration-gate
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+    branches: [ main ]
+  push:
+    branches: [ GhostValidation ]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   gate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Resolves the "Blind Diff" issue
 
-      - name: Fetch base
+      - name: Fetch Base
+        run: git fetch origin main:main
+
+      - name: Run Gate
+        id: gate_run
         run: |
-          # Always use the freshly-fetched base-branch tip so that auth records
-          # added to main after the PR was opened are not included in the PR diff.
-          git fetch origin ${{ github.base_ref }}
-          BASE_SHA=$(git rev-parse FETCH_HEAD)
-          echo "Base ref: ${{ github.base_ref }}, SHA: ${BASE_SHA}"
-          echo "Merge base: $(git merge-base "${BASE_SHA}" HEAD)"
-          echo "MK2_BASE_REF=${BASE_SHA}" >> $GITHUB_ENV
+          # Isolate ONLY branch changes to clear traffic jams
+          FILES=$(git diff --name-only origin/main...HEAD)
+          python3 tools/ci_gate.py $FILES
+        continue-on-error: true
 
-      - name: Run alteration gate (fail-closed)
-        run: python3 tools/ci_gate.py
+      - name: Commit Logs
+        if: steps.gate_run.outcome == 'failure'
+        run: |
+          git config --local user.email "gatekeeper@auernyx.com"
+          git config --local user.name "Gate-Audit-Bot"
+          git add governance/quarantine/
+          git commit -m "AUDIT: Quarantined gate failure" || true
+          git push origin HEAD:Audit-Logs || true
+          exit 1
