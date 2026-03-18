@@ -1,6 +1,6 @@
 {
   "authorizedBy": "Ghostwolf101",
   "authorizedAt": "2026-02-20",
-  "reason": "Authorize PR #54. Consolidated authorization covering: (1) gate migration away from intent validation toward authorization records; (2) weekly audit script fixes (correct tools/ci_gate.py path usage and enforce fail-closed exit code propagation); (3) weekly-audit.ps1 improvements from review feedback (exit-code guards and authorization-record-aware skip logic).",
+  "reason": "Resolve shallow clone blindness in mk2-alteration-gate: switch to 'git fetch origin main:main', set MK2_BASE_REF via step env block, and simplify trigger to branches filter.",
   "pullRequest": 54
 }

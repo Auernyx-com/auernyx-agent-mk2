@@ -1,0 +1,5 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-15",
+  "reason": "Add auto-authorize workflow so the alteration gate passes automatically for allowlisted PR authors, removing the need to manually create authorization records from a mobile device."
+}

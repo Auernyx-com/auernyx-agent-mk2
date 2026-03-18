@@ -2,7 +2,7 @@ name: mk2-alteration-gate
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -11,19 +11,18 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          # FLAW FIX: Fetch full history so git diff can see the base branch
           fetch-depth: 0
 
-      - name: Fetch base
-        run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          echo "Base ref: ${{ github.base_ref }}, SHA: ${BASE_SHA}"
-          git fetch origin ${{ github.base_ref }}
-          git rev-parse "${BASE_SHA}"
-          git merge-base "${BASE_SHA}" HEAD
-          echo "MK2_BASE_REF=${BASE_SHA}" >> $GITHUB_ENV
+      - name: Fetch Base Branch
+        # Ensures the 'main' branch is physically present in the runner's git graph
+        run: git fetch origin main:main
 
-      - name: Run alteration gate (fail-closed)
+      - name: Run Alteration Gate (Fail-Closed)
+        env:
+          # Dynamically calculate the merge-base to avoid "Blind Diff" errors
+          MK2_BASE_REF: ${{ github.event.pull_request.base.sha || 'main' }}
         run: python3 tools/ci_gate.py

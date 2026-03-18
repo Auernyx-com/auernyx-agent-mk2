@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-18",
+  "reason": "Authorize resolution of merge conflict between PR #66 (weekly-audit script fixes: fail-closed exit-code propagation) and PRs #93/#94 (ci_gate diff-range and shallow-clone fixes). Adds tools/weekly-audit.ps1, tools/weekly-audit.sh, and root weekly-audit.ps1 wrapper on top of main.",
+  "pullRequest": 66
+}
