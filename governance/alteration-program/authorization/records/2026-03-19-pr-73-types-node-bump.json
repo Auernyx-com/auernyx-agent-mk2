@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-19",
+  "reason": "Apply @types/node bump from ^25.3.5 to ^25.5.0 (Dependabot PR #73, approved by Ghostwolf101). Addresses Copilot review comment on version discrepancy in PR title.",
+  "pullRequest": 73
+}
