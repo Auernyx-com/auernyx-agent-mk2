@@ -1,0 +1,5 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-19",
+  "reason": "Restore alteration gate to Option A minimal policy: the gate validates authorizedBy is a valid GitHub login present in allowlist.json, with no approvals field or hardcoded approver required. Add zero-change no-op passthrough (correctly, without the redundant duplicate block that was present in PR #54). Unblocks gate-repair PR and restores workflow continuity."
+}
