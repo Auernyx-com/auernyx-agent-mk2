@@ -119,16 +119,17 @@ AUERNYX_WRITE_ENABLED=1 node dist/clients/cli/auernyx.js baseline pre --reason "
 **Script**: `tools/ci_gate.py`
 
 **Invariants Enforced:**
-1. Exactly ONE intent file must be changed/added under `governance/alteration-program/intent/`
-2. Intent filename must match `intentId` field (format: `13digits-8hex.json`)
-3. Required fields: `intentId`, `changeClass`, `riskClass`, `status`, `scope.in`, `scope.out`
-4. Trace files must be append-only: `governance/alteration-program/logs/*.ndjson`
-5. `updates/incoming/` must not contain committed payload files
-6. Modifying closed intents requires adding an `amendments[]` entry
+1. Exactly ONE authorization record must be changed/added under `governance/alteration-program/authorization/records/`
+2. The auth record must be valid JSON with required fields: `authorizedBy`, `authorizedAt`, `reason`
+3. `authorizedBy` must be a valid GitHub login present in `governance/alteration-program/authorization/allowlist.json`
+4. `authorizedAt` must be a valid ISO date (`YYYY-MM-DD`) and must not be in the future
+5. Trace files must be append-only: `governance/alteration-program/logs/*.ndjson`
+6. `updates/incoming/` must not contain committed payload files
+7. The path `updates/updates/` must not exist (illegal nested path)
 
 **How to Pass the Gate:**
-- Create/modify exactly one intent JSON file
-- Ensure intent ID format is correct: `<timestamp>-<8hex>` (e.g., `1770580214737-a1bc898e.json`)
+- Add or modify exactly one `.json` auth record under `governance/alteration-program/authorization/records/`
+- Include `authorizedBy` (your GitHub login, must be in `allowlist.json`), `authorizedAt` (today's date, `YYYY-MM-DD`), and a non-empty `reason` string
 - Validate with: `python3 tools/ci_gate.py` (set `MK2_BASE_REF` for PR context)
 
 ### Branch Registry Update (branch-registry-update.yml)
@@ -142,8 +143,14 @@ AUERNYX_WRITE_ENABLED=1 node dist/clients/cli/auernyx.js baseline pre --reason "
 
 ## Testing & Validation
 
-### No Unit Tests
-This repository has NO dedicated unit test infrastructure (`*.test.ts` files are excluded). Validation is done through:
+### Unit Tests
+Run the unit test suite with:
+```bash
+npm test
+```
+This compiles with `tsconfig.test.json` and runs `node --test dist/tests/*.test.js`. Test source files live under `tests/` (e.g., `tests/analyzeDependency.test.ts`).
+
+Additional validation is done through:
 1. TypeScript type checking (`npm run typecheck`)
 2. Compilation verification (`npm run compile`)
 3. Capability smoke tests (`npm run verify`)
@@ -154,19 +161,22 @@ This repository has NO dedicated unit test infrastructure (`*.test.ts` files are
 # 1. Clean build
 rm -rf dist/ && npm run compile
 
-# 2. Verify core functionality
+# 2. Run unit tests
+npm test
+
+# 3. Verify core functionality
 npm run verify
 
-# 3. Test memory check
+# 4. Test memory check
 node dist/clients/cli/auernyx.js memory --reason "test" --no-daemon
 
-# 4. Test repo scan
+# 5. Test repo scan
 node dist/clients/cli/auernyx.js scan . --reason "test" --no-daemon
 
-# 5. Test governance self-test
+# 6. Test governance self-test
 node dist/clients/cli/auernyx.js governance self-test --reason "test" --no-daemon
 
-# 6. Validate CI gate locally (if modifying governance)
+# 7. Validate CI gate locally (if modifying governance)
 python3 tools/ci_gate.py
 ```
 
@@ -227,8 +237,8 @@ During comprehensive code review, NO malicious patterns were found:
 **Fix**: This is a governance invariant—do NOT bypass. Use `runLifecycle` for all execution.
 
 ### CI gate failures
-**Cause**: Intent file format issues or multiple intent changes
-**Fix**: Ensure exactly ONE intent file changed, validate format with `python3 tools/ci_gate.py`
+**Cause**: Missing or invalid authorization record
+**Fix**: Add exactly ONE `.json` file under `governance/alteration-program/authorization/records/` containing `authorizedBy` (GitHub login in `allowlist.json`), `authorizedAt` (today's `YYYY-MM-DD`), and a non-empty `reason`. Validate with `python3 tools/ci_gate.py`
 
 ### Daemon connection failures
 **Cause**: Daemon not running or wrong port
