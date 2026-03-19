@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-03-19-pr-105",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #105: [WIP] Update auto-authorization workflow for PRs (PR opened by Copilot)",
+  "signature": "Ghostwolf101-2026-03-19-pr105",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-19",
+  "reason": "PR #105: Update auto-authorize workflow to check assignees and requested reviewers, enabling Copilot-created PRs to pass the alteration gate when a human sponsor is assigned",
+  "pullRequest": 105
+}
