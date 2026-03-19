@@ -47,6 +47,7 @@
     "webpack-cli": "^6.0.1"
     },
   "scripts": {
+    "build": "npm run compile",
     "compile": "tsc -p ./",
     "typecheck": "tsc -p ./ --noEmit",
     "test": "tsc -p tsconfig.test.json && node --test dist/tests/*.test.js",
