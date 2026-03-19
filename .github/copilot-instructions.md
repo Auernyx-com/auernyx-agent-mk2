@@ -253,3 +253,70 @@ During comprehensive code review, NO malicious patterns were found:
 **CI validation:** `python3 tools/ci_gate.py`
 
 **Trust these instructions.** Only perform additional searches if information is incomplete or proven incorrect.
+
+## Working with GitHub Copilot
+
+### Issue Creation Guidelines
+When creating issues for Copilot coding agent:
+- **Be specific**: Clearly define the desired outcome (e.g., "Add validation for email field in user registration")
+- **Be concise**: Keep issues focused on a single, well-defined task
+- **Include context**: Reference relevant files, functions, or documentation
+- **Specify tests**: Mention how the change should be verified
+- **Note conventions**: Highlight any coding style or architectural patterns to follow
+
+### Common Development Workflows
+
+**Adding a new capability:**
+```bash
+# 1. Create capability file in capabilities/
+# 2. Add to config/allowlist.json
+# 3. Update core/router.ts mapping
+# 4. Document in docs/mk2-capabilities.md
+# 5. Compile and test
+npm run compile
+node dist/clients/cli/auernyx.js <your-capability> --reason "test" --no-daemon
+```
+
+**Making governance-compliant changes:**
+```bash
+# 1. Create auth record FIRST (required for all PRs to main)
+# File: governance/alteration-program/authorization/records/YYYY-MM-DD-<description>.json
+# Content: {"authorizedBy": "<your-github-username>", "authorizedAt": "<ISO-timestamp>", "reason": "<why>", "pullRequest": <pr-number>}
+
+# 2. Make your code changes
+# 3. Validate locally
+python3 tools/ci_gate.py  # Run CI gate validation
+
+# 4. Commit and push
+git add .
+git commit -m "your change description"
+git push origin your-branch
+```
+
+**Testing a PR:**
+```bash
+# 1. Clean build
+rm -rf dist/ && npm run compile
+
+# 2. Run verification
+npm run verify
+
+# 3. Test specific capabilities
+node dist/clients/cli/auernyx.js memory --reason "pr-test" --no-daemon
+node dist/clients/cli/auernyx.js scan . --reason "pr-test" --no-daemon
+
+# 4. Validate governance if modifying governance files
+python3 tools/ci_gate.py
+```
+
+### Auto-Authorization
+The repository has an auto-authorize workflow that automatically creates authorization records for:
+- PRs created by authorized users listed in `governance/alteration-program/authorization/allowlist.json`
+- PRs where an authorized user is assigned as a reviewer
+- This enables Copilot-created PRs to pass CI when an authorized user is assigned
+
+### Security Considerations
+- **Never commit secrets**: All secrets must be environment variables or in gitignored config files
+- **No direct Kintsugi writes**: Never write directly to `.auernyx/kintsugi/` - this is protected governance storage
+- **Validate inputs**: All external inputs must be validated before use
+- **Write-gate compliance**: All write operations require `AUERNYX_WRITE_ENABLED=1` and appropriate approvals
