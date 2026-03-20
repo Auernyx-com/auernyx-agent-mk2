@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-03-20-pr-103",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #103: docs: enhance Copilot instructions with workflow guidance and best practices",
+  "signature": "Ghostwolf101-2026-03-20-pr103",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-03-20",
+  "reason": "PR #103: docs: enhance Copilot instructions with workflow guidance and best practices",
+  "pullRequest": 103
+}
