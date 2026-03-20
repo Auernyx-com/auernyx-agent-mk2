@@ -300,12 +300,12 @@ python3 tools/ci_gate.py
 ```
 
 ### Auto-Authorization
-The repository has an auto-authorize workflow that automatically creates authorization records for:
-- PRs created by authorized users listed in `governance/alteration-program/authorization/allowlist.json`
-- PRs where an authorized user is assigned as a reviewer
-- This enables Copilot-created PRs to pass CI when an authorized user is assigned
+The repository has an auto-authorize workflow that automatically creates authorization records when:
+- A pull request is opened by a user whose login is listed in `governance/alteration-program/authorization/allowlist.json` (matched against `github.actor`)
+- This enables PRs (including Copilot-assisted PRs opened under an authorized account) to pass CI without manual authorization setup
 
 ### Security Considerations
+- **Never commit secrets**: All secrets must be environment variables or in gitignored config files
 - **Never commit secrets**: All secrets must be environment variables or in gitignored config files
 - **No direct Kintsugi writes**: Never write directly to `.auernyx/kintsugi/` - this is protected governance storage
 - **Validate inputs**: All external inputs must be validated before use
