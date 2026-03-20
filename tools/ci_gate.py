@@ -90,8 +90,8 @@ def validate_auth_record(record_path: str) -> None:
         fail(f"reason must be a non-empty string in {record_path}")
 
     approvals = record.get("approvals", [])
-    if not isinstance(approvals, list) or "jason" not in approvals:
-        fail(f"authorization record must include approval by 'jason' in approvals list in {record_path}")
+    if not isinstance(approvals, list) or REQUIRED_APPROVER not in approvals:
+        fail(f"authorization record must include approval by {REQUIRED_APPROVER!r} in approvals list in {record_path}")
 
     if not ALLOWLIST_PATH.exists():
         fail(f"allowlist not found at {ALLOWLIST_PATH}")
