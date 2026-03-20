@@ -94,4 +94,33 @@ jobs:
           } > "$audit_file"
           git add governance/quarantine/
           git commit --allow-empty -m "AUDIT: Gate failure [run=${{ github.run_id }}, event=${{ github.event_name }}, ref=${{ github.ref }}, sha=${{ github.sha }}]"
-          git push origin audit-work:Audit-Logs
+
+          # Push with a small retry loop to handle non-fast-forward failures when
+          # multiple jobs concurrently append to Audit-Logs. This preserves the
+          # "fail-closed" audit logging guarantee.
+          max_retries=3
+          delay_seconds=2
+
+          attempt=1
+          while [ "$attempt" -le "$max_retries" ]; do
+            # Refresh remote Audit-Logs; if it exists, rebase our audit-work branch
+            # on top of the latest origin/Audit-Logs before pushing.
+            if git fetch origin Audit-Logs:refs/remotes/origin/Audit-Logs 2>/dev/null; then
+              # Rebase failures should not silently stop the loop; fall back to retry.
+              git rebase origin/Audit-Logs || true
+            fi
+
+            if git push origin audit-work:Audit-Logs; then
+              echo "Audit log push succeeded on attempt $attempt."
+              break
+            fi
+
+            if [ "$attempt" -eq "$max_retries" ]; then
+              echo "ERROR: Failed to push audit log to origin/Audit-Logs after $max_retries attempts." >&2
+              exit 1
+            fi
+
+            echo "Non-fast-forward or transient error when pushing audit log (attempt $attempt). Retrying after backoff..." >&2
+            attempt=$((attempt + 1))
+            sleep "$delay_seconds"
+          done
