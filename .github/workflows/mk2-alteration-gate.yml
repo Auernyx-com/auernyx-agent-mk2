@@ -78,6 +78,20 @@ jobs:
             mkdir -p governance/quarantine
           fi
 
+          # Ensure the governance/quarantine directory exists on the Audit-Logs branch
+          # and write a minimal audit artifact so git add has a concrete path.
+          mkdir -p governance/quarantine
+
+          audit_file="governance/quarantine/${GITHUB_RUN_ID:-run}-gate-failure.txt"
+          {
+            echo "mk2-alteration-gate failure audit artifact"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "event_name=${GITHUB_EVENT_NAME}"
+            echo "ref=${GITHUB_REF}"
+            echo "sha=${GITHUB_SHA}"
+            echo "repo=${GITHUB_REPOSITORY}"
+            echo "timestamp=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")"
+          } > "$audit_file"
           git add governance/quarantine/
           git commit --allow-empty -m "AUDIT: Gate failure [run=${{ github.run_id }}, event=${{ github.event_name }}, ref=${{ github.ref }}, sha=${{ github.sha }}]"
           git push origin audit-work:Audit-Logs
