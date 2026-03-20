@@ -271,7 +271,7 @@ node dist/clients/cli/auernyx.js <your-capability> --reason "test" --no-daemon
 ```bash
 # 1. Create auth record FIRST (required for all PRs to main)
 # File: governance/alteration-program/authorization/records/YYYY-MM-DD-<description>.json
-# Content: {"authorizedBy": "<your-github-username>", "authorizedAt": "<ISO-timestamp>", "reason": "<why>", "pullRequest": <pr-number>}
+# Content: {"authorizedBy": "<your-github-username>", "authorizedAt": "YYYY-MM-DD", "reason": "<why>", "pullRequest": <pr-number>}  # authorizedAt is an ISO date (YYYY-MM-DD)
 
 # 2. Make your code changes
 # 3. Validate locally
