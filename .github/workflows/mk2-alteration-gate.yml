@@ -75,14 +75,13 @@ jobs:
             # On an orphan branch there is no HEAD commit, so use git rm instead
             # of git reset --hard to clear the index/working tree.
             git rm -rf . || true
-            mkdir -p governance/quarantine
           fi
 
           # Ensure the governance/quarantine directory exists on the Audit-Logs branch
           # and write a minimal audit artifact so git add has a concrete path.
           mkdir -p governance/quarantine
 
-          audit_file="governance/quarantine/${GITHUB_RUN_ID:-run}-gate-failure.txt"
+          audit_file="governance/quarantine/${GITHUB_RUN_ID:-unknown-run-id}-gate-failure.txt"
           {
             echo "mk2-alteration-gate failure audit artifact"
             echo "run_id=${GITHUB_RUN_ID}"
@@ -94,4 +93,34 @@ jobs:
           } > "$audit_file"
           git add governance/quarantine/
           git commit --allow-empty -m "AUDIT: Gate failure [run=${{ github.run_id }}, event=${{ github.event_name }}, ref=${{ github.ref }}, sha=${{ github.sha }}]"
-          git push origin audit-work:Audit-Logs
+
+          # Push with a small retry loop to handle non-fast-forward failures when
+          # multiple jobs concurrently append to Audit-Logs. Uses linear backoff
+          # (2s, 4s) to reduce contention on subsequent retries.
+          max_retries=3
+          delay_seconds=2
+          attempt=1
+          while [ "$attempt" -le "$max_retries" ]; do
+            # Re-fetch and rebase onto origin/Audit-Logs so each retry
+            # is a clean fast-forward.
+            if git fetch origin Audit-Logs:refs/remotes/origin/Audit-Logs 2>/dev/null; then
+              if ! git rebase origin/Audit-Logs; then
+                echo "WARNING: rebase onto origin/Audit-Logs failed (attempt $attempt); aborting rebase and retrying from current state." >&2
+                git rebase --abort 2>/dev/null || true
+              fi
+            fi
+
+            if git push origin audit-work:Audit-Logs; then
+              echo "Audit log push succeeded on attempt $attempt."
+              break
+            fi
+
+            if [ "$attempt" -eq "$max_retries" ]; then
+              echo "ERROR: Failed to push audit log to origin/Audit-Logs after $max_retries attempts." >&2
+              exit 1
+            fi
+
+            echo "Non-fast-forward or transient error on push attempt $attempt. Retrying after backoff..." >&2
+            sleep $((delay_seconds * attempt))
+            attempt=$((attempt + 1))
+          done
