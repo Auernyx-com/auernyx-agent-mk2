@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, os, re, subprocess
+import json, os, re, subprocess, sys
 from datetime import date
 from pathlib import Path
 
@@ -170,7 +170,7 @@ def main():
     # No-op: if there are no changed files, the gate passes automatically.
     if not files:
         print("Mk2 Alteration Gate: PASS (no-op diff, no changes detected)")
-        return
+        return 0
 
     assert_append_only_trace_files(files, append_only_base)
 
@@ -185,6 +185,7 @@ def main():
     validate_auth_record(auth_records[0])
 
     print("Mk2 Alteration Gate: PASS")
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
