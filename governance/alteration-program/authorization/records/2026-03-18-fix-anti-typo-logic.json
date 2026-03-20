@@ -1,5 +1,5 @@
 {
   "authorizedBy": "Ghostwolf101",
   "authorizedAt": "2026-03-18",
-  "reason": "Anti-typo fix: update mk2-alteration-gate workflow to add GhostValidation push trigger, narrow PR trigger to main, elevate permissions to contents:write, use git fetch origin main:main, compute merge-base for accurate diff, add fail-closed Commit Logs step with system-defined run ID."
+  "reason": "Anti-typo fix: update mk2-alteration-gate workflow to add GhostValidation push trigger, narrow PR trigger to main, default workflow permissions to contents:read, scope contents:write to a dedicated audit-commit job, use git fetch origin main:main, compute merge-base for accurate diff, and run a fail-closed audit-commit stage with a system-defined run ID."
 }
