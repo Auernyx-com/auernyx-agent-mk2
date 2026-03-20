@@ -2,5 +2,11 @@
   "authorizedBy": "Ghostwolf101",
   "authorizedAt": "2026-02-20",
   "reason": "Authorize PR #54. Consolidated authorization covering: (1) gate migration away from intent validation toward authorization records; (2) weekly audit script fixes (correct tools/ci_gate.py path usage and enforce fail-closed exit code propagation); (3) weekly-audit.ps1 improvements from review feedback (exit-code guards and authorization-record-aware skip logic).",
-  "pullRequest": 54
+  "pullRequest": 54,
+  "approvals": [
+    {
+      "approvedBy": "Ghostwolf101",
+      "approvedAt": "2026-02-20"
+    }
+  ]
 }
