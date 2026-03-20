@@ -72,7 +72,10 @@ jobs:
             git checkout -b audit-work origin/Audit-Logs
           else
             git checkout --orphan audit-work
-            git reset --hard
+            # On an orphan branch there is no HEAD commit, so use git rm instead
+            # of git reset --hard to clear the index/working tree.
+            git rm -rf . || true
+            mkdir -p governance/quarantine
           fi
 
           git add governance/quarantine/
