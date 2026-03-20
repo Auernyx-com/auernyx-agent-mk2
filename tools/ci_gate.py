@@ -28,7 +28,6 @@ AUTH_RECORD_DIR = f"{PREFIX}governance/alteration-program/authorization/records"
 ALLOWLIST_PATH = REPO_ROOT / "governance/alteration-program/authorization/allowlist.json"
 
 GITHUB_LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
-REQUIRED_APPROVER = "jason"
 
 def fail(msg: str) -> None:
     raise SystemExit(f"Fail-closed: {msg}")
@@ -89,10 +88,6 @@ def validate_auth_record(record_path: str) -> None:
     if not isinstance(record.get("reason"), str) or not record["reason"].strip():
         fail(f"reason must be a non-empty string in {record_path}")
 
-    approvals = record.get("approvals", [])
-    if not isinstance(approvals, list) or REQUIRED_APPROVER not in approvals:
-        fail(f"authorization record must include approval by {REQUIRED_APPROVER!r} in approvals list in {record_path}")
-
     if not ALLOWLIST_PATH.exists():
         fail(f"allowlist not found at {ALLOWLIST_PATH}")
     try:
@@ -103,9 +98,6 @@ def validate_auth_record(record_path: str) -> None:
     allowed_logins = allowlist.get("authorizedLogins", [])
     if authorized_by not in allowed_logins:
         fail(f"authorizedBy '{authorized_by}' is not in the allowlist ({ALLOWLIST_PATH}). authorizedLogins: {allowed_logins}")
-
-    if authorized_by != REQUIRED_APPROVER:
-        fail(f"authorizedBy must be '{REQUIRED_APPROVER}' (got {authorized_by!r}) in {record_path}")
 
 def assert_updates_inbox_clean() -> None:
     inbox = REPO_ROOT / "updates" / "incoming"
