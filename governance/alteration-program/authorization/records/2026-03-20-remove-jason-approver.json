@@ -1,5 +1,0 @@
-{
-  "authorizedBy": "Ghostwolf101",
-  "authorizedAt": "2026-03-20",
-  "reason": "Remove phantom 'jason' approver requirement from ci_gate.py and allowlist. The 'jason' string was a misread of '.json'; no such approver exists."
-}

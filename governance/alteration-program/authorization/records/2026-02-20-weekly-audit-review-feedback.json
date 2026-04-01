@@ -1,6 +1,0 @@
-{
-  "authorizedBy": "Ghostwolf101",
-  "authorizedAt": "2026-02-20",
-  "reason": "Consolidated authorization record for all weekly-audit.ps1 improvements arising from PR #58 review feedback: authorize adding exit-code guards with fallbacks for early git rev-parse commands and adding authorization-record-aware gate skip logic for clean working-tree scenarios, superseding any separate per-change authorization records for this PR.",
-  "pullRequest": 58
-}

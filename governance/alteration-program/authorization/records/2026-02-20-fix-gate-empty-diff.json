@@ -1,6 +1,0 @@
-{
-  "authorizedBy": "Ghostwolf101",
-  "authorizedAt": "2026-02-20",
-  "reason": "Authorize weekly audit script fixes (bash + PowerShell) to ensure fail-closed behavior and correct gating.",
-  "approvals": ["jason"]
-}
