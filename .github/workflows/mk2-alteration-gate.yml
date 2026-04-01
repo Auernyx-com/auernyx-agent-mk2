@@ -100,8 +100,8 @@ jobs:
             echo "ref=${GITHUB_REF}"
             echo "repo=${GITHUB_REPOSITORY}"
             echo "timestamp=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")"
-          git add governance/quarantine/
           } > "$audit_file"
+          git add governance/quarantine/
           git commit --allow-empty -m "AUDIT: Gate failure [run=${{ github.run_id }}, event=${{ github.event_name }}, ref=${{ github.ref }}, sha=${{ github.sha }}]"
           # Push with a small retry loop to handle non-fast-forward failures when
 
