@@ -1,13 +1,13 @@
 name: mk2-alteration-gate
 
-  pull_request:
 on:
+  pull_request:
     types: [opened, synchronize, reopened, edited]
     branches: [main]
   push:
     branches: [GhostValidation]
-# Default to read-only; the audit-commit job overrides to write.
 
+# Default to read-only; the audit-commit job overrides to write.
 permissions:
   contents: read
 
@@ -18,15 +18,15 @@ jobs:
       contents: read
     outputs:
       gate_outcome: ${{ steps.gate_run.outcome }}
-      - name: Checkout Code
     steps:
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
-
           fetch-depth: 0 # Resolves the "Blind Diff" issue
-      - name: Fetch Base
 
+      - name: Fetch Base
         run: git fetch origin main:main
+
       - name: Run Gate
         id: gate_run
         run: |
@@ -40,14 +40,14 @@ jobs:
       - name: Fail workflow if gate did not pass
         if: steps.gate_run.outcome == 'failure'
         run: exit 1
-  audit-commit:
 
+  audit-commit:
     needs: [gate]
     # Run only when gate failed, from same-repo branches (not forks),
     # using always() so job is not skipped when needs.gate fails.
     if: |
-      needs.gate.result == 'failure' &&
       always() &&
+      needs.gate.result == 'failure' &&
       (github.event_name != 'pull_request' ||
        github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
@@ -56,21 +56,11 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-          fetch-depth: 0
         with:
-
+          fetch-depth: 0
           ref: ${{ github.sha }}
-      - name: Fetch Base
-        run: |
-          # Always use the freshly-fetched base-branch tip so that audit records
-          # added to main after the PR was opened are not included in the PR diff.
-          git fetch origin ${{ github.base_ref }}
-          BASE_SHA=$(git rev-parse FETCH_HEAD)
-          echo "Merge base: $(git merge-base "${BASE_SHA}" HEAD)"
-          echo "Base ref: ${{ github.base_ref }}, SHA: ${BASE_SHA}"
-          echo "MK2_BASE_REF=${BASE_SHA}" >> $GITHUB_ENV
-      - name: Commit audit log to Audit-Logs branch
 
+      - name: Commit audit log to Audit-Logs branch
         run: |
           # Use verified github-actions bot identity for all commits.
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -80,18 +70,17 @@ jobs:
           # if the branch does not yet exist create an orphan to seed it.
           if git fetch origin Audit-Logs:refs/remotes/origin/Audit-Logs 2>/dev/null; then
             git checkout -b audit-work origin/Audit-Logs
-            git checkout --orphan audit-work
           else
+            git checkout --orphan audit-work
             # On an orphan branch there is no HEAD commit, so use git rm instead
             # of git reset --hard to clear the index/working tree.
             git rm -rf . || true
           fi
-          # Ensure the governance/quarantine directory exists on the Audit-Logs branch
 
+          # Ensure the governance/quarantine directory exists on the Audit-Logs branch
           # and write a minimal audit artifact so git add has a concrete path.
           mkdir -p governance/quarantine
           audit_file="governance/quarantine/${GITHUB_RUN_ID:-unknown-run-id}-gate-failure.txt"
-
           {
             echo "mk2-alteration-gate failure audit artifact"
             echo "run_id=${GITHUB_RUN_ID}"
@@ -103,8 +92,8 @@ jobs:
           } > "$audit_file"
           git add governance/quarantine/
           git commit --allow-empty -m "AUDIT: Gate failure [run=${{ github.run_id }}, event=${{ github.event_name }}, ref=${{ github.ref }}, sha=${{ github.sha }}]"
-          # Push with a small retry loop to handle non-fast-forward failures when
 
+          # Push with a small retry loop to handle non-fast-forward failures when
           # multiple jobs concurrently append to Audit-Logs. Uses linear backoff
           # (2s, 4s) to reduce contention on subsequent retries.
           delay_seconds=2
@@ -120,16 +109,14 @@ jobs:
               fi
             fi
             if git push origin audit-work:Audit-Logs; then
-              break
               echo "Audit log push succeeded on attempt $attempt."
+              break
             fi
             if [ "$attempt" -eq "$max_retries" ]; then
-
               echo "ERROR: Failed to push audit log to origin/Audit-Logs after $max_retries attempts." >&2
               exit 1
             fi
             echo "Non-fast-forward or transient error on push attempt $attempt. Retrying after backoff..." >&2
-            attempt=$((attempt + 1))
-
             sleep $((delay_seconds * attempt))
+            attempt=$((attempt + 1))
           done
