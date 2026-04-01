@@ -126,8 +126,8 @@ jobs:
             if [ "$attempt" -eq "$max_retries" ]; then
 
               echo "ERROR: Failed to push audit log to origin/Audit-Logs after $max_retries attempts." >&2
-            fi
               exit 1
+            fi
             echo "Non-fast-forward or transient error on push attempt $attempt. Retrying after backoff..." >&2
             attempt=$((attempt + 1))
 
