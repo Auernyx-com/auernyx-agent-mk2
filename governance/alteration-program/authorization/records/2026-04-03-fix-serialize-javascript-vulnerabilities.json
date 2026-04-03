@@ -1,0 +1,5 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-04-03",
+  "reason": "Update webpack-cli devDependency from ^6.0.1 to ^7.0.2 to eliminate high severity serialize-javascript vulnerabilities (GHSA-5c6j-r48x-rmvq, GHSA-qj8w-gfj5-8c6v) in the transitive dependency chain. Ensures the fail-closed gate system can function correctly with a clean dependency tree."
+}
