@@ -12,8 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    outputs:
-      gate_outcome: ${{ steps.gate_run.outcome }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
