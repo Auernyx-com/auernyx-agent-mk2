@@ -1,5 +1,339 @@
 {
   "stagingBranch": "staging/platform-canary",
-  "generatedAt": "2026-01-08T10:41:33.328Z",
-  "branches": []
+  "generatedAt": "2026-04-05T03:36:10.611Z",
+  "branches": [
+    {
+      "name": "ci/registry-update",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "claude/setup-copilot-instructions",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "codex/create-pr-for-auernyx-dependency-analysis",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/add-copilot-instructions",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/advise-ib-rule-sets",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/fix-anti-typo-logic",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/fix-dependabot-governance-breach",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/fix-md-notes-separation",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/implement-kintsugi-failure-recording",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/improve-code-performance",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/investigate-repository-compromise",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/optimize-line-parsing",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/optimize-line-parsing-loop",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/optimize-line-parsing-loop-again",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/setup-copilot-instructions",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/sub-pr-27",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/sub-pr-27-again",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/sub-pr-27-another-one",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/sub-pr-29",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/sub-pr-54",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/sub-pr-54-again",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/sub-pr-54-another-one",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/update-allowlist-for-copilot",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/update-alteration-gate-logic",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/update-dependency-versions",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "copilot/update-mk2-alteration-gate-logic",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "dependabot/npm_and_yarn/types/node-25.2.3",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "dependabot/npm_and_yarn/types/node-25.5.2",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "dependabot/npm_and_yarn/types/vscode-1.110.0",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "dependabot/npm_and_yarn/typescript-6.0.2",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "finding-autofix-038b9a0e",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "main",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "relax-alteration-gate",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "revert-58-copilot/sub-pr-54-again",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "revert-68-copilot/update-mk2-alteration-gate-logic",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "staging/platform-canary",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "wip/option-c-dual-output",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    }
+  ]
 }
