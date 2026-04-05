@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-04-05-pr-74",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #74: deps: bump @types/vscode from 1.109.0 to 1.110.0 (PR opened by dependabot[bot])",
+  "signature": "Ghostwolf101-2026-04-05-pr74",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-04-05",
+  "reason": "PR #74: deps: bump @types/vscode from 1.109.0 to 1.110.0",
+  "pullRequest": 74
+}

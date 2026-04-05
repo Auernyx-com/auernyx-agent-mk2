@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
-    "@types/vscode": "^1.109.0",
+    "@types/vscode": "^1.110.0",
     "@vscode/test-electron": "^2.5.2",
     "ajv": "^8.18.0",
     "typescript": "^5.9.3",
