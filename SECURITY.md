@@ -36,7 +36,7 @@ We provide security updates for the following versions:
 
 ### Alternative: Direct Email Contact
 
-If you cannot use GitHub Security Advisories, email: **[your-security-email@domain.com]**
+If you cannot use GitHub Security Advisories, email: **admin@auernyx.com**
 
 > ⚠️ **Maintainer Note:** Update the email address above with your actual security contact email.
 
@@ -171,7 +171,7 @@ python3 tools/ci_gate.py
 ## Security Contact
 
 - **GitHub Security Advisories:** [https://github.com/Auernyx-com/auernyx-agent-mk2/security/advisories](https://github.com/Auernyx-com/auernyx-agent-mk2/security/advisories)
-- **Email:** [your-security-email@domain.com] *(update this placeholder)*
+- **Email:** admin@aeurnyx.com
 - **Issue Tracker (non-security bugs):** [https://github.com/Auernyx-com/auernyx-agent-mk2/issues](https://github.com/Auernyx-com/auernyx-agent-mk2/issues)
 
 ---
