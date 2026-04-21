@@ -16,26 +16,11 @@
   },
   "contributes": {
     "commands": [
-      {
-        "command": "auernyx.ask",
-        "title": "Ask Auernyx"
-      },
-      {
-        "command": "auernyx.askApply",
-        "title": "Ask Auernyx (Apply Changes)"
-      },
-      {
-        "command": "auernyx.scanRepo",
-        "title": "Scan Repo (Auernyx)"
-      },
-      {
-        "command": "auernyx.fenerisPrep",
-        "title": "Prepare Feneris Port"
-      },
-      {
-        "command": "auernyx.fenerisPrepApply",
-        "title": "Prepare Feneris Port (Apply Changes)"
-      }
+      {"command": "auernyx.ask", "title": "Ask Auernyx"},
+      {"command": "auernyx.askApply", "title": "Ask Auernyx (Apply Changes)"},
+      {"command": "auernyx.scanRepo", "title": "Scan Repo (Auernyx)"},
+      {"command": "auernyx.fenerisPrep", "title": "Prepare Feneris Port"},
+      {"command": "auernyx.fenerisPrepApply", "title": "Prepare Feneris Port (Apply Changes)"}
     ]
   },
   "devDependencies": {
@@ -45,7 +30,7 @@
     "ajv": "^8.18.0",
     "typescript": "^5.9.3",
     "webpack-cli": "^7.0.2"
-}
+  },
   "scripts": {
     "build": "npm run compile",
     "compile": "tsc -p ./",
@@ -60,11 +45,4 @@
     "assets:icon": "npm run assets:ico",
     "watch": "tsc -watch -p ./",
     "registry:generate": "node tools/volatility/generate-matrix.mjs",
-    "volatility:canary": "node tools/volatility/run-matrix.mjs branches/compat-matrix.generated.json",
-    "volatility:prs": "node tools/volatility/open-propagation-prs.mjs branches/compat-matrix.generated.json"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
-}
+    "volatility:canary": "
