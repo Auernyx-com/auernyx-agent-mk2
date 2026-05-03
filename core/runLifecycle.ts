@@ -267,6 +267,50 @@ export async function runLifecycle(args: {
         rollback_points: plan.rollbackPoints,
     });
 
+    // Rollback referential integrity: every step.rollbackPointId must resolve to a declared rollback point.
+    // A dangling reference is a planning defect that undermines the audit trail.
+    {
+        const rollbackPointIds = new Set(plan.rollbackPoints.map((rp) => rp.id));
+        const dangling = plan.steps
+            .filter((s) => s.rollbackPointId && !rollbackPointIds.has(s.rollbackPointId))
+            .map((s) => `${s.id}:${s.rollbackPointId}`);
+        if (dangling.length > 0) {
+            const gitPost = vscodePolicy.git_rules.capture_status_porcelain_post ? captureGit("post") : { ok: false, error: "git_capture_disabled" };
+            const canonLocal = canonGitignoreStatus(args.ctx.repoRoot);
+            const refusal: { code: RefusalCode; message: string; protectedPathViolation: boolean } = {
+                code: "REFUSE_AUDIT_WEAKENING",
+                message: `dangling_rollback_ref:${dangling.join(",")}`,
+                protectedPathViolation: false
+            };
+            receipt?.appendEvent("rollback.dangling_ref", { dangling });
+            receipt?.writeJson("governance.json", {
+                decision_code: refusal.code,
+                write_gate: { env: cfg.writeEnabled, armed: false },
+                git_porcelain_pre: gitPre.ok ? (gitPre.porcelain ?? "") : "",
+                git_porcelain_post: gitPost.ok ? (gitPost.porcelain ?? "") : "",
+                canon_gitignore_ok: canonLocal.ok,
+                protected_path_violation: false,
+                plan_hash_sha256: planHashSha256,
+                diff_hash_sha256: diffPreview.sha256,
+                receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+                message: refusal.message,
+                timestamp_local: timestampLocal,
+                timestamp_utc: timestampUtc,
+                repo_root: args.ctx.repoRoot,
+                invocation: intake,
+            });
+            receipt?.writeJson("final.json", { ok: false, status: "REFUSED", stage: "preflight", planId: plan.planId, refusal: { code: refusal.code, reason: refusal.message } });
+            const finalized = receipt?.finalize();
+            return {
+                ok: false,
+                capability: plannedCapability,
+                plan,
+                refusal: { code: refusal.code, reason: refusal.message },
+                ...(finalized ? { receipt: finalized } : {})
+            };
+        }
+    }
+
     // Ambiguity hard-stop for mutating intents that are too vague.
     const intentText = String(args.intent ?? "").trim().toLowerCase();
     const looksVague = /^(fix(\s+it)?|clean(\s+up)?|make\s+it\s+work|do\s+it|handle\s+it)\b/.test(intentText);
@@ -644,14 +688,69 @@ export async function runLifecycle(args: {
                 };
             }
 
-            // Additional preconditions for APPLY (beyond router checks):
-            // - git reachable
-            // - dirty tree allowed only if explicitly requested
-            // - canon paths must be gitignored
             const isMutatingStep = String(step.type).toUpperCase() !== "READ_ONLY";
             const applyArmed = (approval as any)?.apply === true;
             const allowDirty = (approval as any)?.allowDirty === true;
 
+            // Rollback acknowledgment gate: if this step declares a rollback point, the step
+            // approval must explicitly list that ID in acknowledgedRollbackPointIds before
+            // execution is allowed. The operator must demonstrate they know how to back out.
+            if (isMutatingStep && step.rollbackPointId) {
+                const acked: string[] = Array.isArray((approval as any)?.acknowledgedRollbackPointIds)
+                    ? (approval as any).acknowledgedRollbackPointIds as string[]
+                    : [];
+                if (!acked.includes(step.rollbackPointId)) {
+                    receipt?.appendEvent("rollback.unacknowledged", { stepId: step.id, rollbackPointId: step.rollbackPointId });
+                    receipt?.writeJson("outputs.json", { outputs });
+                    const gitPost = vscodePolicy.git_rules.capture_status_porcelain_post ? captureGit("post") : { ok: false, error: "git_capture_disabled" };
+                    const canonPost = canonGitignoreStatus(args.ctx.repoRoot);
+                    const refusal: { code: RefusalCode; message: string; protectedPathViolation: boolean } = {
+                        code: "REFUSE_WRITE_GATE_MISSING",
+                        message: `rollback_acknowledgment_required:${step.id}:${step.rollbackPointId}`,
+                        protectedPathViolation: false
+                    };
+                    receipt?.writeJson("final.json", {
+                        ok: false,
+                        status: "REFUSED",
+                        stage: "execution",
+                        planId: plan.planId,
+                        stepId: step.id,
+                        rollbackPointId: step.rollbackPointId,
+                        ...(warnings.length ? { warnings } : {}),
+                        refusal: { code: refusal.code, reason: refusal.message }
+                    });
+                    receipt?.writeJson("governance.json", {
+                        decision_code: refusal.code,
+                        write_gate: { env: cfg.writeEnabled, armed },
+                        git_porcelain_pre: gitPre.ok ? (gitPre.porcelain ?? "") : "",
+                        git_porcelain_post: gitPost.ok ? (gitPost.porcelain ?? "") : "",
+                        canon_gitignore_ok: canonPost.ok,
+                        protected_path_violation: false,
+                        plan_hash_sha256: planHashSha256,
+                        diff_hash_sha256: diffPreview.sha256,
+                        receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+                        message: refusal.message,
+                        timestamp_local: timestampLocal,
+                        timestamp_utc: timestampUtc,
+                        repo_root: args.ctx.repoRoot,
+                        invocation: intake,
+                    });
+                    const finalized = receipt?.finalize();
+                    return {
+                        ok: false,
+                        capability: plan.steps[0]?.tool?.name,
+                        plan,
+                        ...(warnings.length ? { warnings } : {}),
+                        refusal: { code: refusal.code, reason: refusal.message },
+                        ...(finalized ? { receipt: finalized } : {})
+                    };
+                }
+            }
+
+            // Additional preconditions for APPLY (beyond router checks):
+            // - git reachable
+            // - dirty tree allowed only if explicitly requested
+            // - canon paths must be gitignored
             if (isMutatingStep && applyArmed) {
                 if (vscodePolicy.git_rules.require_repo_root_detection && !gitPre.ok) {
                     throw new Error("preflight_git_unavailable");
