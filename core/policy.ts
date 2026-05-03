@@ -101,28 +101,10 @@ export class Policy {
     }
 }
 
+// Deny-by-default: if allowlist.json is missing or unreadable, nothing is allowed.
+// The explicit config/allowlist.json is the authorization document — not this fallback.
 const DEFAULT_ALLOWLIST: AllowlistConfig = {
-    allowedCapabilities: [
-        "scanRepo",
-        "searchDocPreview",
-        "searchDocApply",
-        "fenerisPrep",
-        "baselinePre",
-        "baselinePost",
-        "memoryCheck",
-        "proposeFixes",
-        "governanceSelfTest",
-        "governanceUnlock",
-        "rollbackKnownGood",
-        "skjoldrFirewallStatus",
-        "skjoldrFirewallApplyProfile",
-        "skjoldrFirewallApplyRulesetFile",
-        "skjoldrFirewallExportBaseline",
-        "skjoldrFirewallRestoreBaseline",
-        "skjoldrFirewallAdviseInboundRuleSets",
-        "analyzeDependency",
-        "docker"
-    ]
+    allowedCapabilities: []
 };
 
 export function loadAllowlist(repoRoot: string): AllowlistConfig {
@@ -133,7 +115,7 @@ export function loadAllowlist(repoRoot: string): AllowlistConfig {
         const parsed = JSON.parse(raw) as Partial<AllowlistConfig>;
         const allowed = Array.isArray(parsed.allowedCapabilities)
             ? (parsed.allowedCapabilities.filter(Boolean) as CapabilityName[])
-            : DEFAULT_ALLOWLIST.allowedCapabilities;
+            : [];
         return { allowedCapabilities: allowed };
     } catch {
         return DEFAULT_ALLOWLIST;

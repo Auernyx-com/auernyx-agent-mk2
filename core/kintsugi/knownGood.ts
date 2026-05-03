@@ -115,7 +115,7 @@ export async function recordKnownGoodSnapshot(
             signature: "governance::kintsugi:known-good::anchor::KINTSUGI_KNOWN_GOOD_ANCHOR",
             approved_by: approvedBy,
             approval_timestamp: new Date().toISOString(),
-            risk_level: "SAFE",
+            risk_level: "CONTROLLED",
             blast_radius: ["kintsugi-ledger"],
             baseline_snapshot_path: params.policySnapshotPath,
             baseline_snapshot_hash: params.policyHash,

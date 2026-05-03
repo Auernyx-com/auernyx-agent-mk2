@@ -6,11 +6,12 @@ import { createReceiptWriter } from "./receipts";
 import { loadConfig } from "./config";
 import { evidenceFromExternalRef, evidenceFromFileHash, evidenceFromPastedText, type Evidence } from "./evidence";
 import { ApprovalRequiredError } from "./approvals";
-import * as crypto from "crypto";
 import { activateJudgment, appendProvenanceAudit, clearJudgment, ensureGenesisRecord, verifyProvenance } from "./provenance";
+import { sha256Hex, stableStringify } from "./crypto";
 import { gitStatusPorcelain, isDirtyPorcelain } from "./git";
 import { canonGitignoreStatus, computePlanHash, computePseudoDiff, loadVsCodePolicy } from "./vscodePolicy";
 import { GovernanceRefusalError } from "./governanceRefusal";
+import { getApproverIdentity } from "./kintsugi/memory";
 
 type DecisionCode = "OK_PREVIEW_ONLY" | "OK_APPLIED";
 type RefusalCode =
@@ -20,29 +21,6 @@ type RefusalCode =
     | "REFUSE_AUDIT_WEAKENING"
     | "REFUSE_AMBIGUOUS_REQUEST";
 
-// Move stableStringify outside the function to avoid recreation on every call
-function stableStringify(value: unknown): string {
-    const seen = new WeakSet<object>();
-    const normalize = (v: any): any => {
-        if (v === null || v === undefined) return v;
-        const t = typeof v;
-        if (t === "number" || t === "string" || t === "boolean") return v;
-        if (Array.isArray(v)) return v.map(normalize);
-        if (t === "object") {
-            if (seen.has(v)) return "[Circular]";
-            seen.add(v);
-            const out: Record<string, any> = {};
-            for (const k of Object.keys(v).sort()) out[k] = normalize(v[k]);
-            return out;
-        }
-        return String(v);
-    };
-    return JSON.stringify(normalize(value));
-}
-
-function sha256Hex(buf: Buffer | string): string {
-    return crypto.createHash("sha256").update(buf).digest("hex");
-}
 
 export type RunLifecycleResult = {
     ok: boolean;
@@ -116,6 +94,10 @@ export async function runLifecycle(args: {
         // Intent is ambiguous enough to risk side effects.
         if (msg === "ambiguous_side_effect_request") {
             return { code: "REFUSE_AMBIGUOUS_REQUEST", message: msg, protectedPathViolation: false };
+        }
+
+        if (msg === "risk_tolerance_insufficient") {
+            return { code: "REFUSE_WRITE_GATE_MISSING", message: msg, protectedPathViolation: false };
         }
 
         // Default catch-all: anything else is expressed as audit-weakening (cannot safely proceed).
@@ -403,7 +385,7 @@ export async function runLifecycle(args: {
             ok: false,
             status: "REFUSED",
             stage: "approval",
-            planId: (plan as any).planId,
+            planId: plan.planId,
             refusal: { code: refusal.code, reason: refusal.message }
         });
         receipt?.writeJson("governance.json", {
@@ -438,6 +420,7 @@ export async function runLifecycle(args: {
         warnings.push("duplicate_step_approval_last_write_wins");
     }
 
+    const approverIdentity = getApproverIdentity(args.ctx.repoRoot);
     const outputs: unknown[] = [];
     const stepIds = plan.steps.map((s) => s.id);
     const requestedIndex = requestedStepId ? stepIds.indexOf(requestedStepId) : -1;
@@ -454,7 +437,7 @@ export async function runLifecycle(args: {
             ok: false,
             status: "REFUSED",
             stage: "execution",
-            planId: (plan as any).planId,
+            planId: plan.planId,
             ...(warnings.length ? { warnings } : {}),
             refusal: { code: refusal.code, reason: refusal.message }
         });
@@ -530,7 +513,7 @@ export async function runLifecycle(args: {
             ok: true,
             status: "OK",
             decision_code: decision,
-            planId: (plan as any).planId,
+            planId: plan.planId,
             steps: []
         });
         const finalized = receipt?.finalize();
@@ -565,7 +548,7 @@ export async function runLifecycle(args: {
                     ok: false,
                     status: "REFUSED",
                     stage: "approval",
-                    planId: (plan as any).planId,
+                    planId: plan.planId,
                     missingStepIds,
                     ...(warnings.length ? { warnings } : {}),
                     refusal: { code: refusal.code, reason: refusal.message }
@@ -592,6 +575,69 @@ export async function runLifecycle(args: {
                     capability: plan.steps[0]?.tool?.name,
                     plan,
                     missingStepIds,
+                    ...(warnings.length ? { warnings } : {}),
+                    refusal: { code: refusal.code, reason: refusal.message },
+                    ...(finalized ? { receipt: finalized } : {})
+                };
+            }
+
+            // Evidence validation: every declared requirement on this step must be satisfied
+            // before execution is allowed. user_assertion is satisfied by the step approval
+            // carrying a known approver identity — the HIL's identity in the system IS the
+            // assertion. All other types require a matching collected evidence item.
+            const missingEvidenceIds: string[] = [];
+            for (const req of step.requiredEvidence) {
+                if (req.type === "user_assertion") {
+                    if (!approverIdentity.trim()) {
+                        missingEvidenceIds.push(`${req.id}:user_assertion:no_approver_identity`);
+                    }
+                } else {
+                    if (!evidenceOut.some((ev) => ev.type === req.type)) {
+                        missingEvidenceIds.push(`${req.id}:${req.type}:not_provided`);
+                    }
+                }
+            }
+            if (missingEvidenceIds.length > 0) {
+                receipt?.appendEvent("evidence.missing", { stepId: step.id, missingEvidenceIds });
+                receipt?.writeJson("outputs.json", { outputs });
+                const gitPost = vscodePolicy.git_rules.capture_status_porcelain_post ? captureGit("post") : { ok: false, error: "git_capture_disabled" };
+                const canonPost = canonGitignoreStatus(args.ctx.repoRoot);
+                const refusal: { code: RefusalCode; message: string; protectedPathViolation: boolean } = {
+                    code: "REFUSE_WRITE_GATE_MISSING",
+                    message: `step_evidence_required:${step.id}:${missingEvidenceIds.join(",")}`,
+                    protectedPathViolation: false
+                };
+                receipt?.writeJson("final.json", {
+                    ok: false,
+                    status: "REFUSED",
+                    stage: "evidence",
+                    planId: plan.planId,
+                    stepId: step.id,
+                    missingEvidenceIds,
+                    ...(warnings.length ? { warnings } : {}),
+                    refusal: { code: refusal.code, reason: refusal.message }
+                });
+                receipt?.writeJson("governance.json", {
+                    decision_code: refusal.code,
+                    write_gate: { env: cfg.writeEnabled, armed },
+                    git_porcelain_pre: gitPre.ok ? (gitPre.porcelain ?? "") : "",
+                    git_porcelain_post: gitPost.ok ? (gitPost.porcelain ?? "") : "",
+                    canon_gitignore_ok: canonPost.ok,
+                    protected_path_violation: false,
+                    plan_hash_sha256: planHashSha256,
+                    diff_hash_sha256: diffPreview.sha256,
+                    receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+                    message: refusal.message,
+                    timestamp_local: timestampLocal,
+                    timestamp_utc: timestampUtc,
+                    repo_root: args.ctx.repoRoot,
+                    invocation: intake,
+                });
+                const finalized = receipt?.finalize();
+                return {
+                    ok: false,
+                    capability: plan.steps[0]?.tool?.name,
+                    plan,
                     ...(warnings.length ? { warnings } : {}),
                     refusal: { code: refusal.code, reason: refusal.message },
                     ...(finalized ? { receipt: finalized } : {})
@@ -625,7 +671,7 @@ export async function runLifecycle(args: {
 
             const ctx: RouterContext = {
                 ...args.ctx,
-                execution: { planId: (plan as any).planId, stepId: step.id }
+                execution: { planId: plan.planId, stepId: step.id }
             };
 
             const out = await args.router.executeStep(step as any, ctx, approval);
@@ -664,7 +710,7 @@ export async function runLifecycle(args: {
             ok: true,
             status: "OK",
             decision_code: decision,
-            planId: (plan as any).planId,
+            planId: plan.planId,
             ...(warnings.length ? { warnings } : {}),
             steps: requestedStepId ? [requestedStepId] : plan.steps.map((s: any) => s.id)
         });
@@ -705,7 +751,7 @@ export async function runLifecycle(args: {
             status: "REFUSED",
             decision_code: refusal.code,
             stage: "execution",
-            planId: (plan as any).planId,
+            planId: plan.planId,
             ...(warnings.length ? { warnings } : {}),
             refusal: { code: refusal.code, reason: refusal.message }
         });

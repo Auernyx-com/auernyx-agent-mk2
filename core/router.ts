@@ -6,6 +6,7 @@ import { Approval, ApprovalRequiredError, approvalIdentity, isValidApproval, isV
 import { loadConfig } from "./config";
 import { readGovernanceLock } from "./governanceLock";
 import { isJudgmentActive } from "./provenance";
+import { getKintsugiPolicy } from "./kintsugi/memory";
 import type { PlanStep } from "./planner";
 
 export interface Intent {
@@ -73,6 +74,14 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             if (!allowedWhileLocked.includes(capability)) {
                 throw new Error(`governance_locked: ${lock.reason ?? "(unset)"}`);
             }
+        }
+
+        // Risk tolerance gate: Tier 2 operations require the policy to be explicitly
+        // elevated to CONTROLLED. WITHIN_TOLERANCE is the default operating mode and
+        // does not authorize high-risk capabilities. Use proposeFixes to elevate.
+        const kintsugiPolicy = getKintsugiPolicy(ctx.repoRoot);
+        if (meta.tier >= 2 && kintsugiPolicy.riskTolerance !== "CONTROLLED") {
+            throw new Error("risk_tolerance_insufficient");
         }
 
         if (capabilityRequiresApproval(capability)) {

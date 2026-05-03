@@ -17,7 +17,7 @@ export function readGovernanceLock(repoRoot: string): GovernanceLock {
     try {
         return JSON.parse(fs.readFileSync(p, "utf8")) as GovernanceLock;
     } catch {
-        return { locked: true, reason: "lock file corrupted" };
+        return { locked: true, reason: "The lock file could not be read — its contents are damaged or unreadable. The system is treating itself as locked rather than assume it is safe to proceed." };
     }
 }
 

@@ -1,5 +1,5 @@
 import type { RouterContext } from "../core/router";
-import * as crypto from "crypto";
+import { sha256Hex, stableStringify } from "../core/crypto";
 
 export type DependencyEcosystem = "npm" | "pypi" | "maven";
 
@@ -68,28 +68,6 @@ function setBoundedCache<T>(cache: Map<string, T>, key: string, value: T): void 
         if (typeof first === "string") cache.delete(first);
     }
     cache.set(key, value);
-}
-
-function stableStringify(value: unknown): string {
-    const seen = new WeakSet<object>();
-    const normalize = (v: any): any => {
-        if (v === null || v === undefined) return v;
-        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return v;
-        if (Array.isArray(v)) return v.map(normalize);
-        if (typeof v === "object") {
-            if (seen.has(v)) throw new Error("circular_json");
-            seen.add(v);
-            const out: Record<string, unknown> = {};
-            for (const k of Object.keys(v).sort()) out[k] = normalize((v as Record<string, unknown>)[k]);
-            return out;
-        }
-        return String(v);
-    };
-    return JSON.stringify(normalize(value));
-}
-
-function sha256Hex(input: string): string {
-    return crypto.createHash("sha256").update(input, "utf8").digest("hex");
 }
 
 function semverParts(v: string): [number, number, number] | null {

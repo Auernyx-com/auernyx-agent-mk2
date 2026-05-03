@@ -139,8 +139,10 @@ export async function rollbackKnownGood(ctx: RouterContext, input?: unknown): Pr
             });
         }
 
-        const riskLevel = policy.rollbackRiskClass;
-        if (riskLevel === "CONTROLLED" && ctx.approval?.confirm !== "APPLY") {
+        const rollbackClass = policy.rollbackRiskClass;
+        const riskLevel: "CONTROLLED" | "ELEVATED" | "CRITICAL" =
+            rollbackClass === "CONTROLLED" ? "ELEVATED" : "CONTROLLED";
+        if (rollbackClass === "CONTROLLED" && ctx.approval?.confirm !== "APPLY") {
             throw new GovernanceRefusalError({
                 system: "kintsugi:rollback",
                 requestedAction: `Rollback to ${kgsId}`,

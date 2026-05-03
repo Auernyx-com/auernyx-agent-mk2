@@ -51,7 +51,7 @@ export type KintsugiRecord = MandatoryFailureRecord & {
     change_set?: Record<string, { from: unknown; to: unknown }>;
     approved_by?: string;
     approval_timestamp?: string;
-    risk_level?: "SAFE" | "CONTROLLED";
+    risk_level?: "CONTROLLED" | "ELEVATED" | "CRITICAL";
     blast_radius?: string[];
 
     baseline_snapshot_path?: string;
@@ -81,14 +81,14 @@ export type KintsugiPolicy = {
     strictPreflightForArtifactWrites: boolean;
     showKintsugiOutputOnFailure: boolean;
     driftDetectionEnabled: boolean;
-    riskTolerance: "SAFE" | "CONTROLLED";
+    riskTolerance: "WITHIN_TOLERANCE" | "CONTROLLED" | "FAILED_CLOSED";
     approverIdentity?: string;
 
     allowRollback: boolean;
     rollbackWindowDays: number;
     rollbackMaxDepth: number;
     rollbackRequiresIntegrityPass: boolean;
-    rollbackRiskClass: "SAFE" | "CONTROLLED";
+    rollbackRiskClass: "WITHIN_TOLERANCE" | "CONTROLLED";
 };
 
 const DEFAULT_POLICY: KintsugiPolicy = {
@@ -96,7 +96,7 @@ const DEFAULT_POLICY: KintsugiPolicy = {
     strictPreflightForArtifactWrites: false,
     showKintsugiOutputOnFailure: false,
     driftDetectionEnabled: true,
-    riskTolerance: "SAFE",
+    riskTolerance: "WITHIN_TOLERANCE",
     approverIdentity: undefined,
 
     allowRollback: true,
@@ -189,7 +189,7 @@ export async function recordHumanApprovedPolicyChange(
         reason: string;
         before: KintsugiPolicy;
         after: KintsugiPolicy;
-        riskLevel: "SAFE" | "CONTROLLED";
+        riskLevel: "CONTROLLED" | "ELEVATED" | "CRITICAL";
         blastRadius: string[];
     }
 ): Promise<void> {
@@ -321,7 +321,7 @@ export async function snapshotPolicyAndActivate(
         suggestionId: string;
         reason: string;
         approvedBy: string;
-        riskLevel: "SAFE" | "CONTROLLED";
+        riskLevel: "CONTROLLED" | "ELEVATED" | "CRITICAL";
         blastRadius: string[];
     }
 ): Promise<{ snapshotPath: string; hash: string }> {
@@ -444,7 +444,7 @@ async function ensurePolicyInitialized(repoRoot: string): Promise<void> {
         suggestionId: "policy-init",
         reason: "Initialize default Kintsugi policy",
         approvedBy,
-        riskLevel: "SAFE",
+        riskLevel: "CONTROLLED",
         blastRadius: ["kintsugi-policy"],
     }).catch(() => undefined);
 }
@@ -456,7 +456,7 @@ async function writePolicySnapshotAndActivate(
         suggestionId: string;
         reason: string;
         approvedBy: string;
-        riskLevel: "SAFE" | "CONTROLLED";
+        riskLevel: "CONTROLLED" | "ELEVATED" | "CRITICAL";
         blastRadius: string[];
     }
 ): Promise<{ snapshotPath: string; hash: string }> {
