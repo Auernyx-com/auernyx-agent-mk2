@@ -18,6 +18,7 @@
     "skjoldrFirewallRestoreBaseline",
     "skjoldrFirewallAdviseInboundRuleSets",
     "analyzeDependency",
-    "docker"
+    "docker",
+    "mondayInfractionReview"
   ]
 }

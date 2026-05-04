@@ -27,7 +27,8 @@ export type CapabilityName =
     | "skjoldrFirewallExportBaseline"
     | "skjoldrFirewallRestoreBaseline"
     | "skjoldrFirewallAdviseInboundRuleSets"
-    | "analyzeDependency";
+    | "analyzeDependency"
+    | "mondayInfractionReview";
 
 export type CapabilityTier = 0 | 1 | 2;
 
@@ -64,7 +65,9 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
     skjoldrFirewallRestoreBaseline: { name: "skjoldrFirewallRestoreBaseline", readOnly: false, tier: 2 },
     skjoldrFirewallAdviseInboundRuleSets: { name: "skjoldrFirewallAdviseInboundRuleSets", readOnly: true, tier: 0 },
 
-    analyzeDependency: { name: "analyzeDependency", readOnly: true, tier: 0 }
+    analyzeDependency: { name: "analyzeDependency", readOnly: true, tier: 0 },
+
+    mondayInfractionReview: { name: "mondayInfractionReview", readOnly: false, tier: 1 }
 };
 
 export function getCapabilityMeta(name: CapabilityName): CapabilityMeta {

@@ -19,5 +19,11 @@
   },
   "governance": {
     "approverIdentity": "Justin Hughes | GhostWolf101"
+  },
+  "monday": {
+    "llm": {
+      "provider": "",
+      "model": ""
+    }
   }
 }

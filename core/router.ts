@@ -153,6 +153,9 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
 
             if (text.includes("analyze") && text.includes("dependency")) return "analyzeDependency";
             if (text.includes("docker")) return "docker";
+            if (text.includes("monday") || text.includes("infraction review") || text.includes("hil review")) {
+                return "mondayInfractionReview";
+            }
             return null;
         },
 
