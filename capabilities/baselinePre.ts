@@ -44,6 +44,7 @@ export async function baselinePre(ctx: RouterContext, input?: unknown): Promise<
         policyHash: policyHash(policy),
         approvedBy,
         reason,
+        kgsId: entry.kgsId,
     });
 
     return { entry, kintsugiEntry };

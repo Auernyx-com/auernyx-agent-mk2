@@ -4,7 +4,7 @@
 **Auernyx Agent Mk2** is a governed AI orchestrator with strict policy enforcement and tamper-evident audit trails. It is a TypeScript/Node.js daemon-first system that separates reasoning (Auernyx), execution (controlled capabilities), and audit (Kintsugi ledger). This is NOT a VS Code extension—it's editor-agnostic with daemon-based operation.
 
 **Key Characteristics:**
-- **Type**: Governed control plane with MCP execution architecture
+- **Type**: Sovereign governed control plane with direct capability architecture
 - **Size**: ~270 source files, ~4,658 lines in core modules
 - **Languages**: TypeScript (primary), Python (CI scripts), PowerShell (Windows launchers)
 - **Runtime**: Node.js v20+ (tested with v24.13.0), npm 11+, Python 3.10+

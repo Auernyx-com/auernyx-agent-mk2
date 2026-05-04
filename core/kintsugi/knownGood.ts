@@ -82,6 +82,7 @@ export async function recordKnownGoodSnapshot(
         approvedBy?: string;
         reason: string;
         notes?: string;
+        kgsId?: string;
     }
 ): Promise<KnownGoodSnapshotEntry> {
     const nowIso = new Date().toISOString();
@@ -131,7 +132,7 @@ export async function recordKnownGoodSnapshot(
     const approvedBy = params.approvedBy ?? getApproverIdentity(repoRoot);
 
     const entry: KnownGoodSnapshotEntry = {
-        kgs_id: kgsId(nowIso),
+        kgs_id: params.kgsId ?? kgsId(nowIso),
         timestamp: nowIso,
         policy_snapshot_path: params.policySnapshotPath,
         policy_hash: params.policyHash,
