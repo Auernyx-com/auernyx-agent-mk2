@@ -1,6 +1,6 @@
-import * as crypto from "crypto";
 import { CapabilityName, getCapabilityMeta } from "./policy";
 import type { Router } from "./router";
+import { sha256Hex, stableStringify } from "./crypto";
 
 export type EvidenceRequirement = {
     id: string;
@@ -45,31 +45,6 @@ export type Plan = {
     rollbackPoints: RollbackPoint[];
     steps: PlanStep[];
 };
-
-function sha256Hex(buf: Buffer | string): string {
-    return crypto.createHash("sha256").update(buf).digest("hex");
-}
-
-function stableStringify(value: unknown): string {
-    const seen = new WeakSet<object>();
-    const normalize = (v: any): any => {
-        if (v === null || v === undefined) return v;
-        const t = typeof v;
-        if (t === "number" || t === "boolean" || t === "string") return v;
-        if (Array.isArray(v)) return v.map(normalize);
-        if (t === "object") {
-            if (seen.has(v)) throw new Error("circular_json");
-            seen.add(v);
-            const out: Record<string, any> = {};
-            for (const k of Object.keys(v).sort()) {
-                out[k] = normalize(v[k]);
-            }
-            return out;
-        }
-        return String(v);
-    };
-    return JSON.stringify(normalize(value));
-}
 
 function cloneNoSharedRefs<T>(value: T): T {
     const clone = (v: any): any => {

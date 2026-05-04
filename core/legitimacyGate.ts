@@ -1,13 +1,7 @@
 // Legitimacy Gate for Mk2
 // Checks intent before planning
 
-export function check(intent: string): { allow: boolean; reason?: string } {
-  // Minimal stub: allow all intents except empty or 'malware'
-  if (!intent || intent.toLowerCase().includes("malware")) {
-    return { allow: false, reason: "Intent is empty or forbidden." };
-  }
-  return { allow: true };
-}export type LegitimacyResult =
+export type LegitimacyResult =
     | { ok: true }
     | {
           ok: false;

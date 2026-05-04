@@ -15,6 +15,6 @@ export type RefusalReasonCode =
     | "AUDIT_INVARIANT_VIOLATION"
     | "LEDGER_PROTECTION";
 
-export type RiskClass = "SAFE" | "CONTROLLED";
+export type RiskClass = "WITHIN_TOLERANCE" | "CONTROLLED" | "FAILED_CLOSED";
 
 export const REASONS_VERSION = 1 as const;

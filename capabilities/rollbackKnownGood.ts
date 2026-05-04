@@ -2,6 +2,7 @@ import type { RouterContext } from "../core/router";
 import { GovernanceRefusalError } from "../core/governanceRefusal";
 import { getApproverIdentity, getKintsugiPolicy, ledgerHasRecordHash, makeMfr, makeSnapshotHash, policyHash, recordFailure, recordHumanApprovedPolicyChange, verifyKintsugiIntegrity } from "../core/kintsugi/memory";
 import { listKnownGoodSnapshotsWithPaths, type KnownGoodSnapshotEntry } from "../core/kintsugi/knownGood";
+import { restoreKnownGood } from "../core/knownGood";
 import * as fs from "fs";
 
 export type RollbackInput =
@@ -139,8 +140,10 @@ export async function rollbackKnownGood(ctx: RouterContext, input?: unknown): Pr
             });
         }
 
-        const riskLevel = policy.rollbackRiskClass;
-        if (riskLevel === "CONTROLLED" && ctx.approval?.confirm !== "APPLY") {
+        const rollbackClass = policy.rollbackRiskClass;
+        const riskLevel: "CONTROLLED" | "ELEVATED" | "CRITICAL" =
+            rollbackClass === "CONTROLLED" ? "ELEVATED" : "CONTROLLED";
+        if (rollbackClass === "CONTROLLED" && ctx.approval?.confirm !== "APPLY") {
             throw new GovernanceRefusalError({
                 system: "kintsugi:rollback",
                 requestedAction: `Rollback to ${kgsId}`,
@@ -187,7 +190,20 @@ export async function rollbackKnownGood(ctx: RouterContext, input?: unknown): Pr
             },
         });
 
-        return { restoredPolicyHash: policyHash(after), kgsId };
+        let configRestored = false;
+        let configRestoreWarning: string | undefined;
+        try {
+            restoreKnownGood(ctx.repoRoot, kgsId);
+            configRestored = true;
+        } catch (err) {
+            configRestoreWarning = `Config snapshot not found for ${kgsId} — allowlist and config were not restored. ${String(err)}`;
+            ctx.ledger?.append(ctx.sessionId, "rollback.config_restore_skipped", {
+                kgsId,
+                reason: configRestoreWarning,
+            });
+        }
+
+        return { restoredPolicyHash: policyHash(after), kgsId, configRestored, configRestoreWarning };
     }
 
     throw new Error(`Unknown action: ${String(action)}`);

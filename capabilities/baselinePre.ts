@@ -35,7 +35,7 @@ export async function baselinePre(ctx: RouterContext, input?: unknown): Promise<
         suggestionId: "baselinePre",
         reason,
         approvedBy,
-        riskLevel: "SAFE",
+        riskLevel: "CONTROLLED",
         blastRadius: ["kintsugi-policy"],
     });
 
@@ -44,6 +44,7 @@ export async function baselinePre(ctx: RouterContext, input?: unknown): Promise<
         policyHash: policyHash(policy),
         approvedBy,
         reason,
+        kgsId: entry.kgsId,
     });
 
     return { entry, kintsugiEntry };

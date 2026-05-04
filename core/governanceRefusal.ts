@@ -12,7 +12,8 @@ export type RefusalReason =
     | "INPUT_AMBIGUOUS"
     | "PRECONDITIONS_NOT_MET"
     | "AUDIT_INVARIANT_VIOLATION"
-    | "LEDGER_PROTECTION";
+    | "LEDGER_PROTECTION"
+    | "BRANCH_NOT_CONNECTED";
 
 export type GovernanceRefusal = {
     system: string;
