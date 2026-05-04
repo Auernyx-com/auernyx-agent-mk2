@@ -1,6 +1,11 @@
 {
   "governance_record": "2026-05-04-pr-116",
-  "signature": "Ghostwolf101-2026-05-04-pr116",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-04",
   "reason": "PR #116: Ghostwolf101 patch 1",
-  "pullRequest": 116
+  "approvals": [
+    "jason"
+  ],
+  "pullRequest": 116,
+  "signature": "Ghostwolf101-2026-05-04-pr116"
 }
