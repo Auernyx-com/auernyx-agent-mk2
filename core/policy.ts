@@ -47,7 +47,7 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
 
     // Tier 1+: mutating / privileged (approval required)
     searchDocApply: { name: "searchDocApply", readOnly: false, tier: 1 },
-    fenerisPrep: { name: "fenerisPrep", readOnly: false, tier: 1 },
+    fenerisPrep: { name: "fenerisPrep", readOnly: true, tier: 1 },
     baselinePre: { name: "baselinePre", readOnly: false, tier: 1 },
     baselinePost: { name: "baselinePost", readOnly: true, tier: 1 },
 

@@ -18,6 +18,10 @@
   "constraints_ref": [
     "constraints/feneris.constraint.v1.json"
   ],
+  "schemas_ref": [
+    "schemas/aesir.governance.infraction.v1.json",
+    "schemas/feneris.infraction.score.v1.json"
+  ],
   "metadata": {
     "parent_authority": "mnema",
     "authoritative": true,

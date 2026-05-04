@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-05-04 — v1.0.0 · A.Varsity
+
+### Auernyx Varsity 1.0.0
+
+The foundation is sound. The defense is complete. The system is what it says it is.
+
+**Feneris — Watchdog and Sentinel** (`core/feneris.ts`, `capabilities/fenerisPrep.ts`)
+
+The third blade wired and verified. Feneris monitors for governance and policy violations,
+emits OPEN infractions with evidence, and tracks the origin point of every anomaly detected.
+All seven constraints honored: `FENERIS.MONITOR.ONLY`, `FENERIS.NO_AUTONOMOUS_ENFORCEMENT`,
+`FENERIS.INFRACTION.RAISE_OPEN_ONLY`, `FENERIS.NO_VERDICT`, `FENERIS.EVIDENCE.REQUIRED`,
+`FENERIS.NO_SIDE_EFFECTS`, `FENERIS.NO_NETWORK_SIDE_EFFECTS`.
+
+Six sentinel checks: allowlist integrity, Obsidian's Judgment state, governance lock state,
+receipt chain completeness, Kintsugi policy validity, genesis record presence.
+
+**Dual-scoring rubric** (`governance/canon-adjacent/schemas/feneris.infraction.score.v1.json`)
+
+Every infraction carries two independent assessments, never merged:
+- `feneris_assessment` — AI scoring at detection time
+- `hil_assessment` — human scoring at disposition time
+
+Four dimensions, 1–10 each: scope, severity, sensitivity, blast_radius. Side-by-side
+divergence is signal, not noise — the calibration dataset for future knowledge gain.
+
+**Founding record** (`docs/FENERIS_FOUNDING_INCIDENT.md`)
+
+The credential push incident — email and password accidentally committed and pushed,
+pre-repository — documented as the first closed infraction in Feneris's record.
+The scar that made the gold visible.
+
+**What 1.0.0 means**
+
+- Governance core: complete
+- Three-gate defense: Legitimacy Gate + Obsidian's Judgment + Feneris Sentinel — complete
+- Hash-chained audit trail with receipts on every operation: complete
+- Both clients operational and independent: complete
+- Fail-closed CI gate: complete
+- Zero external dependencies: complete
+
+Pantheon (ChatGPT/OpenAI integration) is not a blocker — it is a future integration.
+Varsity is the governance rail. That separation is by design.
+
+**AVars** — shorthand. **A.Varsity** — the name.
+
+---
+
 ## 2026-05-03
 
 ### Governance Stabilization — Foundational Deficiency Remediation

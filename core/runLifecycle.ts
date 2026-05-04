@@ -229,7 +229,7 @@ export async function runLifecycle(args: {
             case "searchDocPreview":
                 return ["docs/SEARCH.md"];
             case "fenerisPrep":
-                return ["feneris-windows/init.ps1"];
+                return [];
             case "baselinePre":
                 return [
                     "artifacts/known_good/entries/*.kgs.json",

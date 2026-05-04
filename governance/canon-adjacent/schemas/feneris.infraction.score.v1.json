@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "feneris.infraction.score.v1",
+  "title": "Feneris Infraction Score (v1)",
+  "description": "Four-dimension 1-10 scoring rubric applied to every Feneris infraction. Filled independently by Feneris (feneris_assessment) and HIL (hil_assessment). Both records are preserved — never merged or averaged.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["score", "origin_point", "rationale"],
+  "properties": {
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "severity", "sensitivity", "blast_radius"],
+      "properties": {
+        "scope": {
+          "type": "integer", "minimum": 1, "maximum": 10,
+          "description": "Breadth of impact. 1=single isolated component. 10=system-wide, all execution paths affected."
+        },
+        "severity": {
+          "type": "integer", "minimum": 1, "maximum": 10,
+          "description": "Governance integrity damage. 1=minor policy drift. 10=core governance law violated."
+        },
+        "sensitivity": {
+          "type": "integer", "minimum": 1, "maximum": 10,
+          "description": "Nature of data or vector involved. 1=non-sensitive operational data. 5-6=credentials/IP/PII. 7-8=bypass vectors/governance keys. 9-10=complete loss of control."
+        },
+        "blast_radius": {
+          "type": "integer", "minimum": 1, "maximum": 10,
+          "description": "Potential propagation if unaddressed. 1=fully self-contained. 5-6=persists across sessions. 9-10=uncontrolled cascade across connected systems."
+        }
+      }
+    },
+    "origin_point": {
+      "type": "string",
+      "description": "Where the anomaly was detected. Format: check:<id>|component:<name>|path:<file-if-applicable>",
+      "minLength": 1
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Why these scores were assigned. Sufficient for a future reviewer to reconstruct the reasoning.",
+      "minLength": 1
+    }
+  }
+}

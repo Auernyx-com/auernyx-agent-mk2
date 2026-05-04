@@ -1,8 +1,8 @@
 {
   "name": "auernyx-agent",
-  "displayName": "Auernyx Agent",
-  "description": "Governed AI orchestrator with two independent agents: VS Code extension and headless daemon with CLI/browser UI.",
-  "version": "0.0.2",
+  "displayName": "A.Varsity",
+  "description": "Auernyx Varsity — governed AI orchestrator with full three-gate defense, hash-chained audit trail, and zero external dependencies. Two independent agents: VS Code extension and headless daemon with CLI/browser UI.",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.85.0"
   },
