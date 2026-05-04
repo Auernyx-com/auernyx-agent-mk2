@@ -1,0 +1,8 @@
+{
+  "governance_record": "2026-05-04-fix-ci-gate-base-exception",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-04",
+  "reason": "Fix: narrow except BaseException to except Exception in ci_gate.py trace-file fallbacks, re-raising KeyboardInterrupt and SystemExit",
+  "approvals": ["jason"],
+  "pullRequest": "pending"
+}
