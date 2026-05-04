@@ -1,0 +1,10 @@
+{
+  "governance_record": "2026-05-04-pr-117",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-04",
+  "reason": "PR #117: Reformat package.json commands array and remove empty metadata fields",
+  "approvals": [
+    "jason"
+  ],
+  "pullRequest": 117
+}
