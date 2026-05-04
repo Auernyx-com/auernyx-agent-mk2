@@ -45,4 +45,7 @@
     "assets:icon": "npm run assets:ico",
     "watch": "tsc -watch -p ./",
     "registry:generate": "node tools/volatility/generate-matrix.mjs",
-    "volatility:canary": "
+    "volatility:canary": "node tools/volatility/run-matrix.mjs branches/compat-matrix.generated.json",
+    "volatility:prs": "node tools/volatility/open-propagation-prs.mjs branches/compat-matrix.generated.json"
+  }
+}

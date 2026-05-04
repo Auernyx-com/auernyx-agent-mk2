@@ -18,6 +18,7 @@ export interface Approval {
 export interface StepApproval extends Approval {
     stepId: string;
     evidenceRefs?: string[];
+    acknowledgedRollbackPointIds?: string[];
 }
 
 export function createHumanApproval(
@@ -52,7 +53,10 @@ export function isValidStepApproval(approval: unknown): approval is StepApproval
     if (typeof a.stepId !== "string" || a.stepId.trim().length === 0) return false;
     if (a.evidenceRefs === undefined) return true;
     if (!Array.isArray(a.evidenceRefs)) return false;
-    return (a.evidenceRefs as unknown[]).every((v) => typeof v === "string" && v.trim().length > 0);
+    if (!(a.evidenceRefs as unknown[]).every((v) => typeof v === "string" && v.trim().length > 0)) return false;
+    if (a.acknowledgedRollbackPointIds === undefined) return true;
+    if (!Array.isArray(a.acknowledgedRollbackPointIds)) return false;
+    return (a.acknowledgedRollbackPointIds as unknown[]).every((v) => typeof v === "string" && v.trim().length > 0);
 }
 
 export function approvalIdentity(approval: Approval | undefined): string | undefined {

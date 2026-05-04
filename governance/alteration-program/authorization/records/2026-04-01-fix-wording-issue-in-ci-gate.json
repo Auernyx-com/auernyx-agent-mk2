@@ -1,0 +1,6 @@
+{
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-04-01",
+  "reason": "PR #110: Fix ci_gate.py to require at least one auth record instead of exactly one, resolving failure when a PR branch has multiple auth records from multiple commits.",
+  "pullRequest": 110
+}

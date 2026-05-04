@@ -15,11 +15,11 @@ type ProposeFixesInput = {
 };
 
 function isLooseningPolicy(before: any, after: any): boolean {
-    if (before?.riskTolerance === "SAFE" && after?.riskTolerance === "CONTROLLED") return true;
+    if (before?.riskTolerance === "WITHIN_TOLERANCE" && after?.riskTolerance === "CONTROLLED") return true;
     if (before?.confirmArtifactWrites === true && after?.confirmArtifactWrites === false) return true;
     if (before?.rollbackRequiresIntegrityPass === true && after?.rollbackRequiresIntegrityPass === false) return true;
     if (before?.allowRollback === false && after?.allowRollback === true) return true;
-    if (before?.rollbackRiskClass === "CONTROLLED" && after?.rollbackRiskClass === "SAFE") return true;
+    if (before?.rollbackRiskClass === "CONTROLLED" && after?.rollbackRiskClass === "WITHIN_TOLERANCE") return true;
     return false;
 }
 
@@ -32,8 +32,8 @@ export async function proposeFixes(ctx: RouterContext, input?: unknown): Promise
     if (policy.riskTolerance !== "CONTROLLED") {
         suggestions.push({
             id: "enable-riskTolerance-controlled",
-            label: "Enable riskTolerance=CONTROLLED",
-            detail: "Allows CONTROLLED operations (still requires typed APPLY).",
+            label: "Elevate riskTolerance to CONTROLLED",
+            detail: "Authorizes Tier 2 operations. Deliberate, receipted, requires typed APPLY.",
             patch: { riskTolerance: "CONTROLLED" },
         });
     }
@@ -75,7 +75,7 @@ export async function proposeFixes(ctx: RouterContext, input?: unknown): Promise
         const before = getKintsugiPolicy(ctx.repoRoot);
         const after = { ...before, ...(picked.patch as any) };
         const loosening = isLooseningPolicy(before, after);
-        const riskLevel = loosening ? "CONTROLLED" : "SAFE";
+        const riskLevel = loosening ? "ELEVATED" : "CONTROLLED";
 
         if (riskLevel === "CONTROLLED" && ctx.approval?.confirm !== "APPLY") {
             throw new GovernanceRefusalError({

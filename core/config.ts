@@ -47,7 +47,7 @@ export interface AuernyxConfig {
     };
 }
 
-export type RiskTolerance = "SAFE" | "CONTROLLED";
+export type RiskTolerance = "WITHIN_TOLERANCE" | "CONTROLLED" | "FAILED_CLOSED";
 
 export interface RollbackPolicyConfig {
     allowRollback: boolean;
@@ -99,10 +99,15 @@ const DEFAULT_SKJOLDR: SkjoldrFirewallConfig = {
 const DEFAULT_GOVERNANCE: GovernanceConfig = {
     // Empty => no identity check enforced.
     approverIdentity: "",
-    // SAFE means “do not allow controlled/loosening operations unless explicitly confirmed”.
-    riskTolerance: "SAFE",
+    riskTolerance: "WITHIN_TOLERANCE",
     // Paths are relative to repo root. Used by the guarded filesystem helpers.
-    protectedPaths: [".auernyx/kintsugi/ledger/records"],
+    // These must stay in sync with the hard-coded PROTECTED_CONTAINS in kintsugi/protectedPaths.ts
+    // so that both witnesses independently protect the same critical systems.
+    protectedPaths: [
+        ".auernyx/kintsugi/ledger/records",
+        ".auernyx/kintsugi/policy/history",
+        ".auernyx/kintsugi/active.policy.json",
+    ],
     rollback: {
         allowRollback: false,
         rollbackWindowDays: 14,
@@ -180,7 +185,7 @@ export function loadConfig(repoRoot: string): {
             riskTolerance:
                 (String((govRaw as any)?.riskTolerance ?? DEFAULT_GOVERNANCE.riskTolerance).toUpperCase() as RiskTolerance) === "CONTROLLED"
                     ? "CONTROLLED"
-                    : "SAFE",
+                    : "WITHIN_TOLERANCE",
             protectedPaths: Array.isArray((govRaw as any)?.protectedPaths)
                 ? (govRaw as any).protectedPaths.filter((p: any) => typeof p === "string" && p.trim().length > 0)
                 : DEFAULT_GOVERNANCE.protectedPaths,
@@ -218,50 +223,6 @@ export function loadConfig(repoRoot: string): {
                     : DEFAULT_SKJOLDR.baselineSnapshotHash,
         };
 
-        return {
-            daemon: {
-                host,
-                port: Number.isFinite(port) && port > 0 ? port : DEFAULT_DAEMON.port,
-                secret,
-                maxBodyBytes: Number.isFinite(maxBodyBytes) && maxBodyBytes > 0 ? maxBodyBytes : DEFAULT_DAEMON.maxBodyBytes,
-                rateLimit: {
-                    windowMs: Number.isFinite(windowMs) && windowMs > 0 ? windowMs : DEFAULT_DAEMON.rateLimit.windowMs,
-                    maxRequests: Number.isFinite(maxRequests) && maxRequests > 0 ? maxRequests : DEFAULT_DAEMON.rateLimit.maxRequests
-                }
-            },
-            paths: {
-                scanAllowedRoots
-            },
-            governance: {
-                ...governance,
-                approverIdentity: String(governance.approverIdentity ?? "").trim(),
-                protectedPaths: Array.isArray(governance.protectedPaths)
-                    ? governance.protectedPaths.map((p) => String(p).replace(/\\/g, "/").trim()).filter((p) => p.length > 0)
-                    : DEFAULT_GOVERNANCE.protectedPaths,
-                rollback: {
-                    allowRollback: Boolean(governance.rollback?.allowRollback),
-                    rollbackWindowDays:
-                        Number.isFinite(governance.rollback?.rollbackWindowDays) && (governance.rollback!.rollbackWindowDays as number) > 0
-                            ? (governance.rollback!.rollbackWindowDays as number)
-                            : DEFAULT_GOVERNANCE.rollback.rollbackWindowDays,
-                    rollbackMaxDepth:
-                        Number.isFinite(governance.rollback?.rollbackMaxDepth) && (governance.rollback!.rollbackMaxDepth as number) > 0
-                            ? (governance.rollback!.rollbackMaxDepth as number)
-                            : DEFAULT_GOVERNANCE.rollback.rollbackMaxDepth,
-                    rollbackRequiresIntegrityPass: Boolean(governance.rollback?.rollbackRequiresIntegrityPass ?? DEFAULT_GOVERNANCE.rollback.rollbackRequiresIntegrityPass)
-                }
-            },
-            addons: {
-                skjoldrFirewall: {
-                    ...skjoldr,
-                    timeoutMs: Number.isFinite(skjoldr.timeoutMs) && skjoldr.timeoutMs > 0 ? skjoldr.timeoutMs : DEFAULT_SKJOLDR.timeoutMs,
-                }
-            },
-            writeEnabled,
-            receiptsEnabled
-        };
-
-        // Cache the result with file mtime
         const result = {
             daemon: {
                 host,
@@ -304,7 +265,7 @@ export function loadConfig(repoRoot: string): {
             writeEnabled,
             receiptsEnabled
         };
-        
+
         setCachedConfig(filePath, result, stat.mtimeMs);
         return result;
     } catch {

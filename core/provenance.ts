@@ -1,7 +1,7 @@
-import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { sha256Hex, stableStringify } from "./crypto";
 
 export type ProvenanceFailureCode =
     | "genesis_missing"
@@ -34,26 +34,6 @@ export type JudgmentRecord = {
     failure: Omit<Extract<ProvenanceStatus, { ok: false }>, "ok">;
 };
 
-function sha256Hex(buf: Buffer | string): string {
-    return crypto.createHash("sha256").update(buf).digest("hex");
-}
-
-function stableStringify(input: unknown): string {
-    const sortKeysDeep = (v: any): any => {
-        if (Array.isArray(v)) return v.map(sortKeysDeep);
-        if (v && typeof v === "object") {
-            const out: Record<string, any> = {};
-            for (const k of Object.keys(v).sort()) {
-                const value = (v as any)[k];
-                if (value === undefined) continue;
-                out[k] = sortKeysDeep(value);
-            }
-            return out;
-        }
-        return v;
-    };
-    return JSON.stringify(sortKeysDeep(input));
-}
 
 function provenanceDir(repoRoot: string): string {
     return path.join(repoRoot, ".auernyx", "provenance");

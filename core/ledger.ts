@@ -1,6 +1,6 @@
-import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import { sha256Hex, stableStringify } from "./crypto";
 
 export interface LedgerEntry {
     ts: string;
@@ -11,19 +11,6 @@ export interface LedgerEntry {
     hash: string;
 }
 
-function stableStringify(value: unknown): string {
-    return JSON.stringify(value, (_key, val) => {
-        if (val && typeof val === "object" && !Array.isArray(val)) {
-            return Object.keys(val as Record<string, unknown>)
-                .sort()
-                .reduce<Record<string, unknown>>((acc, k) => {
-                    acc[k] = (val as Record<string, unknown>)[k];
-                    return acc;
-                }, {});
-        }
-        return val;
-    });
-}
 
 export class Ledger {
     private readonly ledgerPath: string;
@@ -103,7 +90,7 @@ export class Ledger {
 
         const computeEntry = (prevHash: string | undefined): LedgerEntry => {
             const toHash = stableStringify({ ts, sessionId, event, data, prevHash });
-            const hash = crypto.createHash("sha256").update(toHash).digest("hex");
+            const hash = sha256Hex(toHash);
             return { ts, sessionId, event, data, prevHash, hash };
         };
 
