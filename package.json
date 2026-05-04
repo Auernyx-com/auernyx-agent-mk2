@@ -1,1 +1,51 @@
-{"name": "auernyx-agent","displayName": "Auernyx Agent","description": "Governed AI orchestrator with two independent agents: VS Code extension and headless daemon with CLI/browser UI.","version": "0.0.2","engines": {"vscode": "^1.85.0"},"main": "./dist/clients/vscode/extension.js","activationEvents": ["onStartupFinished"],"bin": {"auernyx": "./dist/clients/cli/auernyx.js","auernyx-daemon": "./dist/clients/cli/auernyx-daemon.js"},"contributes": {"commands": [{"command": "auernyx.ask","title": "Ask Auernyx"},{"command": "auernyx.askApply","title": "Ask Auernyx (Apply Changes)"},{"command": "auernyx.scanRepo","title": "Scan Repo (Auernyx)"},{"command": "auernyx.fenerisPrep","title": "Prepare Feneris Port"},{"command": "auernyx.fenerisPrepApply","title": "Prepare Feneris Port (Apply Changes)"}]},"devDependencies": {"@types/node": "^25.5.2","@types/vscode": "^1.109.0","@vscode/test-electron": "^2.5.2","ajv": "^8.18.0","typescript": "^5.9.3","webpack-cli": "^6.0.1"},"scripts": {"build": "npm run compile","compile": "tsc -p ./","typecheck": "tsc -p ./ --noEmit","test": "tsc -p tsconfig.test.json && node --test dist/tests/*.test.js","verify": "npm run typecheck && npm run compile && node ./dist/clients/cli/auernyx.js memory --reason \"verify\" --no-daemon && node ./dist/clients/cli/auernyx.js scan . --reason \"verify\" --no-daemon","verify:kotlin": "node ./tools/run-kotlin-proof-battery.mjs","cli": "node ./dist/clients/cli/auernyx.js","daemon": "node ./dist/clients/cli/auernyx-daemon.js","assets:resize": "node ./tools/make-ico.js --resize-only --keep-temp","assets:ico": "node ./tools/make-ico.js","assets:icon": "npm run assets:ico","watch": "tsc -watch -p ./","registry:generate": "node tools/volatility/generate-matrix.mjs","volatility:canary": "node tools/volatility/run-matrix.mjs branches/compat-matrix.generated.json","volatility:prs": "node tools/volatility/open-propagation-prs.mjs branches/compat-matrix.generated.json"},"keywords": [],"author": "","license": "ISC","type": "commonjs"}
+{
+  "name": "auernyx-agent",
+  "displayName": "Auernyx Agent",
+  "description": "Governed AI orchestrator with two independent agents: VS Code extension and headless daemon with CLI/browser UI.",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./dist/clients/vscode/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "bin": {
+    "auernyx": "./dist/clients/cli/auernyx.js",
+    "auernyx-daemon": "./dist/clients/cli/auernyx-daemon.js"
+  },
+  "contributes": {
+    "commands": [
+      {"command": "auernyx.ask", "title": "Ask Auernyx"},
+      {"command": "auernyx.askApply", "title": "Ask Auernyx (Apply Changes)"},
+      {"command": "auernyx.scanRepo", "title": "Scan Repo (Auernyx)"},
+      {"command": "auernyx.fenerisPrep", "title": "Prepare Feneris Port"},
+      {"command": "auernyx.fenerisPrepApply", "title": "Prepare Feneris Port (Apply Changes)"}
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@types/vscode": "^1.110.0",
+    "@vscode/test-electron": "^2.5.2",
+    "ajv": "^8.18.0",
+    "typescript": "^5.9.3",
+    "webpack-cli": "^7.0.2"
+  },
+  "scripts": {
+    "build": "npm run compile",
+    "compile": "tsc -p ./",
+    "typecheck": "tsc -p ./ --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test dist/tests/*.test.js",
+    "verify": "npm run typecheck && npm run compile && node ./dist/clients/cli/auernyx.js memory --reason \"verify\" --no-daemon && node ./dist/clients/cli/auernyx.js scan . --reason \"verify\" --no-daemon",
+    "verify:kotlin": "node ./tools/run-kotlin-proof-battery.mjs",
+    "cli": "node ./dist/clients/cli/auernyx.js",
+    "daemon": "node ./dist/clients/cli/auernyx-daemon.js",
+    "assets:resize": "node ./tools/make-ico.js --resize-only --keep-temp",
+    "assets:ico": "node ./tools/make-ico.js",
+    "assets:icon": "npm run assets:ico",
+    "watch": "tsc -watch -p ./",
+    "registry:generate": "node tools/volatility/generate-matrix.mjs",
+    "volatility:canary": "node tools/volatility/run-matrix.mjs branches/compat-matrix.generated.json",
+    "volatility:prs": "node tools/volatility/open-propagation-prs.mjs branches/compat-matrix.generated.json"
+  }
+}
