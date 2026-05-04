@@ -348,12 +348,19 @@ async function main() {
                 : null;
             if (effectiveControlled && identityRequiredForControlled && (!identity || identity.trim().length === 0)) process.exit(4);
 
-            const approval = createHumanApproval(reason, {
-                identity: identity ?? undefined,
-                apply: effectiveControlled && approvalFlags.apply ? true : undefined,
-                allowDirty: effectiveControlled && approvalFlags.apply && approvalFlags.allowDirty ? true : undefined,
-                confirm: effectiveControlled && approvalFlags.apply ? "APPLY" : undefined
-            });
+            const daemonRollbackPointIds: string[] = effectiveControlled && approvalFlags.apply && Array.isArray(daemonPlan?.rollbackPoints)
+                ? (daemonPlan.rollbackPoints as any[]).map((rp: any) => String(rp?.id ?? "")).filter(Boolean)
+                : [];
+
+            const approval = {
+                ...createHumanApproval(reason, {
+                    identity: identity ?? undefined,
+                    apply: effectiveControlled && approvalFlags.apply ? true : undefined,
+                    allowDirty: effectiveControlled && approvalFlags.apply && approvalFlags.allowDirty ? true : undefined,
+                    confirm: effectiveControlled && approvalFlags.apply ? "APPLY" : undefined
+                }),
+                ...(daemonRollbackPointIds.length > 0 ? { acknowledgedRollbackPointIds: daemonRollbackPointIds } : {}),
+            };
 
             const retry = await tryRunViaDaemon({ repoRoot }, daemonIntent, daemonInput, approval);
             if (retry === null) {
@@ -442,7 +449,13 @@ async function main() {
     });
 
     const plan = planForIntent(core.router, daemonIntent, localInput);
-    const stepApprovals = plan.steps.map((s) => ({ ...approval, stepId: s.id }));
+    const stepApprovals = plan.steps.map((s) => ({
+        ...approval,
+        stepId: s.id,
+        ...(approvalFlags.apply && s.rollbackPointId
+            ? { acknowledgedRollbackPointIds: [s.rollbackPointId] }
+            : {}),
+    }));
 
     const lifecycle = await runLifecycle({
         router: core.router,

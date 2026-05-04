@@ -89,9 +89,11 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
                 throw new ApprovalRequiredError(capability);
             }
 
-            // Optional identity enforcement (parity with original governance).
+            // Identity enforcement applies to controlled (non-readonly) operations only.
+            // Read-only operations require a valid approval for audit trail but do not
+            // require identity — routine checks should not be blocked by identity gate.
             const expected = cfg.governance.approverIdentity;
-            if (expected.trim().length > 0) {
+            if (!meta.readOnly && expected.trim().length > 0) {
                 const provided = approvalIdentity(approval);
                 if (!provided || provided.trim() !== expected.trim()) {
                     throw new Error("no_authority");

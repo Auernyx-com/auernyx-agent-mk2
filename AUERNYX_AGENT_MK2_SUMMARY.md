@@ -82,7 +82,7 @@ Intent
 | Obsidian | Provenance judgment — activates on genesis failure |
 | Ghost | Dual-witness verifier — pure observer, no side effects |
 | Feneris | Watchdog — log watching, compromise detection, code flagging (branch declared, not yet connected) |
-| Mondag | Pending |
+| Monday | Pending |
 | Smalls | Pending |
 | Sovereignty | Pending |
 

@@ -16,5 +16,8 @@
   },
   "paths": {
     "scanAllowedRoots": []
+  },
+  "governance": {
+    "approverIdentity": "Justin Hughes | GhostWolf101"
   }
 }
