@@ -1,0 +1,61 @@
+{
+  "governance_record": "2026-05-05-direct-push-bypass-remediation",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-05",
+  "incident_type": "ruleset-bypass-self-remediated",
+  "caught_by": "Claude Code (claude-sonnet-4-6) — self-identified during SQUAD BAT compatibility assessment session, 2026-05-05",
+  "root_cause": "GitHub ruleset 'Governance avars' (ID: 14704874) had bypass_actors configured with bypass_mode: 'always' for OrganizationAdmin. This silently permitted direct pushes to main without PR review or CI gate enforcement. No notification mechanism was in place to surface bypasses as they occurred.",
+  "remediation": [
+    "This authorization record created as retroactive governance documentation",
+    "bypass_mode changed from 'always' to 'pull_request' on 2026-05-05 — all future pushes to main require PR review regardless of actor identity",
+    "All bypassed commits verified to contain legitimate development work authorized by Ghostwolf101 during active sessions"
+  ],
+  "reason": "Retroactive documentation of all direct pushes to main that bypassed the 'Governance avars' ruleset between 2026-04-04 and 2026-05-05. Two actor groups are documented below. Content of all commits is legitimate and founder-authorized. The bypass mechanism (bypass_mode: 'always') has been closed as part of this remediation. Self-identified and self-remediated by Claude Code.",
+  "bypassed_commits": {
+    "claude_code_direct_pushes": {
+      "actor": "opensource@auernyx.com (Claude Code operating under Auernyx identity)",
+      "period": "2026-05-03 to 2026-05-05",
+      "note": "All commits made during active development sessions with Ghostwolf101. Work was directed and reviewed by Ghostwolf101 in real time but was not routed through a PR before landing on main.",
+      "commits": [
+        { "sha": "de5b0fa3c3dcad05b8244b3ab4d95be6d6f967ab", "date": "2026-05-03", "subject": "feat(governance): foundational deficiency remediation — stabilization pass 2026-05-03" },
+        { "sha": "6f112a24c685e6e90017ed2420d29a44606c4900", "date": "2026-05-03", "subject": "feat(governance): enforce rollback point acknowledgment at execution time" },
+        { "sha": "8ccbe4b10a2acdedd17e1a5834a3a7d3e797808b", "date": "2026-05-03", "subject": "feat(governance): foundational stabilization — branch stubs, config restore, dead code removal" },
+        { "sha": "3bb336f41794f622232c0a983b5c824f1fe09ae3", "date": "2026-05-03", "subject": "feat(governance): CLI rollback acknowledgment, identity gate scope, approverIdentity config" },
+        { "sha": "34f4bbcb60904b2a6fed78be8b319bfe7e0fc927", "date": "2026-05-04", "subject": "feat(monday): wire Monday HIL layer — infraction disposition loop closed" },
+        { "sha": "7c9fbb58c0019ebd749016dc43b0d3d94cc4fc6c", "date": "2026-05-04", "subject": "feat(obsidian): restore Judgment overlay — genesis tamper confrontation" },
+        { "sha": "eecc4ab95788c1186a07fc3ff7788d0b27e14322", "date": "2026-05-04", "subject": "feat(health): tree-topology health check — leaf/branch/trunk/root" },
+        { "sha": "527bfde395b15906c059e4e893e41bab0efde4d6", "date": "2026-05-04", "subject": "feat(monday): governance lock + Judgment communication surface" },
+        { "sha": "68167db26f2484591bf6f6ba7029080ef2a4913b", "date": "2026-05-04", "subject": "feat(monday): Tier 2 approval briefing layer — mondayTier2Review" },
+        { "sha": "78f371f9cafe7247b0951f2053c32c2a22fd3526", "date": "2026-05-05", "subject": "feat(monday): dynamic onboarding skeleton — Monday-voiced, scope-driven questions" },
+        { "sha": "970c49d524df536a35390eeac4815c0638be01a9", "date": "2026-05-05", "subject": "fix(router): safe default for search doc — preview before apply" }
+      ]
+    },
+    "founder_direct_pushes": {
+      "actor": "214086463+Ghostwolf101@users.noreply.github.com (Founder — Justin Hughes)",
+      "period": "2026-04-04 to 2026-05-05",
+      "note": "Founder direct pushes via GitHub web UI and CLI. These are the originating authority's own commits. Documented here for audit completeness because the PR requirement exists to ensure CI gates run and governance records are created regardless of actor identity.",
+      "commits": [
+        { "sha": "b5294d3d3c97c19253ebb364b1e6339ce8137957", "date": "2026-04-04", "subject": "Update SECURITY.md" },
+        { "sha": "fd49eae3023944259a67e5d58adca469ee22b6ce", "date": "2026-04-20", "subject": "Update branch-registry-update.yml" },
+        { "sha": "55109a68825660686b92feefe01b7b9979fce439", "date": "2026-04-20", "subject": "Update branch-registry-update.yml" },
+        { "sha": "b61cc09f7e0c0a1641681471e768023090f9daa4", "date": "2026-04-20", "subject": "Delete deep scan protical.txt" },
+        { "sha": "a1a1cca618f44158cc62261fd264d8ef3ca50bc1", "date": "2026-04-20", "subject": "Update branch-registry-update.yml" },
+        { "sha": "0ae2a2a16569827ca2482fb359d7da616a95cc0c", "date": "2026-04-20", "subject": "Update package.json" },
+        { "sha": "2d30c261ecb4e840708e124bd144b162a0edad13", "date": "2026-04-20", "subject": "Update package.json" },
+        { "sha": "beb1cb1f7b39358a4469ec3f441fd3bb2465297a", "date": "2026-05-03", "subject": "chore: add governance authorization record for PR #116" },
+        { "sha": "1b9f1275d2524db9877f482eb8e97a503476fc19", "date": "2026-05-04", "subject": "fix: add missing authorizedBy and authorizedAt fields to auth record" },
+        { "sha": "953b84c45aac1da46642b3649d14e9fd600c76b3", "date": "2026-05-04", "subject": "governance: add authorization record for PR #117" },
+        { "sha": "c8b943e1c84a7ff3de8db61c3c8bdc8bd8d84329", "date": "2026-05-04", "subject": "chore: trigger gate after base-branch retarget to main" },
+        { "sha": "54b3434a0323eb608ccc542cf0bcee64c90ffd36", "date": "2026-05-04", "subject": "merge: resolve package.json conflict — apply PR #117 formatting, restore truncated scripts" },
+        { "sha": "d81234f86849bb5f9b0d58f05a653d05c73658f6", "date": "2026-05-04", "subject": "fix: narrow except BaseException to except Exception in ci_gate.py trace-file fallbacks" },
+        { "sha": "6a9b9625d65c5f1b5cd80529c30965a4fe6f6abc", "date": "2026-05-04", "subject": "feat(feneris): wire Feneris watchdog — A.Varsity v1.0.0" },
+        { "sha": "2f34711756f9e55d0b5ff17ecbe02b76765627ca", "date": "2026-05-05", "subject": "feat(registry): module registry — clean landing for any module joining the trunk" },
+        { "sha": "1c6b2496ba6d9e1eca0b1a747d8fb512eeba43fd", "date": "2026-05-05", "subject": "feat(registry): register SQUAD Battalion as branch module" }
+      ]
+    }
+  },
+  "approvals": [
+    "Ghostwolf101"
+  ],
+  "signature": "Ghostwolf101-2026-05-05-bypass-remediation"
+}
