@@ -19,6 +19,7 @@
     "skjoldrFirewallAdviseInboundRuleSets",
     "analyzeDependency",
     "docker",
-    "mondayInfractionReview"
+    "mondayInfractionReview",
+    "mondaySystemStatus"
   ]
 }

@@ -6,6 +6,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { sha256Hex } from "./crypto";
 import type { FenerisInfraction, FenerisInfractionStatus } from "./feneris";
+import type { GovernanceLock } from "./governanceLock";
+import type { JudgmentRecord } from "./provenance";
 
 // ─── LLM adapter interface ────────────────────────────────────────────────────
 
@@ -208,4 +210,69 @@ export function readDispositions(repoRoot: string): HilDispositionRecord[] {
     } catch {
         return [];
     }
+}
+
+// ─── Governance lock formatting ───────────────────────────────────────────────
+
+export function formatGovernanceLockForHuman(lock: GovernanceLock, repoRoot: string): string {
+    const persona = loadMondayPersona(repoRoot);
+
+    if (!lock.locked) {
+        return `${persona.member}: Governance lock is not set. System is operating normally.`;
+    }
+
+    const lines: string[] = [
+        `--- Governance Lock ACTIVE ---`,
+        ``,
+        `${persona.member}:`,
+        `The system is locked. All write and privileged operations are blocked.`,
+        ``,
+        `Reason: ${lock.reason ?? "(no reason recorded)"}`,
+    ];
+
+    if (lock.lastSelfTest) {
+        lines.push(
+            ``,
+            `Last self-test: ${lock.lastSelfTest.timestamp}  result: ${lock.lastSelfTest.ok ? "PASS" : "FAIL"}`
+        );
+        if (lock.lastSelfTest.warnings?.length) {
+            lines.push(`Warnings: ${lock.lastSelfTest.warnings.join(" | ")}`);
+        }
+    }
+
+    lines.push(
+        ``,
+        `Permitted while locked: memoryCheck  governanceSelfTest  governanceUnlock`,
+        `To clear: run governanceUnlock with a valid approval.`
+    );
+
+    return lines.join("\n");
+}
+
+// ─── Obsidian's Judgment formatting ──────────────────────────────────────────
+
+export function formatJudgmentForHuman(judgment: JudgmentRecord, repoRoot: string): string {
+    const persona = loadMondayPersona(repoRoot);
+
+    const lines: string[] = [
+        `--- Obsidian's Judgment ACTIVE ---`,
+        ``,
+        `${persona.member}:`,
+        `Provenance has failed. All non-read-only operations are blocked until the integrity issue is resolved.`,
+        ``,
+        `Activated: ${judgment.activated_at}`,
+        `Failure:   ${judgment.failure.code} — ${judgment.failure.reason}`,
+    ];
+
+    if (judgment.failure.details && Object.keys(judgment.failure.details).length > 0) {
+        lines.push(`Detail:    ${JSON.stringify(judgment.failure.details)}`);
+    }
+
+    lines.push(
+        ``,
+        `This is a provenance judgment, not a governance lock. governanceUnlock will not clear it.`,
+        `Run governanceSelfTest to diagnose. Resolve the underlying integrity failure first.`
+    );
+
+    return lines.join("\n");
 }
