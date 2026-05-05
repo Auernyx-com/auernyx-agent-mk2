@@ -159,6 +159,13 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             ) {
                 return "mondaySystemStatus";
             }
+            if (
+                text.includes("tier 2") || text.includes("tier2") ||
+                text.includes("high risk") || text.includes("high-risk") ||
+                (text.includes("monday") && text.includes("review") && !text.includes("infraction"))
+            ) {
+                return "mondayTier2Review";
+            }
             if (text.includes("monday") || text.includes("infraction review") || text.includes("hil review")) {
                 return "mondayInfractionReview";
             }

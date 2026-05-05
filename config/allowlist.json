@@ -20,6 +20,7 @@
     "analyzeDependency",
     "docker",
     "mondayInfractionReview",
-    "mondaySystemStatus"
+    "mondaySystemStatus",
+    "mondayTier2Review"
   ]
 }

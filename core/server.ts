@@ -30,6 +30,7 @@ import { skjoldrFirewallAdviseInboundRuleSets } from "../capabilities/skjoldrFir
 import { analyzeDependency } from "../capabilities/analyzeDependency";
 import { mondayInfractionReview } from "../capabilities/mondayInfractionReview";
 import { mondaySystemStatus } from "../capabilities/mondaySystemStatus";
+import { mondayTier2Review } from "../capabilities/mondayTier2Review";
 
 import * as fs from "fs";
 import * as path from "path";
@@ -146,7 +147,8 @@ export function createCore(repoRoot: string): AuernyxCore {
         skjoldrFirewallAdviseInboundRuleSets,
         analyzeDependency,
         mondayInfractionReview,
-        mondaySystemStatus
+        mondaySystemStatus,
+        mondayTier2Review
     });
 
     ledger.append(state.sessionId, "core.start", { repoRoot, provenance: prov.ok ? "PASS" : "FAIL" });
