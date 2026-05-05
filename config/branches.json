@@ -9,6 +9,11 @@
       "entry": "",
       "type": "powershell",
       "notes": "Standalone AEsir branch entry path."
+    },
+    "squad-bat": {
+      "entry": "",
+      "type": "powershell",
+      "notes": "SQUAD Battalion entry path. Set to local clone entry point or set AUERNYX_BRANCH_ENTRY_SQUAD_BAT env var."
     }
   }
 }

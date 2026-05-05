@@ -44,5 +44,34 @@
         "question": "Is Skjoldr firewall management part of this deployment?\n   Only say yes if the Skjoldr module is being attached. Enabling the capabilities without the module does nothing useful."
       }
     }
+  ,
+    {
+      "id": "squad-bat",
+      "name": "SQUAD Battalion",
+      "identifier": "auernyx.module.squad-bat.v1",
+      "version": "1.0.0",
+      "attached_at": "2026-05-05T00:00:00.000Z",
+      "repo": "https://github.com/Auernyx-com/SQUAD",
+      "capabilities": [
+        "squadBatPathfinderRoute",
+        "squadBatHousingScreen",
+        "squadBatCrisisRedirect",
+        "squadBatIntakeReview"
+      ],
+      "indicator_capability": "squadBatPathfinderRoute",
+      "tier2_capabilities": {
+        "squadBatPathfinderRoute": {
+          "action": "Routes a veteran case through the SQUAD Battalion Division swarm.",
+          "consequence": "Retrieves veteran vault data for this instance, runs Division logic, destroys working copy on completion. Ygg ledger records outcome only — no PII.",
+          "irreversible": false
+        }
+      },
+      "onboarding": {
+        "question_id": "enable_squad_bat",
+        "type": "boolean",
+        "question": "Is SQUAD Battalion (veteran navigation) part of this deployment?\n   Only enable if the SQUAD BAT module is configured. Requires founding law verification on first run."
+      },
+      "founding_law_sha256": "dc0fcb428e24948c5471798bf3c0b77cafade1c68e1aecb39aa13eef264f2f87"
+    }
   ]
 }
