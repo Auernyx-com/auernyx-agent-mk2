@@ -8,14 +8,12 @@ import type { CapabilityName } from "../core/policy";
 import { getCapabilityMeta } from "../core/policy";
 import { loadMondayPersona } from "../core/monday";
 import { getKintsugiPolicy } from "../core/kintsugi/memory";
+import { getModuleTier2Descriptors, type ModuleTier2Descriptor } from "../core/moduleRegistry";
 
-interface Tier2Descriptor {
-    action: string;
-    consequence: string;
-    irreversible: boolean;
-}
-
-const TIER2_DESCRIPTORS: Partial<Record<CapabilityName, Tier2Descriptor>> = {
+// Core descriptors are hardcoded and cannot be overridden by registry entries.
+// This prevents a malicious or misconfigured registry from lying to humans about
+// the risk level or reversibility of these foundational operations.
+const CORE_TIER2_DESCRIPTORS: Partial<Record<string, ModuleTier2Descriptor>> = {
     rollbackKnownGood: {
         action: "Rolls the system back to a known-good snapshot.",
         consequence: "All changes made after the snapshot point will be lost. The ledger records the rollback but the changes are gone.",
@@ -30,26 +28,6 @@ const TIER2_DESCRIPTORS: Partial<Record<CapabilityName, Tier2Descriptor>> = {
         action: "Executes Docker operations against the configured target.",
         consequence: "Container state changes immediately. Scope and impact depend on the specific operation being run.",
         irreversible: false
-    },
-    skjoldrFirewallApplyProfile: {
-        action: "Applies a Skjoldr firewall profile to the active network configuration.",
-        consequence: "Network rules change immediately on application. An incorrect profile can block legitimate traffic or open unintended access.",
-        irreversible: false
-    },
-    skjoldrFirewallApplyRulesetFile: {
-        action: "Applies a ruleset file directly to the Skjoldr firewall.",
-        consequence: "Network rules change immediately. Verify the ruleset file contents before applying — there is no dry-run.",
-        irreversible: false
-    },
-    skjoldrFirewallExportBaseline: {
-        action: "Exports the current Skjoldr firewall state as a named baseline snapshot.",
-        consequence: "Creates a point-in-time record. Lower risk than apply operations, but the snapshot becomes a restore target — accuracy matters.",
-        irreversible: false
-    },
-    skjoldrFirewallRestoreBaseline: {
-        action: "Restores the Skjoldr firewall to a previously exported baseline snapshot.",
-        consequence: "All current firewall rules are replaced by the baseline. Rules added since the baseline was taken will be removed.",
-        irreversible: true
     }
 };
 
@@ -62,12 +40,18 @@ export async function mondayTier2Review(ctx: RouterContext, input?: unknown): Pr
     const reviewInput = input as Tier2ReviewInput | undefined;
     const capabilityName = reviewInput?.capability as CapabilityName | undefined;
 
+    // Registry descriptors are merged under core — core always wins on conflict.
+    const allDescriptors: Partial<Record<string, ModuleTier2Descriptor>> = {
+        ...getModuleTier2Descriptors(ctx.repoRoot),
+        ...CORE_TIER2_DESCRIPTORS
+    };
+
     if (!capabilityName) {
         return {
             monday: persona.member,
             status: "capability_required",
             message: `${persona.member}: Provide the capability name you want reviewed. Submit with { "capability": "<name>" }.`,
-            tier2_capabilities: Object.keys(TIER2_DESCRIPTORS)
+            tier2_capabilities: Object.keys(allDescriptors)
         };
     }
 
@@ -92,7 +76,7 @@ export async function mondayTier2Review(ctx: RouterContext, input?: unknown): Pr
 
     const kintsugiPolicy = getKintsugiPolicy(ctx.repoRoot);
     const isControlled = kintsugiPolicy.riskTolerance === "CONTROLLED";
-    const descriptor = TIER2_DESCRIPTORS[capabilityName];
+    const descriptor = allDescriptors[capabilityName];
 
     const lines: string[] = [
         `--- Tier 2 Review: ${capabilityName} ---`,

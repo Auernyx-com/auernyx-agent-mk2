@@ -30,7 +30,8 @@ export type CapabilityName =
     | "analyzeDependency"
     | "mondayInfractionReview"
     | "mondaySystemStatus"
-    | "mondayTier2Review";
+    | "mondayTier2Review"
+    | "mondayOnboarding";
 
 export type CapabilityTier = 0 | 1 | 2;
 
@@ -71,7 +72,8 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
 
     mondayInfractionReview: { name: "mondayInfractionReview", readOnly: false, tier: 1 },
     mondaySystemStatus:  { name: "mondaySystemStatus",  readOnly: true, tier: 0 },
-    mondayTier2Review:   { name: "mondayTier2Review",   readOnly: true, tier: 0 }
+    mondayTier2Review:   { name: "mondayTier2Review",   readOnly: true,  tier: 0 },
+    mondayOnboarding:    { name: "mondayOnboarding",    readOnly: false, tier: 1 }
 };
 
 export function getCapabilityMeta(name: CapabilityName): CapabilityMeta {

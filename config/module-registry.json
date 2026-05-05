@@ -1,0 +1,48 @@
+{
+  "schema": "auernyx.module-registry.v1",
+  "modules": [
+    {
+      "id": "skjoldr",
+      "name": "Skjoldr Firewall Manager",
+      "identifier": "auernyx.module.skjoldr.v1",
+      "version": "1.0.0",
+      "attached_at": "2026-05-04T00:00:00.000Z",
+      "capabilities": [
+        "skjoldrFirewallStatus",
+        "skjoldrFirewallAdviseInboundRuleSets",
+        "skjoldrFirewallApplyProfile",
+        "skjoldrFirewallApplyRulesetFile",
+        "skjoldrFirewallExportBaseline",
+        "skjoldrFirewallRestoreBaseline"
+      ],
+      "indicator_capability": "skjoldrFirewallStatus",
+      "tier2_capabilities": {
+        "skjoldrFirewallApplyProfile": {
+          "action": "Applies a Skjoldr firewall profile to the active network configuration.",
+          "consequence": "Network rules change immediately on application. An incorrect profile can block legitimate traffic or open unintended access.",
+          "irreversible": false
+        },
+        "skjoldrFirewallApplyRulesetFile": {
+          "action": "Applies a ruleset file directly to the Skjoldr firewall.",
+          "consequence": "Network rules change immediately. Verify the ruleset file contents before applying — there is no dry-run.",
+          "irreversible": false
+        },
+        "skjoldrFirewallExportBaseline": {
+          "action": "Exports the current Skjoldr firewall state as a named baseline snapshot.",
+          "consequence": "Creates a point-in-time record. Lower risk than apply operations, but the snapshot becomes a restore target — accuracy matters.",
+          "irreversible": false
+        },
+        "skjoldrFirewallRestoreBaseline": {
+          "action": "Restores the Skjoldr firewall to a previously exported baseline snapshot.",
+          "consequence": "All current firewall rules are replaced by the baseline. Rules added since the baseline was taken will be removed.",
+          "irreversible": true
+        }
+      },
+      "onboarding": {
+        "question_id": "enable_skjoldr",
+        "type": "boolean",
+        "question": "Is Skjoldr firewall management part of this deployment?\n   Only say yes if the Skjoldr module is being attached. Enabling the capabilities without the module does nothing useful."
+      }
+    }
+  ]
+}

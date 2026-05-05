@@ -31,6 +31,7 @@ import { analyzeDependency } from "../capabilities/analyzeDependency";
 import { mondayInfractionReview } from "../capabilities/mondayInfractionReview";
 import { mondaySystemStatus } from "../capabilities/mondaySystemStatus";
 import { mondayTier2Review } from "../capabilities/mondayTier2Review";
+import { mondayOnboarding } from "../capabilities/mondayOnboarding";
 
 import * as fs from "fs";
 import * as path from "path";
@@ -39,6 +40,7 @@ import { runLifecycle } from "./runLifecycle";
 import { ensureGenesisRecord, verifyProvenance, activateJudgment, clearJudgment, appendProvenanceAudit, readJudgment } from "./provenance";
 import { readGovernanceLock } from "./governanceLock";
 import { readOpenInfractions } from "./feneris";
+import { getModuleHealthStatus } from "./moduleRegistry";
 
 function daemonLockPathForRepo(repoRoot: string): string {
     const normalized = path.resolve(repoRoot).toLowerCase();
@@ -148,7 +150,8 @@ export function createCore(repoRoot: string): AuernyxCore {
         analyzeDependency,
         mondayInfractionReview,
         mondaySystemStatus,
-        mondayTier2Review
+        mondayTier2Review,
+        mondayOnboarding
     });
 
     ledger.append(state.sessionId, "core.start", { repoRoot, provenance: prov.ok ? "PASS" : "FAIL" });
@@ -864,6 +867,13 @@ function readTailLines(filePath: string, maxLines: number): string[] {
 
 type Tolerance = "WITHIN_TOLERANCE" | "OUT_OF_TOLERANCE";
 
+interface ModuleHealthEntry {
+    id: string;
+    name: string;
+    indicator_capability: string;
+    reachable: boolean;
+}
+
 interface TreeHealth {
     root: Tolerance;
     trunk: Tolerance;
@@ -872,7 +882,7 @@ interface TreeHealth {
     detail: {
         root: { judgment_active: boolean };
         trunk: { locked: boolean; reason?: string };
-        branch: { critical_error_infractions: number; kintsugi_ok: boolean };
+        branch: { critical_error_infractions: number; kintsugi_ok: boolean; modules: ModuleHealthEntry[] };
         leaf: { warn_info_infractions: number };
     };
 }
@@ -882,6 +892,11 @@ async function computeTreeHealth(repoRoot: string): Promise<TreeHealth> {
     const lock = readGovernanceLock(repoRoot);
     const openInfractions = readOpenInfractions(repoRoot);
     const kintsugi = await verifyKintsugiIntegrity(repoRoot, { initializePolicy: false });
+
+    const allowlist = loadAllowlist(repoRoot);
+    const allowedSet = new Set<string>(allowlist.allowedCapabilities);
+    const moduleHealth = getModuleHealthStatus(repoRoot, allowedSet);
+    const unreachableCount = moduleHealth.filter(m => !m.reachable).length;
 
     const criticalErrorCount = openInfractions.filter(
         i => i.severity === "critical" || i.severity === "error"
@@ -893,12 +908,12 @@ async function computeTreeHealth(repoRoot: string): Promise<TreeHealth> {
     return {
         root:   judgment?.active          ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
         trunk:  lock.locked               ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
-        branch: (criticalErrorCount > 0 || !kintsugi.ok) ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
+        branch: (criticalErrorCount > 0 || !kintsugi.ok || unreachableCount > 0) ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
         leaf:   warnInfoCount > 0         ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
         detail: {
             root:   { judgment_active: Boolean(judgment?.active) },
             trunk:  { locked: lock.locked, ...(lock.reason ? { reason: lock.reason } : {}) },
-            branch: { critical_error_infractions: criticalErrorCount, kintsugi_ok: kintsugi.ok },
+            branch: { critical_error_infractions: criticalErrorCount, kintsugi_ok: kintsugi.ok, modules: moduleHealth },
             leaf:   { warn_info_infractions: warnInfoCount }
         }
     };

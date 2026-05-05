@@ -11,6 +11,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { loadMondayPersona } from "../core/monday";
 import { sha256Hex } from "../core/crypto";
+import { getModuleOnboardingQuestions } from "../core/moduleRegistry";
 import type { RouterContext } from "../core/router";
 import type { CapabilityName } from "../core/policy";
 
@@ -123,15 +124,6 @@ const QUESTION_BANK: QuestionDef[] = [
             "Enable Monday's HIL layer?",
             "This is the human-in-the-loop communication surface — infraction review, system status, governance lock notifications, Tier 2 briefings.",
             "Disabling it removes the human communication layer entirely. The system still enforces governance, you just won't be told about it clearly."
-        ].join("\n   ")
-    },
-    // ── Capability: Skjoldr ───────────────────────────────────────────────────
-    {
-        id: "enable_skjoldr",
-        type: "boolean",
-        question: [
-            "Is Skjoldr firewall management part of this deployment?",
-            "Only say yes if the Skjoldr module is being attached. Enabling the capabilities without the module does nothing useful."
         ].join("\n   ")
     },
     // ── Capability: Rollback ─────────────────────────────────────────────────
@@ -252,14 +244,22 @@ const QUESTION_BANK: QuestionDef[] = [
     }
 ];
 
-function selectQuestions(scope: OnboardingScope): OnboardingQuestion[] {
-    return QUESTION_BANK
+function selectQuestions(scope: OnboardingScope, repoRoot: string): OnboardingQuestion[] {
+    const bankQuestions = QUESTION_BANK
         .filter(q => !q.condition || q.condition(scope))
         .map(({ condition: _c, ...q }) => ({
             ...q,
-            // Substitute scope values into question text where needed.
             question: q.question.replace('"{approver_identity}"', `"${scope.approver_identity}"`)
         }));
+
+    const registryQuestions: OnboardingQuestion[] = getModuleOnboardingQuestions(repoRoot).map(q => ({
+        id: q.question_id,
+        question: q.question,
+        type: q.type,
+        ...(q.options ? { options: q.options } : {})
+    }));
+
+    return [...bankQuestions, ...registryQuestions];
 }
 
 // ─── Config generation ────────────────────────────────────────────────────────
@@ -393,7 +393,7 @@ export async function mondayOnboarding(ctx: RouterContext, input?: unknown): Pro
         }
 
         const scope = onboardingInput.scope as OnboardingScope;
-        const questions = selectQuestions(scope);
+        const questions = selectQuestions(scope, ctx.repoRoot);
 
         const session: OnboardingSession = {
             session_id: onboardingInput.session_id ?? `onboard-${sha256Hex(`fallback:${Date.now()}`).slice(0, 16)}`,

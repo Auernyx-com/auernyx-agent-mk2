@@ -21,6 +21,7 @@
     "docker",
     "mondayInfractionReview",
     "mondaySystemStatus",
-    "mondayTier2Review"
+    "mondayTier2Review",
+    "mondayOnboarding"
   ]
 }
