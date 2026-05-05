@@ -34,7 +34,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { getKintsugiPolicy, policyHash, verifyKintsugiIntegrity } from "./kintsugi/memory";
 import { runLifecycle } from "./runLifecycle";
-import { ensureGenesisRecord, verifyProvenance, activateJudgment, clearJudgment, appendProvenanceAudit } from "./provenance";
+import { ensureGenesisRecord, verifyProvenance, activateJudgment, clearJudgment, appendProvenanceAudit, readJudgment } from "./provenance";
 
 function daemonLockPathForRepo(repoRoot: string): string {
     const normalized = path.resolve(repoRoot).toLowerCase();
@@ -301,6 +301,11 @@ function uiHtml(): string {
         </style>
     </head>
     <body>
+        <div id="obs-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:32px;">
+            <img src="/obsidian-judgment-img" style="max-width:60vw;max-height:60vh;object-fit:contain;" />
+            <div style="color:#fff;font-size:2rem;font-weight:bold;letter-spacing:0.08em;text-align:center;">you know what you did</div>
+        </div>
+
         <h1>Auernyx Mk2 (Daemon UI)</h1>
         <div class="hint">Read-only by default. Enable writes with <code>AUERNYX_WRITE_ENABLED=1</code>.</div>
 
@@ -750,6 +755,17 @@ function uiHtml(): string {
 
             // Best-effort initial history population.
             refreshHistory().catch(() => void 0);
+
+            async function checkObsidianJudgment() {
+                try {
+                    const resp = await fetch('/obsidian-judgment');
+                    const data = await resp.json();
+                    const overlay = document.getElementById('obs-overlay');
+                    if (overlay) overlay.style.display = data && data.active ? 'flex' : 'none';
+                } catch {}
+            }
+            checkObsidianJudgment();
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) checkObsidianJudgment(); });
         </script>
     </body>
 </html>`;
@@ -950,6 +966,24 @@ export function startDaemon(repoRoot: string) {
 
         if (req.method === "GET" && req.url === "/health") {
             return writeJson(res, 200, { ok: true });
+        }
+
+        if (req.method === "GET" && req.url === "/obsidian-judgment") {
+            const j = readJudgment(repoRoot);
+            return writeJson(res, 200, { active: Boolean(j?.active) });
+        }
+
+        if (req.method === "GET" && req.url === "/obsidian-judgment-img") {
+            const imgPath = path.join(repoRoot, "clients", "vscode", "obsedeansjudgement.png");
+            try {
+                const img = fs.readFileSync(imgPath);
+                res.writeHead(200, { "content-type": "image/png", "content-length": img.length });
+                res.end(img);
+            } catch {
+                res.writeHead(404);
+                res.end();
+            }
+            return;
         }
 
         if (req.method === "GET" && req.url.startsWith("/ledger")) {
