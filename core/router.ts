@@ -107,19 +107,12 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
 
     return {
         route(intent: Intent): CapabilityName | null {
-            /**
-             * Extracts and normalizes the raw text from the intent by trimming whitespace
-             * and converting it to lowercase.
-             *
-             * @remarks
-             * This ensures consistent text processing for downstream logic, such as intent matching.
-             *
-             * @param intent - The intent object containing the raw text to be processed.
-             * @returns The normalized text string.
-             */
             const text = intent.raw.trim().toLowerCase();
             if (text.startsWith("scan")) return "scanRepo";
-            if (text.startsWith("search doc")) return "searchDocApply";
+            if (text.startsWith("search doc")) {
+                if (text.includes("apply")) return "searchDocApply";
+                return "searchDocPreview";
+            }
             if (text.includes("feneris")) return "fenerisPrep";
             if (text.includes("baseline pre")) return "baselinePre";
             if (text.includes("baseline post")) return "baselinePost";
@@ -159,6 +152,8 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             ) {
                 return "mondaySystemStatus";
             }
+            if (text.includes("onboarding")) return "mondayOnboarding";
+
             if (
                 text.includes("tier 2") || text.includes("tier2") ||
                 text.includes("high risk") || text.includes("high-risk") ||
