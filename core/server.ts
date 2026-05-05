@@ -35,6 +35,8 @@ import * as path from "path";
 import { getKintsugiPolicy, policyHash, verifyKintsugiIntegrity } from "./kintsugi/memory";
 import { runLifecycle } from "./runLifecycle";
 import { ensureGenesisRecord, verifyProvenance, activateJudgment, clearJudgment, appendProvenanceAudit, readJudgment } from "./provenance";
+import { readGovernanceLock } from "./governanceLock";
+import { readOpenInfractions } from "./feneris";
 
 function daemonLockPathForRepo(repoRoot: string): string {
     const normalized = path.resolve(repoRoot).toLowerCase();
@@ -856,6 +858,48 @@ function readTailLines(filePath: string, maxLines: number): string[] {
     }
 }
 
+type Tolerance = "WITHIN_TOLERANCE" | "OUT_OF_TOLERANCE";
+
+interface TreeHealth {
+    root: Tolerance;
+    trunk: Tolerance;
+    branch: Tolerance;
+    leaf: Tolerance;
+    detail: {
+        root: { judgment_active: boolean };
+        trunk: { locked: boolean; reason?: string };
+        branch: { critical_error_infractions: number; kintsugi_ok: boolean };
+        leaf: { warn_info_infractions: number };
+    };
+}
+
+async function computeTreeHealth(repoRoot: string): Promise<TreeHealth> {
+    const judgment = readJudgment(repoRoot);
+    const lock = readGovernanceLock(repoRoot);
+    const openInfractions = readOpenInfractions(repoRoot);
+    const kintsugi = await verifyKintsugiIntegrity(repoRoot, { initializePolicy: false });
+
+    const criticalErrorCount = openInfractions.filter(
+        i => i.severity === "critical" || i.severity === "error"
+    ).length;
+    const warnInfoCount = openInfractions.filter(
+        i => i.severity === "warn" || i.severity === "info"
+    ).length;
+
+    return {
+        root:   judgment?.active          ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
+        trunk:  lock.locked               ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
+        branch: (criticalErrorCount > 0 || !kintsugi.ok) ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
+        leaf:   warnInfoCount > 0         ? "OUT_OF_TOLERANCE" : "WITHIN_TOLERANCE",
+        detail: {
+            root:   { judgment_active: Boolean(judgment?.active) },
+            trunk:  { locked: lock.locked, ...(lock.reason ? { reason: lock.reason } : {}) },
+            branch: { critical_error_infractions: criticalErrorCount, kintsugi_ok: kintsugi.ok },
+            leaf:   { warn_info_infractions: warnInfoCount }
+        }
+    };
+}
+
 export function startDaemon(repoRoot: string) {
     const instance = acquireSingleInstanceLock(repoRoot);
     const cfg = loadConfig(repoRoot);
@@ -964,8 +1008,35 @@ export function startDaemon(repoRoot: string) {
             return;
         }
 
-        if (req.method === "GET" && req.url === "/health") {
-            return writeJson(res, 200, { ok: true });
+        if (req.method === "GET" && (req.url === "/health" || req.url === "/health/detail")) {
+            const health = await computeTreeHealth(repoRoot);
+            const ok = health.root === "WITHIN_TOLERANCE"
+                    && health.trunk === "WITHIN_TOLERANCE"
+                    && health.branch === "WITHIN_TOLERANCE"
+                    && health.leaf === "WITHIN_TOLERANCE";
+
+            if (req.url === "/health/detail") {
+                if (!requireSecretIfConfigured(req, res, secret)) return;
+                return writeJson(res, ok ? 200 : 503, {
+                    ok,
+                    tree: {
+                        root:   { tolerance: health.root,   ...health.detail.root },
+                        trunk:  { tolerance: health.trunk,  ...health.detail.trunk },
+                        branch: { tolerance: health.branch, ...health.detail.branch },
+                        leaf:   { tolerance: health.leaf,   ...health.detail.leaf }
+                    }
+                });
+            }
+
+            return writeJson(res, ok ? 200 : 503, {
+                ok,
+                tree: {
+                    root:   health.root,
+                    trunk:  health.trunk,
+                    branch: health.branch,
+                    leaf:   health.leaf
+                }
+            });
         }
 
         if (req.method === "GET" && req.url === "/obsidian-judgment") {
