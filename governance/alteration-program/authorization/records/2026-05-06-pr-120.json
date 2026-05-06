@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-06-pr-120",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #120: Add GitHub Action for managing stale issues and PRs",
+  "signature": "Ghostwolf101-2026-05-06-pr120",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-06",
+  "reason": "PR #120: Add GitHub Action for managing stale issues and PRs",
+  "pullRequest": 120
+}
