@@ -3,27 +3,222 @@ name: mk2-alteration-gate
 on:
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened]
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
+  # Runs first — creates the authorization record if the actor is allowlisted
+  # and no record exists yet. Skips cleanly when actor is github-actions[bot]
+  # (prevents infinite loop when this job's own commit triggers synchronize).
+  auto-authorize:
+    if: |
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout PR head branch
+        run: |
+          git fetch origin "${{ github.event.pull_request.head.ref }}"
+          git checkout "${{ github.event.pull_request.head.ref }}"
+
+      - name: Fetch base ref for diff
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+
+      - name: Determine authorized login
+        id: check-allowlist
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, sys
+
+          actor = os.environ["ACTOR"]
+          allowlist_path = "governance/alteration-program/authorization/allowlist.json"
+          try:
+              with open(allowlist_path, encoding="utf-8") as f:
+                  data = json.load(f)
+          except Exception as e:
+              print(f"WARNING: could not read allowlist: {e}", file=sys.stderr)
+              data = {}
+
+          logins = data.get("authorizedLogins", [])
+
+          def parse_logins(env_var):
+              raw = os.environ.get(env_var, "[]")
+              try:
+                  items = json.loads(raw)
+                  return [
+                      item["login"]
+                      for item in items
+                      if isinstance(item, dict) and "login" in item
+                  ]
+              except (json.JSONDecodeError, TypeError) as e:
+                  print(f"WARNING: could not parse {env_var}: {e}", file=sys.stderr)
+                  return []
+
+          assignee_logins = parse_logins("ASSIGNEES_JSON")
+          reviewer_logins = parse_logins("REVIEWERS_JSON")
+
+          authorized_by = None
+          for login in assignee_logins + reviewer_logins + [actor]:
+              if login in logins:
+                  authorized_by = login
+                  break
+
+          is_allowed = authorized_by is not None
+          print(f"Actor: {actor!r}")
+          print(f"Assignees: {assignee_logins}, Reviewers: {reviewer_logins}")
+          print(f"authorizedLogins: {logins}")
+          print(f"authorizedBy: {authorized_by!r}, allowed: {is_allowed}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"is_allowed={'true' if is_allowed else 'false'}\n")
+              if authorized_by:
+                  out.write(f"authorized_by={authorized_by}\n")
+          PYEOF
+        env:
+          ACTOR:          ${{ github.actor }}
+          ASSIGNEES_JSON: ${{ toJson(github.event.pull_request.assignees) }}
+          REVIEWERS_JSON: ${{ toJson(github.event.pull_request.requested_reviewers) }}
+
+      - name: Check if authorization record already exists in this PR
+        id: check-record
+        if: steps.check-allowlist.outputs.is_allowed == 'true'
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          RECORD_COUNT=$(git diff --name-only "${BASE_SHA}...HEAD" \
+            | grep -cE "^governance/alteration-program/authorization/records/.*\.json$" || true)
+          echo "record_count=${RECORD_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "Authorization records in PR changeset: ${RECORD_COUNT}"
+
+      - name: Create authorization record
+        id: create-record
+        if: >
+          steps.check-allowlist.outputs.is_allowed == 'true' &&
+          steps.check-record.outputs.record_count == '0'
+        run: |
+          python3 - <<'PYEOF'
+          import json, os
+          from datetime import date
+
+          authorized_by = os.environ["AUTHORIZED_BY"]
+          actor         = os.environ["ACTOR"]
+          pr_number     = int(os.environ["PR_NUMBER"])
+          title         = os.environ["TITLE"]
+          today         = date.today().isoformat()
+
+          record_file = (
+              f"governance/alteration-program/authorization/records/"
+              f"{today}-pr-{pr_number}.json"
+          )
+
+          logic = f"{authorized_by} authorized via allowlist for PR #{pr_number}: {title}"
+          if actor != authorized_by:
+              logic += f" (PR opened by {actor})"
+
+          record = {
+              "governance_record":   f"{today}-pr-{pr_number}",
+              "authorization_logic": logic,
+              "signature":           f"{authorized_by}-{today}-pr{pr_number}",
+              "authorizedBy":        authorized_by,
+              "authorizedAt":        today,
+              "reason":              f"PR #{pr_number}: {title}",
+              "pullRequest":         pr_number,
+          }
+
+          os.makedirs(os.path.dirname(record_file), exist_ok=True)
+          with open(record_file, "w", encoding="utf-8") as f:
+              json.dump(record, f, indent=2)
+              f.write("\n")
+
+          print(f"Created authorization record: {record_file}")
+          print(json.dumps(record, indent=2))
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"record_file={record_file}\n")
+          PYEOF
+        env:
+          AUTHORIZED_BY: ${{ steps.check-allowlist.outputs.authorized_by }}
+          ACTOR:         ${{ github.actor }}
+          PR_NUMBER:     ${{ github.event.pull_request.number }}
+          TITLE:         ${{ github.event.pull_request.title }}
+
+      - name: Commit authorization record
+        if: >
+          steps.check-allowlist.outputs.is_allowed == 'true' &&
+          steps.check-record.outputs.record_count == '0'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add governance/alteration-program/authorization/records/
+          if git diff --staged --quiet; then
+            echo "No authorization record changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: add governance authorization for PR #${{ github.event.pull_request.number }}"
+          git push
+
+      - name: Comment on PR
+        if: >
+          steps.check-allowlist.outputs.is_allowed == 'true' &&
+          steps.check-record.outputs.record_count == '0'
+        uses: actions/github-script@v7
+        env:
+          AUTHORIZED_BY: ${{ steps.check-allowlist.outputs.authorized_by }}
+        with:
+          script: |
+            const authorizedBy = process.env.AUTHORIZED_BY;
+            const actor = context.actor;
+            if (!authorizedBy) {
+              core.warning('authorized_by is unexpectedly empty; skipping comment.');
+              return;
+            }
+            const byLine = authorizedBy !== actor
+              ? `\`${authorizedBy}\` (sponsor) on behalf of \`${actor}\``
+              : `\`${authorizedBy}\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body:
+                '✅ **Authorization Record Auto-Created**\n\n' +
+                'A governance authorization record has been automatically created for this PR ' +
+                `by ${byLine} from the authorized allowlist.\n\n` +
+                'The `gate` check will run after this job completes and should pass. ' +
+                '**No further action is needed.**'
+            })
+
+  # Runs after auto-authorize (or after it is skipped). Checks out the latest
+  # branch HEAD so it sees any auth record auto-authorize may have just committed.
   gate:
+    needs: auto-authorize
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          # FLAW FIX: Fetch full history so git diff can see the base branch
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          # Use branch ref — not the event SHA — so we see commits auto-authorize
+          # may have added before this job started.
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Pull latest branch state
+        run: |
+          git fetch origin "${{ github.event.pull_request.head.ref }}"
+          git reset --hard "origin/${{ github.event.pull_request.head.ref }}"
 
       - name: Fetch Base Branch
-        # Ensures the 'main' branch is physically present in the runner's git graph
         run: git fetch origin main:main
 
       - name: Run Alteration Gate (Fail-Closed)
         env:
-          # Dynamically calculate the merge-base to avoid "Blind Diff" errors
           MK2_BASE_REF: ${{ github.event.pull_request.base.sha || 'main' }}
         run: python3 tools/ci_gate.py
