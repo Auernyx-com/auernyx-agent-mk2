@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-05-06 — v1.1.0 · A.Varsity
+
+### Auernyx Varsity 1.1.0
+
+Monday is wired. The trunk accepts branches. The human is never out of the loop.
+
+**Monday — Human-in-the-Loop Layer** (`capabilities/mondayOnboarding.ts`, `capabilities/mondayTier2Review.ts`, `core/monday.ts`)
+
+The HIL layer is complete. Monday is not a chatbot — he is the surface between governance events and the human who must decide them. Four capabilities now live under his name:
+
+- **Infraction disposition loop** (`eecc4ab`) — Monday surfaces open Feneris infractions in plain language, presents the dual-score side by side, and holds the door open until the human makes an actual decision. Not a checkbox. A verdict.
+- **Governance lock + Judgment status** (`527bfde`) — One call shows the full system state: what is locked, what Obsidian has blocked, what open infractions exist, and what the human must do next. Plain English, no translation required.
+- **Tier 2 approval briefing** (`68167db`) — Before any high-risk operation executes, Monday presents a full briefing: what the action does, whether it is reversible, current risk tolerance, and the exact approval payload required. If `WITHIN_TOLERANCE`, Monday blocks and redirects. No Tier 2 operation runs without a briefed human.
+- **Onboarding skeleton** (`78f371f`) — Three-phase onboarding, Monday-voiced. Phase 1: fixed baseline questions (deployment name, vertical, approver identity, environment). Phase 2: dynamic scope-driven questions — healthcare gets PHI questions, finance gets audit questions, production gets genesis-seal verification. Phase 3: recommended config output, human applies deliberately. Sessions append to `.auernyx/onboarding/sessions.ndjson` — full audit trail.
+
+**Obsidian — Judgment Overlay Restored** (`capabilities/obsidianJudgment.ts`)
+
+Genesis tamper confrontation restored. When provenance fails, Obsidian's Judgment activates and Monday surfaces the confrontation in plain language — what failed, what is blocked, what the human must do to restore trust. Judgment is not silent.
+
+**Health Check — Tree Topology** (`capabilities/healthCheck.ts`)
+
+System health now maps the full tree: leaf → branch → trunk → root. Each node reports independently. A dead branch does not silence the trunk.
+
+**Module Registry — Standardized Branching Sockets** (`config/module-registry.json`, `config/branches.json`)
+
+Clean attachment points for any module joining the trunk. The registry defines the contract — name, path, consumer, governance boundary. No module wires itself in — it registers and waits for the trunk to invoke it.
+
+**SQUAD Battalion — First Branch Module Registered** (`consumers/branches/Invoke-SquadBat.ps1`)
+
+SQUAD Battalion is the first external module to register against the trunk. The founding law hash travels with it. Every Division genesis record inherits it.
+
+**Fixes**
+
+- Gate: auto-authorize now sequences before the gate — race condition closed that could let an unauthorized operation slip through the window between check and execute (`cc90d98`)
+- Router: safe default for search doc — preview before apply, no silent destructive write (`970c49d`)
+
+**Governance**
+
+- Direct-push bypass incidents documented and remediated — 2026-04-04 to 2026-05-05 (`3be07c9`). Thirteen direct pushes identified, intent files generated retroactively, governance record sealed.
+- Stale issue and PR automation added — housekeeping runs without human overhead
+- Monday persona file formalized — architects mark corrected to canonical `Build. Return. Repair.`, authored_by corrected pending LLC filing
+
+**What 1.1.0 means**
+
+- Monday HIL layer: complete
+- Onboarding: complete
+- Branch/module registry: complete
+- SQUAD Battalion: registered
+- Obsidian confrontation surface: restored
+- Foundation from 1.0.0: untouched
+
+The governance rail holds. The human is in the loop at every decision point that matters.
+
+---
+
 ## 2026-05-04 — v1.0.0 · A.Varsity
 
 ### Auernyx Varsity 1.0.0
