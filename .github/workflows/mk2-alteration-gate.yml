@@ -33,6 +33,21 @@ jobs:
         run: |
           git fetch origin "${{ github.base_ref }}"
 
+      - name: Fetch approved reviews
+        id: fetch-reviews
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reviews = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            const approved = reviews.data
+              .filter(r => r.state === 'APPROVED')
+              .map(r => ({ login: r.user.login }));
+            core.setOutput('approved_reviewers', JSON.stringify(approved));
+
       - name: Determine authorized login
         id: check-allowlist
         run: |
@@ -65,16 +80,18 @@ jobs:
 
           assignee_logins = parse_logins("ASSIGNEES_JSON")
           reviewer_logins = parse_logins("REVIEWERS_JSON")
+          approved_reviewer_logins = parse_logins("APPROVED_REVIEWERS_JSON")
 
           authorized_by = None
-          for login in assignee_logins + reviewer_logins + [actor]:
+          for login in assignee_logins + reviewer_logins + approved_reviewer_logins + [actor]:
               if login in logins:
                   authorized_by = login
                   break
 
           is_allowed = authorized_by is not None
           print(f"Actor: {actor!r}")
-          print(f"Assignees: {assignee_logins}, Reviewers: {reviewer_logins}")
+          print(f"Assignees: {assignee_logins}, Requested reviewers: {reviewer_logins}")
+          print(f"Approved reviewers: {approved_reviewer_logins}")
           print(f"authorizedLogins: {logins}")
           print(f"authorizedBy: {authorized_by!r}, allowed: {is_allowed}")
 
@@ -84,9 +101,10 @@ jobs:
                   out.write(f"authorized_by={authorized_by}\n")
           PYEOF
         env:
-          ACTOR:          ${{ github.actor }}
-          ASSIGNEES_JSON: ${{ toJson(github.event.pull_request.assignees) }}
-          REVIEWERS_JSON: ${{ toJson(github.event.pull_request.requested_reviewers) }}
+          ACTOR:                  ${{ github.actor }}
+          ASSIGNEES_JSON:         ${{ toJson(github.event.pull_request.assignees) }}
+          REVIEWERS_JSON:         ${{ toJson(github.event.pull_request.requested_reviewers) }}
+          APPROVED_REVIEWERS_JSON: ${{ steps.fetch-reviews.outputs.approved_reviewers }}
 
       - name: Check if authorization record already exists in this PR
         id: check-record
