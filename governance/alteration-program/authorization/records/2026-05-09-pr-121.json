@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-09-pr-121",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #121: deps: bump fast-uri from 3.1.0 to 3.1.2 in the npm_and_yarn group across 1 directory (PR opened by dependabot[bot])",
+  "signature": "Ghostwolf101-2026-05-09-pr121",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-09",
+  "reason": "PR #121: deps: bump fast-uri from 3.1.0 to 3.1.2 in the npm_and_yarn group across 1 directory",
+  "pullRequest": 121
+}
