@@ -1,0 +1,14 @@
+name = "auernyx-agent-mk2"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+[[r2_buckets]]
+binding = "AVRS_DATA"
+bucket_name = "avrs-mk2-data"
+
+[ai]
+binding = "AI"
+
+[[services]]
+binding = "KRISTH"
+service = "kristh-worker"
