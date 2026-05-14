@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-13-pr-125",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #125: fix(deploy): add wrangler.toml and worker.js for Cloudflare CI",
+  "signature": "Ghostwolf101-2026-05-13-pr125",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-13",
+  "reason": "PR #125: fix(deploy): add wrangler.toml and worker.js for Cloudflare CI",
+  "pullRequest": 125
+}
