@@ -10,5 +10,5 @@ bucket_name = "avrs-mk2-data"
 binding = "AI"
 
 [[services]]
-binding = "KRISTH"
+binding = "KENNR"
 service = "kristh-worker"
