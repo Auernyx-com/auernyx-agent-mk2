@@ -1,8 +1,15 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+function authenticate(request, env) {
+  const header = request.headers.get('Authorization') ?? '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!env.AVRS_API_KEY) return true; // no key configured — open (dev mode)
+  return token === env.AVRS_API_KEY;
+}
 
 const AVRS_SYSTEM = `You are AVRS — the Accountability Verification and Record System, built by Wyerd AI Governance.
 
@@ -118,13 +125,14 @@ export default {
           query:   'POST /query         — Ask AVRS anything. Governance queries, system questions, decision evaluation.',
           history: 'GET  /history       — Today\'s interaction log',
           status:  'GET  /             — This status page',
-          kristh:  'ANY  /kristh/*      — Design DNA extraction (Kristh service binding)',
+          kennr:   'ANY  /kennr/*       — Design DNA extraction (Kennr service binding)',
         },
       });
     }
 
     // POST /query — main AVRS assistant
     if (request.method === 'POST' && url.pathname === '/query') {
+      if (!authenticate(request, env)) return json({ error: 'Unauthorized' }, 401);
       let body;
       try {
         body = await request.json();
@@ -165,6 +173,7 @@ export default {
 
     // GET /history — today's R2 logs
     if (request.method === 'GET' && url.pathname === '/history') {
+      if (!authenticate(request, env)) return json({ error: 'Unauthorized' }, 401);
       const date = new Date().toISOString().split('T')[0];
       const list = await env.AVRS_DATA.list({ prefix: `interactions/${date}/` });
 
@@ -178,12 +187,13 @@ export default {
       return json(entries.filter(Boolean).reverse());
     }
 
-    // /kristh/* → proxy to Kristh service binding
-    if (url.pathname.startsWith('/kristh/')) {
-      const kristhPath = url.pathname.slice('/kristh'.length);
-      const kristhUrl = new URL(request.url);
-      kristhUrl.pathname = kristhPath;
-      return env.KRISTH.fetch(new Request(kristhUrl.toString(), {
+    // /kennr/* → proxy to Kennr service binding
+    if (url.pathname.startsWith('/kennr/')) {
+      if (!authenticate(request, env)) return json({ error: 'Unauthorized' }, 401);
+      const kennrPath = url.pathname.slice('/kennr'.length);
+      const kennrUrl = new URL(request.url);
+      kennrUrl.pathname = kennrPath;
+      return env.KENNR.fetch(new Request(kennrUrl.toString(), {
         method: request.method,
         headers: request.headers,
         body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
