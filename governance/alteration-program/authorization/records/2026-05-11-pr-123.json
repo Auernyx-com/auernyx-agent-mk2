@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-11-pr-123",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #123: deps: bump typescript from 5.9.3 to 6.0.3 (PR opened by dependabot[bot])",
+  "signature": "Ghostwolf101-2026-05-11-pr123",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-11",
+  "reason": "PR #123: deps: bump typescript from 5.9.3 to 6.0.3",
+  "pullRequest": 123
+}
