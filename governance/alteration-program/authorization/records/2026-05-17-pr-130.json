@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-17-pr-130",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #130: fix(tsconfig): add explicit types:[node] for @types/node v25.8.0 compat",
+  "signature": "Ghostwolf101-2026-05-17-pr130",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-17",
+  "reason": "PR #130: fix(tsconfig): add explicit types:[node] for @types/node v25.8.0 compat",
+  "pullRequest": 130
+}
