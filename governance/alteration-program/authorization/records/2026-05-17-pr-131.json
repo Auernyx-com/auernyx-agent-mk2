@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-17-pr-131",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #131: fix(dependabot-gate): commit missing intent_generator.py tool",
+  "signature": "Ghostwolf101-2026-05-17-pr131",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-17",
+  "reason": "PR #131: fix(dependabot-gate): commit missing intent_generator.py tool",
+  "pullRequest": 131
+}
