@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-17-pr-128",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #128: deps: bump ajv from 8.18.0 to 8.20.0 (PR opened by dependabot[bot])",
+  "signature": "Ghostwolf101-2026-05-17-pr128",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-17",
+  "reason": "PR #128: deps: bump ajv from 8.18.0 to 8.20.0",
+  "pullRequest": 128
+}
