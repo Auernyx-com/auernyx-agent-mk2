@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-25-pr-133",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #133: fix: remove malformed copilot-setup-steps workflow",
+  "signature": "Ghostwolf101-2026-05-25-pr133",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-25",
+  "reason": "PR #133: fix: remove malformed copilot-setup-steps workflow",
+  "pullRequest": 133
+}
