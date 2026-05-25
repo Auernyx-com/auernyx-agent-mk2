@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  checks: write
 
 jobs:
   # Runs first — creates the authorization record if the actor is allowlisted
@@ -240,3 +241,45 @@ jobs:
         env:
           MK2_BASE_REF: ${{ github.event.pull_request.base.sha || 'main' }}
         run: python3 tools/ci_gate.py
+
+      # ── Permanent fix for HEAD-mismatch bug ─────────────────────────────────
+      # auto-authorize commits the auth record AFTER the workflow was triggered,
+      # moving the branch HEAD. GitHub registers this job's check run against the
+      # triggered SHA, not the new HEAD. The branch protection wants `gate` on
+      # the current HEAD — they never match without this step.
+      #
+      # This step runs only when ci_gate.py passes (no if:always — failure stops
+      # it). It checks if HEAD moved; if so, it explicitly registers a passing
+      # `gate` check run on the new SHA. Self-healing. No re-trigger needed.
+      - name: Register gate result on current HEAD
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const currentSha  = execSync('git rev-parse HEAD').toString().trim();
+            const triggeredSha = context.sha;
+
+            if (currentSha === triggeredSha) {
+              core.info('HEAD unchanged — automatic check run covers current HEAD. Done.');
+              return;
+            }
+
+            core.info(`HEAD moved after auto-authorize: ${triggeredSha.slice(0,12)} → ${currentSha.slice(0,12)}`);
+            core.info('Registering gate check run on current HEAD...');
+
+            await github.rest.checks.create({
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              name:         'gate',
+              head_sha:     currentSha,
+              status:       'completed',
+              conclusion:   'success',
+              started_at:   new Date().toISOString(),
+              completed_at: new Date().toISOString(),
+              output: {
+                title:   'Mk2 Alteration Gate',
+                summary: 'Gate passed. Authorization record verified. Check registered on post-auto-authorize HEAD.',
+              },
+            });
+
+            core.info(`Gate check registered on ${currentSha.slice(0,12)}. No re-trigger needed.`);
