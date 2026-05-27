@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-05-27-pr-135",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #135: fix: restore branch registry steps, daily schedule",
+  "signature": "Ghostwolf101-2026-05-27-pr135",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-05-27",
+  "reason": "PR #135: fix: restore branch registry steps, daily schedule",
+  "pullRequest": 135
+}
