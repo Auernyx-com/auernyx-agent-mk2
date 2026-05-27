@@ -2,7 +2,7 @@ name: Branch Registry Update
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 4 * * *"  # once daily — 4:17am UTC
   workflow_dispatch:
 
 permissions:
@@ -18,3 +18,44 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Generate matrix
+        run: node tools/volatility/generate-matrix.mjs
+
+      - name: Create PR if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet; then
+            echo "No registry changes."
+            exit 0
+          fi
+
+          BR="ci/registry-update"
+          git checkout -B "$BR"
+          git add branches/compat-matrix.generated.json
+          git commit -m "Update connected branch registry (auto-discovery)"
+
+          git push -u origin "$BR" --force-with-lease
+
+          gh pr create \
+            --base "${{ github.ref_name }}" \
+            --head "$BR" \
+            --title "Update connected branch registry (auto-discovery)" \
+            --body "Automated update of branches/compat-matrix.generated.json from handshake discovery." || {
+              echo "PR creation blocked — branch pushed: $BR"
+              echo "Open PR manually: https://github.com/${{ github.repository }}/pull/new/$BR"
+              exit 0
+            }
