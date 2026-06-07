@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-06-07-pr-137",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #137: deps: bump @types/node from 25.9.1 to 25.9.2 (PR opened by dependabot[bot])",
+  "signature": "Ghostwolf101-2026-06-07-pr137",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-06-07",
+  "reason": "PR #137: deps: bump @types/node from 25.9.1 to 25.9.2",
+  "pullRequest": 137
+}
