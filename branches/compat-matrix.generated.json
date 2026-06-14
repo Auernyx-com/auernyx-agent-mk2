@@ -1,5 +1,96 @@
 {
   "stagingBranch": "staging/platform-canary",
-  "generatedAt": "2026-01-08T10:41:33.328Z",
-  "branches": []
+  "generatedAt": "2026-06-14T08:27:46.079Z",
+  "branches": [
+    {
+      "name": "Ghostwolf101-patch-1",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "ci/registry-update",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "dependabot/npm_and_yarn/types/node-25.9.3",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "dependabot/npm_and_yarn/vscode/test-electron-3.0.0",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "fix/cloudflare-worker-entry-point",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "fix/commit-intent-generator",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "fix/gate-approved-reviews",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "fix/tsconfig-node-types",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "main",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    },
+    {
+      "name": "wip/option-c-dual-output",
+      "requires": [
+        "install",
+        "build",
+        "test",
+        "baseline"
+      ]
+    }
+  ]
 }
