@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-07-05-pr-141",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #141: deps: bump webpack-cli from 7.0.3 to 7.2.1 (PR opened by dependabot[bot])",
+  "signature": "Ghostwolf101-2026-07-05-pr141",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-07-05",
+  "reason": "PR #141: deps: bump webpack-cli from 7.0.3 to 7.2.1",
+  "pullRequest": 141
+}
