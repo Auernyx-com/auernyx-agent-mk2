@@ -316,7 +316,6 @@ The repository has an auto-authorize workflow that automatically creates authori
 
 ### Security Considerations
 - **Never commit secrets**: All secrets must be environment variables or in gitignored config files
-- **Never commit secrets**: All secrets must be environment variables or in gitignored config files
 - **No direct Kintsugi writes**: Never write directly to `.auernyx/kintsugi/` - this is protected governance storage
 - **Validate inputs**: All external inputs must be validated before use
 - **Write-gate compliance**: All write operations require `AUERNYX_WRITE_ENABLED=1` and appropriate approvals
