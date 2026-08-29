@@ -31,7 +31,13 @@ export type CapabilityName =
     | "mondayInfractionReview"
     | "mondaySystemStatus"
     | "mondayTier2Review"
-    | "mondayOnboarding";
+    | "mondayOnboarding"
+    | "wyerdTraderTradingCycle"
+    | "kennrDesignExtract"
+    | "kennrDesignDnaSynthesize"
+    | "kennrDesignDiff"
+    | "skadiLeadScan"
+    | "fenerisSecurityStatus";
 
 export type CapabilityTier = 0 | 1 | 2;
 
@@ -73,7 +79,21 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
     mondayInfractionReview: { name: "mondayInfractionReview", readOnly: false, tier: 1 },
     mondaySystemStatus:  { name: "mondaySystemStatus",  readOnly: true, tier: 0 },
     mondayTier2Review:   { name: "mondayTier2Review",   readOnly: true,  tier: 0 },
-    mondayOnboarding:    { name: "mondayOnboarding",    readOnly: false, tier: 1 }
+    mondayOnboarding:    { name: "mondayOnboarding",    readOnly: false, tier: 1 },
+
+    // Wyerd Trader: governance-evaluated trading cycle (paper trading PoC)
+    wyerdTraderTradingCycle: { name: "wyerdTraderTradingCycle", readOnly: false, tier: 1 },
+
+    // Kennr: Design DNA Extractor — outbound calls to kennr-worker CF Worker
+    kennrDesignExtract:      { name: "kennrDesignExtract",      readOnly: false, tier: 1 },
+    kennrDesignDnaSynthesize:{ name: "kennrDesignDnaSynthesize", readOnly: false, tier: 1 },
+    kennrDesignDiff:         { name: "kennrDesignDiff",          readOnly: true,  tier: 0 },
+
+    // Skadi: Western Slope CO lead gen scanner — outbound calls to skadi CF Worker
+    skadiLeadScan: { name: "skadiLeadScan", readOnly: false, tier: 1 },
+
+    // Feneris: security layer status via Unix socket
+    fenerisSecurityStatus: { name: "fenerisSecurityStatus", readOnly: true, tier: 0 },
 };
 
 export function getCapabilityMeta(name: CapabilityName): CapabilityMeta {

@@ -164,6 +164,24 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             if (text.includes("monday") || text.includes("infraction review") || text.includes("hil review")) {
                 return "mondayInfractionReview";
             }
+
+            if (text.includes("wyerd trader") || text.includes("trading cycle")) {
+                return "wyerdTraderTradingCycle";
+            }
+
+            if (text.includes("kennr")) {
+                if (text.includes("diff")) return "kennrDesignDiff";
+                if (text.includes("dna") || text.includes("synthesize") || text.includes("synthesis")) return "kennrDesignDnaSynthesize";
+                return "kennrDesignExtract";
+            }
+
+            if (text.includes("skadi") || text.includes("lead scan") || text.includes("lead gen")) {
+                return "skadiLeadScan";
+            }
+            if (text.includes("feneris") || text.includes("security status") || text.includes("honeypot")) {
+                return "fenerisSecurityStatus";
+            }
+
             return null;
         },
 
