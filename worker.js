@@ -9,7 +9,9 @@ const CORS = {
 function authenticate(request, env) {
   const header = request.headers.get('Authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!env.AVRS_API_KEY) return true; // no key configured — open (dev mode)
+  // Fail closed: a missing AVRS_API_KEY is a misconfiguration, not an
+  // invitation to run open. No key configured means no request passes.
+  if (!env.AVRS_API_KEY) return false;
   return token === env.AVRS_API_KEY;
 }
 
