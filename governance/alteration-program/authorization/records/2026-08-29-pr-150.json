@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-08-29-pr-150",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #150: security: fix fail-open authenticate() on the CF Worker",
+  "signature": "Ghostwolf101-2026-08-29-pr150",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-08-29",
+  "reason": "PR #150: security: fix fail-open authenticate() on the CF Worker",
+  "pullRequest": 150
+}
