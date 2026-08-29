@@ -104,6 +104,35 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
 - `skjoldrFirewallAdviseInboundRuleSets` — analyze inbound rules and provide recommendations (read-only)
 - `analyzeDependency` — dependency risk analysis scaffold (read-only)
 
+### 12) Search doc index
+- `searchDocPreview` — dry-run preview of a `docs/SEARCH.md` add/remove entry, with before/after hashes (read-only)
+- `searchDocApply` — writes the change previewed above (mutating)
+- Notes: this is Mk2's canonical example of the plan → approve → execute controlled-write flow. See the README's "Controlled write path" section for the two-step plan shape.
+
+### 13) Monday — HIL review suite
+- `mondaySystemStatus` — read-only system/governance status summary (read-only)
+- `mondayTier2Review` — read-only review surface for tier-2 (high-risk) actions awaiting approval (read-only)
+- `mondayInfractionReview` — records a human disposition against a Feneris infraction (mutating)
+- `mondayOnboarding` — runs the guided module-onboarding questionnaire (mutating)
+- Notes: Monday is the human-in-the-loop interface layer — see `config/module-registry.json` / `config/module-registry-vm.json` for the onboarding questions tied to each attached module.
+
+### 14) Wyerd Trader — governed trading cycle
+- `wyerdTraderTradingCycle` — evaluates a 3-seat model consensus (AUENRIX/GHOST/BASTION) against fail-closed rules and approves/refuses a paper trade (mutating)
+- Notes: refuses closed on any `FAILED` model verdict; BASTION veto is a hard stop; BASTION confidence below 60% is binding, not advisory; requires 2/3 consensus on both action and asset or falls back to `HOLD`. `hil_gate.status` is `BYPASSED_POC` — a live system would pause here for human approval before any trade executes.
+
+### 15) Kennr — Design DNA Extractor
+- `kennrDesignExtract` — pulls raw HTML/style extraction from a target URL or supplied HTML via the Kennr CF Worker (mutating)
+- `kennrDesignDnaSynthesize` — synthesizes design DNA (colors, fonts, brief) from one or more extractions (mutating)
+- `kennrDesignDiff` — compares two synthesized DNA records (read-only)
+- Notes: all three call a fixed Kennr worker URL, never a caller-supplied endpoint. `hil_gate.status` is `BYPASSED_POC` on all three.
+
+### 16) Skadi — lead scan
+- `skadiLeadScan` — triggers one lead-generation scan against a Western Slope CO market via the Skadi CF Worker (mutating)
+- Notes: market index is clamped to the valid 0–6 range regardless of input; defaults to the day-of-week rotation if omitted. `hil_gate.status` is `BYPASSED_POC`.
+
+### 17) Feneris — security status
+- `fenerisSecurityStatus` — reads current state from the host-level Feneris daemon over its local Unix socket (`/run/feneris/feneris.sock`) (read-only)
+- Notes: this is the host security stack at `/home/echostation/feneris/`, not the router product repo — see the Feneris family docs. Degrades gracefully with a remediation message on a socket permission error rather than failing opaquely.
 
 ---
 
@@ -131,6 +160,11 @@ Routing is simple and deterministic:
   - `advise/advice/recommend` + `inbound/ib` → `skjoldrFirewallAdviseInboundRuleSets`
 - Contains both `analyze` and `dependency` → `analyzeDependency`
 - Contains `docker` → `docker`
+- Contains `monday`, `infraction review`, or `hil review` → `mondayInfractionReview`
+- Contains `wyerd trader` or `trading cycle` → `wyerdTraderTradingCycle`
+- Contains `kennr` → `kennrDesignDiff` if it also contains `diff`; `kennrDesignDnaSynthesize` if it contains `dna`/`synthesize`/`synthesis`; otherwise `kennrDesignExtract`
+- Contains `skadi`, `lead scan`, or `lead gen` → `skadiLeadScan`
+- Contains `feneris`, `security status`, or `honeypot` → `fenerisSecurityStatus`
 
 If nothing matches, the intent is “unroutable”.
 
@@ -459,11 +493,13 @@ Notes:
 - This includes Tier 0 / read-only actions like `scanRepo`.
 - Ledger writes are automatic evidence (they happen to record approvals and actions); approval gating is applied to capability side-effects.
 
-Current tiers (policy metadata):
+Current tiers (policy metadata, `core/policy.ts` — ground truth as of 2026-08-29):
 
-- Tier 0 (read-only): `scanRepo`, `analyzeDependency`
-- Tier 1 (mutating, approval required): `fenerisPrep`, `baselinePre`, `baselinePost`
-- Tier 2 (high-risk, approval required): `docker`
+- Tier 0 (read-only): `scanRepo`, `searchDocPreview`, `memoryCheck`, `skjoldrFirewallStatus`, `skjoldrFirewallAdviseInboundRuleSets`, `analyzeDependency`, `mondaySystemStatus`, `mondayTier2Review`, `kennrDesignDiff`, `fenerisSecurityStatus`
+- Tier 1 (mutating, approval required): `searchDocApply`, `fenerisPrep`, `baselinePre`, `baselinePost`, `proposeFixes`, `governanceSelfTest`, `mondayInfractionReview`, `mondayOnboarding`, `wyerdTraderTradingCycle`, `kennrDesignExtract`, `kennrDesignDnaSynthesize`, `skadiLeadScan`
+- Tier 2 (high-risk, approval required): `docker`, `rollbackKnownGood`, `governanceUnlock`, `skjoldrFirewallApplyProfile`, `skjoldrFirewallApplyRulesetFile`, `skjoldrFirewallExportBaseline`, `skjoldrFirewallRestoreBaseline`
+
+Note: `fenerisPrep` and `baselinePost` are marked `readOnly: true` in policy metadata despite sitting at tier 1 — tier reflects operational risk classification, not strictly read/write status.
 
 ---
 

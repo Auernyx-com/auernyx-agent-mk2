@@ -81,8 +81,8 @@ Intent
 | Mnēma | Persistent memory (Sap layer) |
 | Obsidian | Provenance judgment — activates on genesis failure |
 | Ghost | Dual-witness verifier — pure observer, no side effects |
-| Feneris | Watchdog — log watching, compromise detection, code flagging (branch declared, not yet connected) |
-| Monday | Pending |
+| Feneris | Watchdog and Sentinel — connected as of v1.0.0 (2026-05-04). `fenerisPrep` (Windows scaffold), plus a CF Worker deception layer (unknown routes run through a 2-tier honeypot instead of a 404) and `fenerisSecurityStatus`, which reads live state from the host-level Feneris daemon over its Unix socket |
+| Monday | Connected — human-in-the-loop review layer: `mondaySystemStatus`, `mondayTier2Review` (read-only), `mondayInfractionReview`, `mondayOnboarding` (mutating) |
 | Smalls | Pending |
 | Sovereignty | Pending |
 
@@ -92,7 +92,13 @@ Mk2 is designed to govern any program. Attachment points are declared as capabil
 
 Currently declared but unconnected:
 - `docker` — Docker environment branch
-- `fenerisPrep` — Feneris watchdog branch
+
+Connected branches (revenue/product side, not just internal governance):
+- **Wyerd Trader** — `wyerdTraderTradingCycle` evaluates a 3-seat model consensus against fail-closed trading rules (BASTION veto is a hard stop, confidence floor is binding, needs 2/3 consensus) and approves/refuses a paper trade
+- **Kennr** (Design DNA Extractor) — `kennrDesignExtract`, `kennrDesignDnaSynthesize`, `kennrDesignDiff`, all calling a fixed Kennr CF Worker endpoint
+- **Skadi** (Western Slope CO lead gen) — `skadiLeadScan`, calling the Skadi CF Worker
+
+All six of the above still report `hil_gate.status: "BYPASSED_POC"` — a live system would pause for human approval before outbound action; that gate isn't built yet, but the bypass stays visible in every output and receipt rather than being silent.
 
 ## Clients
 
