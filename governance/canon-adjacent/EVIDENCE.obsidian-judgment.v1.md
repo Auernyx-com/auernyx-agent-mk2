@@ -1,6 +1,6 @@
 # Evidence Consolidation — Obsidian Judgment (TRUNK) + Clear-Gating (SQUAD)
 
-Date: __________ (local)
+Date: 2026-01-05 (local)
 Scope: TRUNK law artifacts (Mk2) + minimal enforcement change (SQUAD module)
 Mode: Maintenance-safe (schema + law artifacts, no new workflows)
 

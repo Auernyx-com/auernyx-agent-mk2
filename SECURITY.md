@@ -171,7 +171,7 @@ python3 tools/ci_gate.py
 ## Security Contact
 
 - **GitHub Security Advisories:** [https://github.com/Auernyx-com/auernyx-agent-mk2/security/advisories](https://github.com/Auernyx-com/auernyx-agent-mk2/security/advisories)
-- **Email:** admin@aeurnyx.com
+- **Email:** admin@auernyx.com
 - **Issue Tracker (non-security bugs):** [https://github.com/Auernyx-com/auernyx-agent-mk2/issues](https://github.com/Auernyx-com/auernyx-agent-mk2/issues)
 
 ---
