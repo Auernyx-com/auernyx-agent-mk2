@@ -22,11 +22,11 @@
     "var/canon/**"
   ],
   "canon_rules": {
-    "must_be_gitignored": true,
+    "must_be_gitignored": false,
     "never_commit_canon": true
   },
   "git_rules": {
-    "require_repo_root_detection": true,
+    "require_repo_root_detection": false,
     "capture_status_porcelain_pre": true,
     "capture_status_porcelain_post": true,
     "deny_history_rewrites": true

@@ -22,6 +22,12 @@
     "mondayInfractionReview",
     "mondaySystemStatus",
     "mondayTier2Review",
-    "mondayOnboarding"
+    "mondayOnboarding",
+    "wyerdTraderTradingCycle",
+    "kennrDesignExtract",
+    "kennrDesignDnaSynthesize",
+    "kennrDesignDiff",
+    "skadiLeadScan",
+    "fenerisSecurityStatus"
   ]
 }
