@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-08-29-pr-151",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #151: docs: full incident report for tonight's cross-org authentication findings",
+  "signature": "Ghostwolf101-2026-08-29-pr151",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-08-29",
+  "reason": "PR #151: docs: full incident report for tonight's cross-org authentication findings",
+  "pullRequest": 151
+}
