@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-08-29-pr-147",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #147: Feneris deception layer + Kennr/Skadi/Trader capability wiring",
+  "signature": "Ghostwolf101-2026-08-29-pr147",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-08-29",
+  "reason": "PR #147: Feneris deception layer + Kennr/Skadi/Trader capability wiring",
+  "pullRequest": 147
+}

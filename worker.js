@@ -1,3 +1,5 @@
+import { fenerisTrap } from './feneris-trap.js';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -200,6 +202,12 @@ export default {
       }));
     }
 
-    return new Response('Not found', { status: 404, headers: CORS });
+    // Feneris trap — unknown routes get a convincing fake MK2 lifecycle response + canary ID
+    return fenerisTrap(request, env, (tid) => json({
+      status: 'WITHIN_TOLERANCE',
+      receipt_id: tid.slice(0, 12),
+      stage: 'queued',
+      message: 'Capability routed. Awaiting governance validation.',
+    }));
   },
 };

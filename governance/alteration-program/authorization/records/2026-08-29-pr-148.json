@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-08-29-pr-148",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #148: docs: bring README/SUMMARY/capabilities up to actual current state",
+  "signature": "Ghostwolf101-2026-08-29-pr148",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-08-29",
+  "reason": "PR #148: docs: bring README/SUMMARY/capabilities up to actual current state",
+  "pullRequest": 148
+}

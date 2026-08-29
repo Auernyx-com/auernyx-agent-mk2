@@ -24,12 +24,12 @@
         },
         "skjoldrFirewallApplyRulesetFile": {
           "action": "Applies a ruleset file directly to the Skjoldr firewall.",
-          "consequence": "Network rules change immediately. Verify the ruleset file contents before applying — there is no dry-run.",
+          "consequence": "Network rules change immediately. Verify the ruleset file contents before applying \u2014 there is no dry-run.",
           "irreversible": false
         },
         "skjoldrFirewallExportBaseline": {
           "action": "Exports the current Skjoldr firewall state as a named baseline snapshot.",
-          "consequence": "Creates a point-in-time record. Lower risk than apply operations, but the snapshot becomes a restore target — accuracy matters.",
+          "consequence": "Creates a point-in-time record. Lower risk than apply operations, but the snapshot becomes a restore target \u2014 accuracy matters.",
           "irreversible": false
         },
         "skjoldrFirewallRestoreBaseline": {
@@ -43,37 +43,7 @@
         "type": "boolean",
         "question": "Is Skjoldr firewall management part of this deployment?\n   Only say yes if the Skjoldr module is being attached. Enabling the capabilities without the module does nothing useful."
       }
-    }
-  ,
-    {
-      "id": "squad-bat",
-      "name": "SQUAD Battalion",
-      "identifier": "auernyx.module.squad-bat.v1",
-      "version": "1.0.0",
-      "attached_at": "2026-05-05T00:00:00.000Z",
-      "repo": "https://github.com/Auernyx-com/SQUAD",
-      "capabilities": [
-        "squadBatPathfinderRoute",
-        "squadBatHousingScreen",
-        "squadBatCrisisRedirect",
-        "squadBatIntakeReview"
-      ],
-      "indicator_capability": "squadBatPathfinderRoute",
-      "tier2_capabilities": {
-        "squadBatPathfinderRoute": {
-          "action": "Routes a veteran case through the SQUAD Battalion Division swarm.",
-          "consequence": "Retrieves veteran vault data for this instance, runs Division logic, destroys working copy on completion. Ygg ledger records outcome only — no PII.",
-          "irreversible": false
-        }
-      },
-      "onboarding": {
-        "question_id": "enable_squad_bat",
-        "type": "boolean",
-        "question": "Is SQUAD Battalion (veteran navigation) part of this deployment?\n   Only enable if the SQUAD BAT module is configured. Requires founding law verification on first run."
-      },
-      "founding_law_sha256": "dc0fcb428e24948c5471798bf3c0b77cafade1c68e1aecb39aa13eef264f2f87"
-    }
-  ,
+    },
     {
       "id": "wyerd-trader",
       "name": "Wyerd Trader",
@@ -88,7 +58,7 @@
       "tier1_capabilities": {
         "wyerdTraderTradingCycle": {
           "action": "Evaluates a paper trading cycle using 3-model consensus. BASTION seat holds veto power.",
-          "consequence": "Updates paper portfolio balance and KV ledger. No real funds. HIL gate is bypassed in PoC mode — in a live system this step would require human operator approval before execution.",
+          "consequence": "Updates paper portfolio balance and KV ledger. No real funds. HIL gate is bypassed in PoC mode \u2014 in a live system this step would require human operator approval before execution.",
           "irreversible": false
         }
       },
@@ -97,8 +67,7 @@
         "type": "boolean",
         "question": "Is Wyerd Trader (paper trading PoC) part of this deployment?\n   Only enable if the conductor script and CF Worker are configured."
       }
-    }
-  ,
+    },
     {
       "id": "kennr",
       "name": "Kennr Design DNA Extractor",
@@ -120,7 +89,7 @@
         },
         "kennrDesignDnaSynthesize": {
           "action": "Synthesizes multiple Kennr extractions into a unified Design DNA profile.",
-          "consequence": "Read-only synthesis pass. Writes the resulting profile to the Kennr Worker D1 database — no local filesystem writes.",
+          "consequence": "Read-only synthesis pass. Writes the resulting profile to the Kennr Worker D1 database \u2014 no local filesystem writes.",
           "irreversible": false
         },
         "kennrDesignDiff": {
@@ -134,8 +103,7 @@
         "type": "boolean",
         "question": "Is Kennr Design DNA Extractor part of this deployment?\n   Only enable if the Kennr CF Worker (kennr-worker) is deployed and accessible."
       }
-    }
-  ,
+    },
     {
       "id": "skadi",
       "name": "Skadi Lead Gen Scanner",
@@ -150,19 +118,26 @@
       "tier1_capabilities": {
         "skadiLeadScan": {
           "action": "Triggers an outbound lead scan for one Western Slope CO market via the Skadi CF Worker.",
-          "consequence": "Makes outbound requests to OSM and Foursquare. Writes results to Airtable. HIL gate is bypassed in PoC mode — in a live system this step would require human operator approval before scan.",
+          "consequence": "Makes outbound requests to OSM and Foursquare. Writes results to Airtable. HIL gate is bypassed in PoC mode \u2014 in a live system this step would require human operator approval before scan.",
           "irreversible": false
         }
       },
-      "schedule": "Monday 07:00 MDT (cron 0 13 * * 1) — rotates across 7 markets",
-      "markets": ["Grand Junction", "Montrose", "Delta", "Glenwood Springs", "Rifle", "Fruita", "Palisade"],
+      "schedule": "Monday 07:00 MDT (cron 0 13 * * 1) \u2014 rotates across 7 markets",
+      "markets": [
+        "Grand Junction",
+        "Montrose",
+        "Delta",
+        "Glenwood Springs",
+        "Rifle",
+        "Fruita",
+        "Palisade"
+      ],
       "onboarding": {
         "question_id": "enable_skadi",
         "type": "boolean",
         "question": "Is Skadi (Western Slope CO lead gen) part of this deployment?\n   Only enable if the Skadi CF Worker is deployed with Airtable and Foursquare secrets configured."
       }
-    }
-  ,
+    },
     {
       "id": "feneris",
       "name": "Feneris Security Layer",

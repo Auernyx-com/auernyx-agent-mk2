@@ -11,4 +11,4 @@ binding = "AI"
 
 [[services]]
 binding = "KENNR"
-service = "kristh-worker"
+service = "kennr-worker"

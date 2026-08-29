@@ -29,12 +29,15 @@ auernyx-agent/
 │   ├── policy.ts            # allowlist, approvals, safeguards
 │   ├── state.ts             # session + working memory
 │   └── ledger.ts            # append-only logs + hashes
-├── capabilities/
-│   ├── scanRepo.ts
-│   ├── fenerisPrep.ts
-│   ├── baselinePre.ts
-│   ├── baselinePost.ts
-│   └── docker.ts
+├── capabilities/          # 28 governed capabilities as of 2026-08-29 — see docs/mk2-capabilities.md
+│   ├── scanRepo.ts, searchDocPreview.ts, searchDocApply.ts
+│   ├── fenerisPrep.ts, fenerisSecurityStatus.ts
+│   ├── baselinePre.ts, baselinePost.ts, docker.ts
+│   ├── memoryCheck.ts, proposeFixes.ts, governanceSelfTest.ts,
+│   │   governanceUnlock.ts, rollbackKnownGood.ts, analyzeDependency.ts
+│   ├── skjoldrFirewall*.ts (6 files)
+│   ├── monday*.ts (4 files — HIL review layer)
+│   └── wyerdTraderTradingCycle.ts, kennrDesign*.ts (3 files), skadiLeadScan.ts
 ├── clients/
 │   ├── cli/
 │   │   └── auernyx.ts        # command-line entry
@@ -215,4 +218,4 @@ Both agents route intents into allowlisted capabilities and enforce the same gov
 
 ---
 
-**Status:** Skeleton complete. Ready for integration.
+**Status:** Governance core shipped as v1.0.0 "A.Varsity" (2026-05-04) — three-gate defense (Legitimacy Gate + Obsidian's Judgment + Feneris Sentinel), hash-chained receipts on every operation, both clients independent and operational, fail-closed CI gate, zero external dependencies. Live in production: the AVRS worker/bridge/GCP stack serving avrs.wyerd.org, and three connected revenue-side branches (Wyerd Trader, Kennr, Skadi) — see [docs/mk2-capabilities.md](docs/mk2-capabilities.md) for the full current capability list and [AUERNYX_AGENT_MK2_SUMMARY.md](AUERNYX_AGENT_MK2_SUMMARY.md) for architecture.

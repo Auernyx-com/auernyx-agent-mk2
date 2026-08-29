@@ -32,6 +32,12 @@ import { mondayInfractionReview } from "../capabilities/mondayInfractionReview";
 import { mondaySystemStatus } from "../capabilities/mondaySystemStatus";
 import { mondayTier2Review } from "../capabilities/mondayTier2Review";
 import { mondayOnboarding } from "../capabilities/mondayOnboarding";
+import { wyerdTraderTradingCycle } from "../capabilities/wyerdTraderTradingCycle";
+import { kennrDesignExtract } from "../capabilities/kennrDesignExtract";
+import { kennrDesignDnaSynthesize } from "../capabilities/kennrDesignDnaSynthesize";
+import { kennrDesignDiff } from "../capabilities/kennrDesignDiff";
+import { skadiLeadScan } from "../capabilities/skadiLeadScan";
+import { fenerisSecurityStatus } from "../capabilities/fenerisSecurityStatus";
 
 import * as fs from "fs";
 import * as path from "path";
@@ -151,7 +157,13 @@ export function createCore(repoRoot: string): AuernyxCore {
         mondayInfractionReview,
         mondaySystemStatus,
         mondayTier2Review,
-        mondayOnboarding
+        mondayOnboarding,
+        wyerdTraderTradingCycle,
+        kennrDesignExtract,
+        kennrDesignDnaSynthesize,
+        kennrDesignDiff,
+        skadiLeadScan,
+        fenerisSecurityStatus,
     });
 
     ledger.append(state.sessionId, "core.start", { repoRoot, provenance: prov.ok ? "PASS" : "FAIL" });
