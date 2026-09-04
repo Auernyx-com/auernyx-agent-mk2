@@ -73,41 +73,61 @@ function json(data, status = 200) {
   });
 }
 
+function sourceIp(request) {
+  return request.headers.get('CF-Connecting-IP')
+    ?? request.headers.get('X-Forwarded-For')?.split(',')[0].trim()
+    ?? 'unknown';
+}
+
+// Public /api/ask is unauthenticated by design (it's the demo page's Q&A box)
+// and calls Workers AI per request — bounded by the account's Workers AI
+// usage, not literally free, so this cap still matters. R2-backed, same
+// storage pattern as the Feneris honeypot's per-IP state. Fails open on
+// storage errors (an abuse-guard outage should degrade to "allow", never
+// take down the demo).
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+
+async function checkRateLimit(env, ip) {
+  const key = `ratelimit/ask/${ip}.json`;
+  let state = { windowStart: Date.now(), count: 0 };
+  try {
+    const obj = await env.AVRS_DATA.get(key);
+    if (obj) state = JSON.parse(await obj.text());
+  } catch {
+    return { allowed: true }; // fail open on read errors
+  }
+
+  const now = Date.now();
+  if (now - state.windowStart > RATE_LIMIT_WINDOW_MS) {
+    state = { windowStart: now, count: 0 };
+  }
+  state.count += 1;
+  const allowed = state.count <= RATE_LIMIT_MAX;
+
+  env.AVRS_DATA.put(key, JSON.stringify(state)).catch(() => {});
+  return { allowed, retryAfterMs: state.windowStart + RATE_LIMIT_WINDOW_MS - now };
+}
+
+// Uses the Worker's own bound Workers AI (env.AI, declared in wrangler.toml)
+// instead of a direct Anthropic API call -- no external secret needed, no
+// per-request billing beyond what's already provisioned. ANTHROPIC_API_KEY
+// was never actually configured on this Worker (confirmed via `wrangler
+// secret list`, 2026-09-04), so the old direct-Anthropic path had never
+// worked in production regardless of the routing bug this fix addresses.
+const AI_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
 async function callClaude(env, userMessage, conversationHistory = []) {
   const messages = [
+    { role: 'system', content: AVRS_SYSTEM },
     ...conversationHistory,
     { role: 'user', content: userMessage },
   ];
 
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type':      'application/json',
-      'x-api-key':         env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta':    'prompt-caching-2024-07-31',
-    },
-    body: JSON.stringify({
-      model:      'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: [
-        {
-          type: 'text',
-          text: AVRS_SYSTEM,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      messages,
-    }),
-  });
-
-  if (!r.ok) {
-    const err = await r.text();
-    throw new Error(`Claude API error ${r.status}: ${err}`);
-  }
-
-  const data = await r.json();
-  return data?.content?.[0]?.text ?? '';
+  const result = await env.AI.run(AI_MODEL, { messages, max_tokens: 1024 });
+  const text = result?.response;
+  if (!text) throw new Error('Workers AI returned an empty response');
+  return text;
 }
 
 export default {
@@ -124,12 +144,15 @@ export default {
         name:    'AVRS MK2 — Accountability Verification and Record System',
         builder: 'Wyerd AI Governance · Veteran-Founded · Colorado',
         status:  'WITHIN_TOLERANCE',
-        model:   'claude-sonnet-4-6',
+        model:   AI_MODEL,
         endpoints: {
-          query:   'POST /query         — Ask AVRS anything. Governance queries, system questions, decision evaluation.',
-          history: 'GET  /history       — Today\'s interaction log',
-          status:  'GET  /             — This status page',
-          kennr:   'ANY  /kennr/*       — Design DNA extraction (Kennr service binding)',
+          query:      'POST /query         — [auth] Ask AVRS anything. Governance queries, system questions, decision evaluation.',
+          history:    'GET  /history       — [auth] Today\'s interaction log',
+          status:     'GET  /             — This status page',
+          kennr:      'ANY  /kennr/*       — [auth] Design DNA extraction (Kennr service binding)',
+          apiStatus:  'GET  /api/status    — Public status widget (avrs.wyerd.org)',
+          apiAsk:     'POST /api/ask       — Public Q&A (avrs.wyerd.org), rate-limited per IP',
+          apiDecisions: 'GET /api/decisions — Public recent-interaction feed (avrs.wyerd.org)',
         },
       });
     }
@@ -163,7 +186,7 @@ export default {
         timestamp,
         query,
         response,
-        model: 'claude-sonnet-4-6',
+        model: AI_MODEL,
         sessionId: sessionId ?? null,
       };
 
@@ -202,6 +225,108 @@ export default {
         headers: request.headers,
         body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
       }));
+    }
+
+    // GET /api/status — public. The demo page's status widget. Deliberately
+    // reports only what this Worker actually knows to be true (env bindings
+    // present, today's real interaction count) rather than inventing
+    // chain_integrity/layers figures it has no data for — the frontend
+    // already renders those as "—" when absent, so omitting is honest,
+    // not broken. Fail-closed per the same law AVRS itself describes: a
+    // missing required secret is reported as FAILED_CLOSED, not hidden.
+    if (request.method === 'GET' && url.pathname === '/api/status') {
+      const misconfigured = !env.AI || !env.AVRS_DATA;
+      let interactionsToday = null;
+      try {
+        const date = new Date().toISOString().split('T')[0];
+        const list = await env.AVRS_DATA.list({ prefix: `interactions/${date}/` });
+        interactionsToday = list.objects.length;
+      } catch {
+        // leave null — unknown, not zero
+      }
+      return json({
+        system_state: misconfigured ? 'FAILED_CLOSED' : 'WITHIN_TOLERANCE',
+        interactions_today: interactionsToday,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    // GET /api/decisions?limit=N — public. Real Q&A interaction history
+    // (same R2 data /history uses), not fabricated governance decisions —
+    // "outcome" is whichever AVRS system-state word Claude's own answer
+    // contained, defaulting to WITHIN_TOLERANCE for an ordinary answered
+    // question with none.
+    if (request.method === 'GET' && url.pathname === '/api/decisions') {
+      const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '10', 10) || 10, 50);
+      const date = new Date().toISOString().split('T')[0];
+      let entries = [];
+      try {
+        const list = await env.AVRS_DATA.list({ prefix: `interactions/${date}/` });
+        const objs = await Promise.all(
+          list.objects.slice(-limit).map(async obj => {
+            const val = await env.AVRS_DATA.get(obj.key);
+            return val ? JSON.parse(await val.text()) : null;
+          }),
+        );
+        entries = objs.filter(Boolean).reverse().map(e => {
+          const text = e.response || '';
+          const outcome = /FAILED_CLOSED/.test(text) ? 'FAILED_CLOSED'
+            : /\bCONTROLLED\b/.test(text) ? 'CONTROLLED'
+            : 'WITHIN_TOLERANCE';
+          return { ts: e.timestamp, summary: (e.query || '').slice(0, 140), outcome };
+        });
+      } catch {
+        // leave entries empty — the frontend renders "No decision data available."
+      }
+      return json({ entries, sample_size: entries.length });
+    }
+
+    // POST /api/ask — public, rate-limited. The demo page's "Ask AVRS" box.
+    // Same callClaude() path as the authenticated /query, just without a
+    // Bearer requirement and with a per-IP cap since anyone can reach it.
+    if (request.method === 'POST' && url.pathname === '/api/ask') {
+      const ip = sourceIp(request);
+      const { allowed, retryAfterMs } = await checkRateLimit(env, ip);
+      if (!allowed) {
+        return json(
+          { error: `Rate limit exceeded. Try again in ${Math.ceil((retryAfterMs ?? 0) / 1000)}s.` },
+          429,
+        );
+      }
+
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'Invalid JSON body' }, 400);
+      }
+
+      const question = body.question;
+      if (!question) return json({ error: 'question is required' }, 400);
+
+      let answer;
+      try {
+        answer = await callClaude(env, question, []);
+      } catch (e) {
+        return json({ error: e.message }, 502);
+      }
+
+      const ts = new Date().toISOString();
+      const date = ts.split('T')[0];
+      await env.AVRS_DATA.put(
+        `interactions/${date}/log-${Date.now()}.json`,
+        JSON.stringify({
+          id: `avrs-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          timestamp: ts,
+          query: question,
+          response: answer,
+          model: AI_MODEL,
+          sessionId: null,
+          source: 'public-ask',
+        }),
+      ).catch(() => {});
+
+      return json({ answer, ts, data_freshness: ts });
     }
 
     // Feneris trap — unknown routes get a convincing fake MK2 lifecycle response + canary ID
