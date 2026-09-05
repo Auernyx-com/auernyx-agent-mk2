@@ -514,7 +514,17 @@ export async function runLifecycle(args: {
 
     // PREVIEW-ONLY short-circuit: if the plan includes any non-readonly steps but is not armed, do not execute.
     // This must still emit receipts and return OK_PREVIEW_ONLY.
-    const firstApproval = byStepId.get(plan.steps[0]?.id ?? "");
+    //
+    // Was unconditionally plan.steps[0] — for a multi-step plan (searchDocApply
+    // ships one today: step-1 preview/READ_ONLY, step-2 apply/CONTROLLED_WRITE),
+    // targeting step-2 via executeStepId with a fully valid, armed approval for
+    // step-2 (and none at all for step-1, which is never being executed) still
+    // read step-1's missing approval here, silently fell back to preview-only,
+    // and never ran step-2 at all — with no refusal code explaining why.
+    // Verified directly before fixing: a real 2-step plan, step-2 targeted with
+    // a valid armed approval, step-2's capability function never actually ran.
+    const targetStepIndex = requestedStepId && requestedIndex >= 0 ? requestedIndex : 0;
+    const firstApproval = byStepId.get(plan.steps[targetStepIndex]?.id ?? "");
     const armed = (firstApproval as any)?.apply === true;
     const canon = canonGitignoreStatus(args.ctx.repoRoot);
 
