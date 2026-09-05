@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-170",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #170: fix(runLifecycle): armed check only ever looked at plan.steps[0]",
+  "signature": "Ghostwolf101-2026-09-05-pr170",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #170: fix(runLifecycle): armed check only ever looked at plan.steps[0]",
+  "pullRequest": 170
+}
