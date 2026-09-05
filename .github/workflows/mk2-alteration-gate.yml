@@ -5,6 +5,18 @@ on:
     branches: [ main ]
     types: [opened, synchronize, reopened]
 
+# auto-authorize commits and pushes an authorization record mid-run, which
+# fires a second, near-simultaneous synchronize event on this same PR. Without
+# this guard, that second event's run can start while the first is still
+# mid-flight, racing it and occasionally failing to schedule at all ("workflow
+# file issue", 0 jobs) — not a real gate failure, just two evaluations of the
+# same PR colliding. queued (not cancelled): the second run still needs to
+# complete for jobs unrelated to the auth-record commit; cancelling it would
+# lose that.
+concurrency:
+  group: mk2-alteration-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write

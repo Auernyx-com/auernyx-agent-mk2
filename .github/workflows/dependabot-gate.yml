@@ -8,6 +8,13 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+# This job commits and pushes an intent file mid-run, which fires a second,
+# near-simultaneous synchronize event on the same PR — the same self-retrigger
+# race documented in mk2-alteration-gate.yml. Queue rather than race it.
+concurrency:
+  group: dependabot-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
