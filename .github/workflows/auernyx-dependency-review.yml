@@ -4,6 +4,14 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# This workflow makes no commits of its own, but mk2-alteration-gate.yml and
+# dependabot-gate.yml do (they push a record/intent file mid-run), which fires
+# a second, near-simultaneous synchronize event on the same PR that this
+# workflow is also triggered by. Queue rather than let two evaluations race.
+concurrency:
+  group: auernyx-dependency-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   pull-requests: write
