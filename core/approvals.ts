@@ -47,16 +47,27 @@ export function isValidApproval(approval: unknown): approval is Approval {
     );
 }
 
+function isCleanStringArray(v: unknown): v is string[] {
+    return Array.isArray(v) && v.every((item) => typeof item === "string" && item.trim().length > 0);
+}
+
 export function isValidStepApproval(approval: unknown): approval is StepApproval {
     if (!isValidApproval(approval)) return false;
     const a = approval as unknown as Record<string, unknown>;
     if (typeof a.stepId !== "string" || a.stepId.trim().length === 0) return false;
-    if (a.evidenceRefs === undefined) return true;
-    if (!Array.isArray(a.evidenceRefs)) return false;
-    if (!(a.evidenceRefs as unknown[]).every((v) => typeof v === "string" && v.trim().length > 0)) return false;
-    if (a.acknowledgedRollbackPointIds === undefined) return true;
-    if (!Array.isArray(a.acknowledgedRollbackPointIds)) return false;
-    return (a.acknowledgedRollbackPointIds as unknown[]).every((v) => typeof v === "string" && v.trim().length > 0);
+
+    // Each optional field is validated independently — evidenceRefs being
+    // absent must not skip validating acknowledgedRollbackPointIds. The
+    // previous version returned early as soon as evidenceRefs was undefined,
+    // which meant any value at all for acknowledgedRollbackPointIds (wrong
+    // element types, or not even an array) was silently accepted whenever a
+    // caller simply omitted evidenceRefs.
+    if (a.evidenceRefs !== undefined && !isCleanStringArray(a.evidenceRefs)) return false;
+    if (a.acknowledgedRollbackPointIds !== undefined && !isCleanStringArray(a.acknowledgedRollbackPointIds)) {
+        return false;
+    }
+
+    return true;
 }
 
 export function approvalIdentity(approval: Approval | undefined): string | undefined {
