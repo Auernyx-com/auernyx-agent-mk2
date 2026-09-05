@@ -37,15 +37,27 @@ export interface MondayPersona {
     personality: { surface: string; core: string };
 }
 
-let _personaCache: MondayPersona | null = null;
+// Was a single scalar, not keyed by repoRoot — the second call to this
+// function with a *different* repoRoot would silently return the first
+// repoRoot's cached persona, ignoring its own personas/monday.json entirely.
+// Verified empirically: two distinct repos with distinct persona files, the
+// second load returned the first repo's persona. Unlikely to bite a single
+// long-running daemon process (one repoRoot for its whole lifetime), but a
+// real correctness gap wherever this function is called across more than
+// one repoRoot in the same process — including any test that loads
+// personas from more than one temp directory.
+const _personaCache = new Map<string, MondayPersona>();
 
 export function loadMondayPersona(repoRoot: string): MondayPersona {
-    if (_personaCache) return _personaCache;
+    const cached = _personaCache.get(repoRoot);
+    if (cached) return cached;
+
     const personaPath = path.join(repoRoot, "personas", "monday.json");
     try {
         const raw = fs.readFileSync(personaPath, "utf8");
-        _personaCache = JSON.parse(raw) as MondayPersona;
-        return _personaCache;
+        const persona = JSON.parse(raw) as MondayPersona;
+        _personaCache.set(repoRoot, persona);
+        return persona;
     } catch {
         return {
             id: "monday",
