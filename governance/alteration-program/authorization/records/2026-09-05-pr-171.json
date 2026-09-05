@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-171",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #171: fix(runLifecycle): every return path reported steps[0] as the capability",
+  "signature": "Ghostwolf101-2026-09-05-pr171",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #171: fix(runLifecycle): every return path reported steps[0] as the capability",
+  "pullRequest": 171
+}
