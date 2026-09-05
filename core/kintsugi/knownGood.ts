@@ -137,7 +137,17 @@ export async function recordKnownGoodSnapshot(
         policy_snapshot_path: params.policySnapshotPath,
         policy_hash: params.policyHash,
         ledger_head_hash: ledgerHeadHash,
-        created_by: makeSnapshotHash(approvedBy),
+        // Plain text, matching the identical created_by field in
+        // writePolicySnapshotAndActivate's snapshot payload one file over
+        // (core/kintsugi/memory.ts) — this used makeSnapshotHash(approvedBy)
+        // instead, hashing away the one thing this field exists to record.
+        // Nothing anywhere ever read it back for comparison (verified: no
+        // consumer treats it as a hash to check against), so this wasn't a
+        // deliberate anonymization — it silently destroyed the "who created
+        // this Known Good snapshot" audit trail for every entry, directly
+        // against the Provenance Protocol this whole system is built on
+        // ("nothing exists without a traceable birth").
+        created_by: approvedBy,
         reason: params.reason,
         notes: params.notes,
     };
