@@ -282,6 +282,37 @@ function readJson(req: http.IncomingMessage, maxBodyBytes: number): Promise<unkn
     });
 }
 
+// Reads and parses a request body, writing the appropriate error response
+// itself on failure so callers just check `.ok`. Previously each of
+// /run, /plan, /step called readJson() directly inside one broad try/catch
+// shared with the rest of the handler's logic (approval checks, runLifecycle
+// execution). Two real bugs came from that: a malformed JSON body (a client
+// mistake) fell through to the generic catch-all and came back as a 500 with
+// the raw JSON.parse error message, when a bad request should be a 400; and
+// only /run's catch block special-cased payload_too_large into a 413 —
+// /plan and /step had no such check, so the identical failure (a body over
+// maxBodyBytes) returned 500 there instead. Verified directly: sent the same
+// oversized body to all three routes, only /run returned 413. Narrowing the
+// parse step to its own try/catch, used identically by all three handlers,
+// fixes both inconsistencies at once.
+async function readRequestBody(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    maxBodyBytes: number
+): Promise<{ ok: true; body: unknown } | { ok: false }> {
+    try {
+        const body = await readJson(req, maxBodyBytes);
+        return { ok: true, body };
+    } catch (err) {
+        if (err instanceof Error && err.message === "payload_too_large") {
+            writeJson(res, 413, { ok: false, error: "payload_too_large" } satisfies DaemonRunResponse);
+        } else {
+            writeJson(res, 400, { ok: false, error: "invalid_json" } satisfies DaemonRunResponse);
+        }
+        return { ok: false };
+    }
+}
+
 // Compile regex once for better performance
 const SAFE_SEGMENT_REGEX = /^[A-Za-z0-9._-]{1,128}$/;
 
@@ -829,6 +860,16 @@ function redact(value: unknown): unknown {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj)) {
         const key = k.toLowerCase();
+        // secretEnabled (/config's own field, computed as secret.trim().length > 0)
+        // is deliberately non-sensitive — it says whether a secret exists, never
+        // what it is. The blanket "secret" substring match below swept it up
+        // too, silently reporting "[REDACTED]" for the one field /config exists
+        // to expose (is auth enabled). Verified directly before fixing: fetched
+        // /config and got secretEnabled:"[REDACTED]" instead of a boolean.
+        if (key === "secretenabled") {
+            out[k] = v;
+            continue;
+        }
         if (key.includes("secret") || key === "x-auernyx-secret" || key === "authorization") {
             out[k] = "[REDACTED]";
             continue;
@@ -968,7 +1009,14 @@ export function startDaemon(repoRoot: string) {
             return writeJson(res, 400, { ok: false, error: "bad request" } satisfies DaemonRunResponse);
         }
 
-        if (req.method === "GET" && req.url === "/") {
+        // Was an exact `req.url === "/"` check, which only ever matches a
+        // bare "/" with no query string at all — the page's own rendered
+        // HTML tells a human to use "/?format=json" for JSON, but that exact
+        // URL 404'd, since req.url for it is literally "/?format=json", not
+        // "/". Verified directly before fixing. Matched to how every other
+        // query-string-tolerant route here (/ledger, /config, /receipts)
+        // already dispatches with startsWith rather than exact equality.
+        if (req.method === "GET" && (req.url === "/" || req.url.startsWith("/?"))) {
                         const accept = String(req.headers["accept"] ?? "");
                         const userAgent = String(req.headers["user-agent"] ?? "");
                         const payload = {
@@ -1273,7 +1321,9 @@ export function startDaemon(repoRoot: string) {
                 // Optional shared-secret auth (protects against random local processes).
                 if (!requireSecretIfConfigured(req, res, secret)) return;
 
-                const body = (await readJson(req, maxBodyBytes)) as Partial<DaemonRunRequest>;
+                const parsedBody = await readRequestBody(req, res, maxBodyBytes);
+                if (!parsedBody.ok) return;
+                const body = parsedBody.body as Partial<DaemonRunRequest>;
                 const intent = typeof body.intent === "string" ? body.intent : "";
                 if (!intent.trim()) {
                     return writeJson(res, 400, { ok: false, error: "missing intent" } satisfies DaemonRunResponse);
@@ -1351,7 +1401,9 @@ export function startDaemon(repoRoot: string) {
                 if (!checkRateLimit(req, res)) return;
                 if (!requireSecretIfConfigured(req, res, secret)) return;
 
-                const body = (await readJson(req, maxBodyBytes)) as Partial<DaemonRunRequest>;
+                const parsedBody = await readRequestBody(req, res, maxBodyBytes);
+                if (!parsedBody.ok) return;
+                const body = parsedBody.body as Partial<DaemonRunRequest>;
                 const intent = typeof body.intent === "string" ? body.intent : "";
                 if (!intent.trim()) {
                     return writeJson(res, 400, { ok: false, error: "missing intent" } satisfies DaemonRunResponse);
@@ -1396,7 +1448,9 @@ export function startDaemon(repoRoot: string) {
                 if (!checkRateLimit(req, res)) return;
                 if (!requireSecretIfConfigured(req, res, secret)) return;
 
-                const body = (await readJson(req, maxBodyBytes)) as any;
+                const parsedBody = await readRequestBody(req, res, maxBodyBytes);
+                if (!parsedBody.ok) return;
+                const body = parsedBody.body as any;
                 const intent = typeof body.intent === "string" ? body.intent : "";
                 const stepId = typeof body.stepId === "string" ? body.stepId : "";
                 if (!intent.trim()) return writeJson(res, 400, { ok: false, error: "missing intent" } satisfies DaemonRunResponse);
