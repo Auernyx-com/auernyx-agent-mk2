@@ -48,6 +48,34 @@ export async function wyerdTraderTradingCycle(ctx: RouterContext, input?: unknow
         };
     }
 
+    // Found via a top-down review, not a symptom: checking data.verdicts.length
+    // === 3 alone doesn't guarantee BASTION is actually one of the 3 seats —
+    // `data as TradingCycleInput` is a compile-time-only assertion, no runtime
+    // guarantee the caller's seat labels are correct. Verified directly: 3
+    // verdicts all labeled AUENRIX/GHOST (no BASTION at all) got approved
+    // outright, silently skipping BASTION's veto and 60%-confidence-floor
+    // checks below entirely, since both are gated on `bastion` being found at
+    // all. Those checks are documented (see auernyx-architecture-detail
+    // memory) as "a hard stop" and "binding, not advisory" — a missing seat
+    // must refuse, not silently waive them.
+    const seats = data.verdicts.map((v) => v.seat);
+    const requiredSeats: Array<TradingCycleInput["verdicts"][number]["seat"]> = ["AUENRIX", "GHOST", "BASTION"];
+    const missingSeats = requiredSeats.filter((s) => !seats.includes(s));
+    const duplicateSeats = seats.filter((s, i) => seats.indexOf(s) !== i);
+    if (missingSeats.length > 0 || duplicateSeats.length > 0) {
+        ctx.ledger?.append(ctx.sessionId, "wyerd-trader.cycle.malformed_seats", {
+            cycle_id: data.cycle_id,
+            seats,
+            missingSeats,
+            duplicateSeats,
+        });
+        return {
+            approved: false,
+            reasoning: `REFUSED: verdicts must include exactly one each of AUENRIX, GHOST, BASTION — got [${seats.join(", ")}]`,
+            hil_gate: HIL_GATE,
+        };
+    }
+
     ctx.ledger?.append(ctx.sessionId, "wyerd-trader.cycle.start", {
         cycle_id: data.cycle_id,
         timestamp: data.timestamp,
