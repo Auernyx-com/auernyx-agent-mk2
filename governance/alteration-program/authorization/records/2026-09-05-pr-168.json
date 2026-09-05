@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-168",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #168: fix(kintsugi): Known Good creator identity + rollback/knownGood coverage",
+  "signature": "Ghostwolf101-2026-09-05-pr168",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #168: fix(kintsugi): Known Good creator identity + rollback/knownGood coverage",
+  "pullRequest": 168
+}
