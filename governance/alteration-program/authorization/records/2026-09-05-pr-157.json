@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-157",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #157: chore: add proprietary LICENSE, mark package private",
+  "signature": "Ghostwolf101-2026-09-05-pr157",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #157: chore: add proprietary LICENSE, mark package private",
+  "pullRequest": 157
+}
