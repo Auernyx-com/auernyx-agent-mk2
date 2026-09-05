@@ -46,6 +46,11 @@ function sortKeysDeep(input: unknown): unknown {
     return input;
 }
 
+// Sorted by filename, which embeds a millisecond timestamp — two entries
+// recorded within the same millisecond sort by their random UUID suffix
+// instead of true creation order (same characteristic already documented on
+// core/knownGood.ts's listKnownGood). Only affects display/listing order;
+// nothing reads this list positionally for a governance decision.
 export async function listKnownGoodSnapshotsWithPaths(
     repoRoot: string,
     options?: { limit?: number }

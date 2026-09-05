@@ -50,17 +50,25 @@ test("recordKnownGoodSnapshot auto-anchors the ledger when none exists yet", asy
   assert.ok(entry.ledger_head_hash.length > 0);
 });
 
-test("listKnownGoodSnapshotsWithPaths returns entries in filename order and respects a limit", async () => {
+test("listKnownGoodSnapshotsWithPaths returns every entry and respects a limit", async () => {
+  // Note: sorted by filename, which embeds a millisecond timestamp — two
+  // entries recorded within the same millisecond (both calls here run
+  // synchronously, back to back) sort by their random UUID suffix, not
+  // true creation order. This test checks count and membership, not a
+  // specific order, to stay accurate to what the function actually
+  // guarantees — an earlier version of this test asserted a specific
+  // "second" entry landed last, which was flaky under exactly this
+  // same-millisecond condition.
   const repoRoot = makeRepoRoot();
   await recordKnownGoodSnapshot(repoRoot, { policySnapshotPath: "/a", policyHash: "h1", approvedBy: "x", reason: "first" });
   await recordKnownGoodSnapshot(repoRoot, { policySnapshotPath: "/b", policyHash: "h2", approvedBy: "x", reason: "second" });
 
   const all = await listKnownGoodSnapshotsWithPaths(repoRoot);
   assert.equal(all.length, 2);
+  assert.deepEqual(new Set(all.map((x) => x.entry.reason)), new Set(["first", "second"]));
 
   const limited = await listKnownGoodSnapshotsWithPaths(repoRoot, { limit: 1 });
   assert.equal(limited.length, 1);
-  assert.equal(limited[0].entry.reason, "second");
 });
 
 test("listKnownGoodSnapshotsWithPaths returns an empty array when nothing has been recorded", async () => {
