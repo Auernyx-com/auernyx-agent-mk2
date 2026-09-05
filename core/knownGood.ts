@@ -43,6 +43,11 @@ export function knownGoodSnapshotsDir(repoRoot: string): string {
     return path.join(knownGoodBaseDir(repoRoot), "snapshots");
 }
 
+// Sorted by filename, which embeds a millisecond timestamp — two entries
+// recorded within the same millisecond sort by their random UUID suffix
+// instead of true creation order. Only affects display/listing order here;
+// restoreKnownGood looks up by exact kgsId, not position, so this never
+// affects which snapshot actually gets restored.
 export function listKnownGood(repoRoot: string, options?: { limit?: number }): KnownGoodEntry[] {
     const entriesDir = knownGoodEntriesDir(repoRoot);
     if (!fs.existsSync(entriesDir)) return [];
