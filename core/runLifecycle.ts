@@ -1,7 +1,7 @@
 import type { Approval, StepApproval } from "./approvals";
 import type { Router, RouterContext } from "./router";
 import { legitimacyGate } from "./legitimacyGate";
-import { planForIntent, type Plan } from "./planner";
+import { planForIntent, type Plan, type PlanStep } from "./planner";
 import { createReceiptWriter } from "./receipts";
 import { loadConfig } from "./config";
 import { evidenceFromExternalRef, evidenceFromFileHash, evidenceFromPastedText, type Evidence } from "./evidence";
@@ -573,12 +573,23 @@ export async function runLifecycle(args: {
         const finalized = receipt?.finalize();
         return {
             ok: true,
-            capability: plannedCapability,
+            // The step actually being gated here, not always steps[0] — same
+            // fix as the armed check itself just above: for a multi-step
+            // plan with a specific step targeted, the capability under
+            // preview is that step's, not necessarily the plan's first one.
+            capability: plan.steps[targetStepIndex]?.tool?.name,
             plan,
             result: [],
             ...(finalized ? { receipt: finalized } : {}),
         };
     }
+
+    // Tracks whichever step was actually being processed, for the catch
+    // block below — a plain try/catch can't see the loop's own `const step`
+    // (different block scope), so without this the catch-all execution
+    // error always reported steps[0] as "capability" regardless of which
+    // step actually threw.
+    let lastAttemptedStep: PlanStep | undefined;
 
     try {
         const start = requestedStepId ? requestedIndex : 0;
@@ -586,6 +597,7 @@ export async function runLifecycle(args: {
 
         for (let i = start; i < endExclusive; i++) {
             const step = plan.steps[i];
+            lastAttemptedStep = step;
             const approval = byStepId.get(step.id);
             if (!approval) {
                 const missingStepIds = (requestedStepId ? [step.id] : plan.steps.slice(i).map((s) => s.id));
@@ -626,7 +638,7 @@ export async function runLifecycle(args: {
                 const finalized = receipt?.finalize();
                 return {
                     ok: false,
-                    capability: plan.steps[0]?.tool?.name,
+                    capability: step.tool?.name, // the step actually missing approval, not always steps[0]
                     plan,
                     missingStepIds,
                     ...(warnings.length ? { warnings } : {}),
@@ -690,7 +702,7 @@ export async function runLifecycle(args: {
                 const finalized = receipt?.finalize();
                 return {
                     ok: false,
-                    capability: plan.steps[0]?.tool?.name,
+                    capability: step.tool?.name, // the step actually missing evidence, not always steps[0]
                     plan,
                     ...(warnings.length ? { warnings } : {}),
                     refusal: { code: refusal.code, reason: refusal.message },
@@ -748,7 +760,7 @@ export async function runLifecycle(args: {
                     const finalized = receipt?.finalize();
                     return {
                         ok: false,
-                        capability: plan.steps[0]?.tool?.name,
+                        capability: step.tool?.name, // the step actually missing its rollback ack, not always steps[0]
                         plan,
                         ...(warnings.length ? { warnings } : {}),
                         refusal: { code: refusal.code, reason: refusal.message },
@@ -826,7 +838,11 @@ export async function runLifecycle(args: {
         const finalized = receipt?.finalize();
         return {
             ok: true,
-            capability: plan.steps[0]?.tool?.name,
+            // The step(s) actually executed, not always steps[0] — verified
+            // directly: targeting step-2 of a real 2-step plan (searchDocApply)
+            // and successfully executing it reported capability: "searchDocPreview"
+            // (step-1's tool) even though searchDocApply is what actually ran.
+            capability: lastAttemptedStep?.tool?.name,
             plan,
             result: outputs,
             ...(warnings.length ? { warnings } : {}),
@@ -867,7 +883,10 @@ export async function runLifecycle(args: {
         const finalized = receipt?.finalize();
         return {
             ok: false,
-            capability: plan.steps[0]?.tool?.name,
+            // Whichever step was actually being attempted when this threw,
+            // not always steps[0] (falls back to plannedCapability if the
+            // failure happened before the loop ever started an iteration).
+            capability: lastAttemptedStep?.tool?.name ?? plannedCapability,
             plan,
             ...(warnings.length ? { warnings } : {}),
             refusal: { code: refusal.code, reason: refusal.message },
