@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-175",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #175: planner.ts coverage + 3 real bug fixes in searchDocApply/searchDocPreview",
+  "signature": "Ghostwolf101-2026-09-05-pr175",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #175: planner.ts coverage + 3 real bug fixes in searchDocApply/searchDocPreview",
+  "pullRequest": 175
+}
