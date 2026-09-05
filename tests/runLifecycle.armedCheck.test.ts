@@ -119,6 +119,76 @@ test("a missing approval for a later step (not step-0) reports THAT step as the 
   assert.equal(result.capability, "searchDocApply");
 });
 
+test("(second, separate armed-check bug, found via core/server.ts integration tests) targeting step-1 (READ_ONLY) of the same plan actually executes it without requiring apply:true", async () => {
+  // plannedIsMutating (the gate just above `armed`) was plan-wide: it
+  // checked whether *any* step in the whole plan was non-readonly, not
+  // whether the step(s) actually about to run were. searchDocApply's plan
+  // has a mutating step-2, so even a pure step-1 (READ_ONLY, no approval
+  // requirements of its own) request got treated as "plan is mutating and
+  // not armed" and silently short-circuited into preview_only_not_armed —
+  // ok:true, but result: [] (step-1's own capability function never ran).
+  // Verified directly before fixing, via a real HTTP /step call targeting
+  // step-1 with a plain non-apply approval: ok:true, result:[].
+  const repoRoot = makeRepoRoot();
+  const previewCalled = { value: false };
+  const router = createRouter(
+    createPolicy(repoRoot),
+    {
+      searchDocPreview: async () => {
+        previewCalled.value = true;
+        return { mode: "preview" };
+      },
+      searchDocApply: async () => ({ mode: "applied" }),
+    } as any
+  );
+
+  const result = (await runLifecycle({
+    router,
+    ctx: { repoRoot, sessionId: "test-session" } as any,
+    intent: "search doc apply",
+    input: { action: "add", docPath: "docs/x.md", title: "X" },
+    executeStepId: "step-1",
+    // Deliberately no apply/confirm — step-1 is READ_ONLY and core/router.ts's
+    // own executeStep only requires those for a non-readonly step.
+    stepApprovals: [{ ...approval, stepId: "step-1" }],
+  })) as any;
+
+  assert.equal(previewCalled.value, true, "step-1's capability function should actually have run, not been short-circuited into a preview no-op");
+  assert.equal(result.ok, true);
+  assert.equal(result.capability, "searchDocPreview");
+  assert.equal(result.result.length, 1);
+});
+
+test("(the fix) the audit receipt's decision_code reflects only the step(s) actually run, not the whole plan's shape", async () => {
+  // Same root cause, one layer later: the success-path decision_code
+  // (OK_APPLIED vs OK_PREVIEW_ONLY) also read plan.steps.some(...) — the
+  // whole plan — rather than the steps this invocation actually executed.
+  // Targeting step-1 alone (READ_ONLY) of a plan that also contains a
+  // mutating step-2 elsewhere would have recorded OK_APPLIED in the audit
+  // trail for a run that never wrote anything.
+  const repoRoot = makeRepoRoot();
+  const router = createRouter(
+    createPolicy(repoRoot),
+    {
+      searchDocPreview: async () => ({ mode: "preview" }),
+      searchDocApply: async () => ({ mode: "applied" }),
+    } as any
+  );
+
+  const result = (await runLifecycle({
+    router,
+    ctx: { repoRoot, sessionId: "test-session" } as any,
+    intent: "search doc apply",
+    input: { action: "add", docPath: "docs/x.md", title: "X" },
+    executeStepId: "step-1",
+    stepApprovals: [{ ...approval, stepId: "step-1" }],
+  })) as any;
+
+  assert.equal(result.ok, true);
+  const governance = JSON.parse(fs.readFileSync(path.join(result.receipt.dirPath, "governance.json"), "utf8"));
+  assert.equal(governance.decision_code, "OK_PREVIEW_ONLY");
+});
+
 test("without a matching step-2 approval, the same plan still correctly falls back to preview-only", async () => {
   const repoRoot = makeRepoRoot();
   const applyCalled = { value: false };

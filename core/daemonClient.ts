@@ -135,7 +135,11 @@ export async function tryRunViaDaemon(
         const plan = planJson?.result?.plan;
         const capability = typeof planJson?.capability === "string" ? planJson.capability : undefined;
 
-        const firstStepId = typeof plan?.steps?.[0]?.id === "string" ? plan.steps[0].id : "step-1";
+        const stepIds: string[] = Array.isArray(plan?.steps)
+            ? plan.steps
+                  .map((s: any) => (typeof s?.id === "string" ? s.id : undefined))
+                  .filter((id: string | undefined): id is string => Boolean(id))
+            : ["step-1"];
 
         if (!approval) {
             return {
@@ -147,22 +151,45 @@ export async function tryRunViaDaemon(
             };
         }
 
-        const stepResp = await post("/step", { intent, input, stepId: firstStepId, approval });
-        const stepJson = stepResp.json as any;
+        // Was a single `/step` call always targeting stepIds[0] — for the
+        // system's only real multi-step plan (searchDocApply: step-1
+        // preview/READ_ONLY, step-2 apply/CONTROLLED_WRITE), a caller who
+        // received the plan, prompted a human, and retried with a fully
+        // apply-ready approval (apply:true, confirm:"APPLY", a matching
+        // identity, acknowledgedRollbackPointIds) still only ever re-ran
+        // step-1's preview — ok:true, capability:"searchDocPreview", and the
+        // actual write never happened. No error, no refusal: a human
+        // approving "apply this" would have seen success while nothing was
+        // ever written. Verified directly end to end before fixing (a real
+        // daemon, the exact two-call sequence clients/cli/auernyx.ts makes).
+        // Fixed by driving every step in the plan to completion with the one
+        // approval given — correct for this system's actual shape: a
+        // user_assertion evidence requirement (the only kind any shipped
+        // capability declares) is satisfied by the approval's own identity,
+        // not a per-step evidenceRefs list, so reusing one approval across
+        // steps is not a gap for anything that exists today.
+        let lastStepJson: any = null;
+        let lastCapability = capability;
+        for (const stepId of stepIds) {
+            const stepResp = await post("/step", { intent, input, stepId, approval });
+            const stepJson = stepResp.json as any;
+            lastStepJson = stepJson;
+            lastCapability = typeof stepJson?.capability === "string" ? stepJson.capability : lastCapability;
 
-        if (stepResp.status >= 400) {
-            return {
-                ok: false,
-                capability: typeof stepJson?.capability === "string" ? stepJson.capability : capability,
-                error: typeof stepJson?.error === "string" ? stepJson.error : `HTTP ${stepResp.status}`
-            };
+            if (stepResp.status >= 400) {
+                return {
+                    ok: false,
+                    capability: lastCapability,
+                    error: typeof stepJson?.error === "string" ? stepJson.error : `HTTP ${stepResp.status}`
+                };
+            }
         }
 
         return {
-            ok: Boolean(stepJson?.ok),
-            capability: typeof stepJson?.capability === "string" ? stepJson.capability : capability,
-            result: stepJson?.result,
-            error: typeof stepJson?.error === "string" ? stepJson.error : undefined
+            ok: Boolean(lastStepJson?.ok),
+            capability: lastCapability,
+            result: lastStepJson?.result,
+            error: typeof lastStepJson?.error === "string" ? lastStepJson.error : undefined
         };
     } catch {
         // Connection refused / timeout / no daemon.

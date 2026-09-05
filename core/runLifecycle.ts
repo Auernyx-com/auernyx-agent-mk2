@@ -528,7 +528,24 @@ export async function runLifecycle(args: {
     const armed = (firstApproval as any)?.apply === true;
     const canon = canonGitignoreStatus(args.ctx.repoRoot);
 
-    if (plannedIsMutating && !armed) {
+    // Same bug family as the armed check just above, found the same way —
+    // by exercising a real 2-step plan through /step rather than reasoning
+    // about it. plannedIsMutating (line ~317) is deliberately plan-wide: it
+    // gates the vague-intent legitimacy check against the whole proposed
+    // plan, which is the right scope there. But reusing that same plan-wide
+    // flag here meant targeting step-1 (READ_ONLY) of the searchDocApply
+    // plan required approval.apply === true anyway, purely because step-2
+    // elsewhere in the *plan* happens to be mutating — a caller correctly
+    // omitting apply for a read-only preview step got silently short-
+    // circuited into preview_only_not_armed instead of actually running it.
+    // Verified directly: /step targeting step-1 with a plain, non-apply
+    // approval returned ok:true but result:[] — nothing executed. Scoped to
+    // just the step(s) this invocation is actually about to run (mirrors the
+    // start/endExclusive slicing used by the execution loop below).
+    const stepsAboutToRun = requestedStepId ? [plan.steps[targetStepIndex]] : plan.steps;
+    const targetIsMutating = stepsAboutToRun.some((s) => s && String(s.type).toUpperCase() !== "READ_ONLY");
+
+    if (targetIsMutating && !armed) {
         const gitPost = vscodePolicy.git_rules.capture_status_porcelain_post ? captureGit("post") : { ok: false, error: "git_capture_disabled" };
         const decision: DecisionCode = "OK_PREVIEW_ONLY";
         receipt?.appendEvent("preview_only", { reason: "not_armed" });
@@ -808,7 +825,14 @@ export async function runLifecycle(args: {
             .map((l) => l.slice(3).trim())
             .filter(Boolean);
 
-        const decision: DecisionCode = plan.steps.some((s) => String(s.type).toUpperCase() !== "READ_ONLY") ? "OK_APPLIED" : "OK_PREVIEW_ONLY";
+        // Same plan-wide-vs-targeted-step bug as targetIsMutating above,
+        // found by the same test: reused plan.steps.some(...) here would
+        // label the audit receipt's own decision_code "OK_APPLIED" for a
+        // run that only actually executed step-1 (READ_ONLY) of the
+        // searchDocApply plan, purely because step-2 elsewhere in the plan
+        // happens to be mutating. stepsAboutToRun is exactly the step(s)
+        // this invocation executed (same set the loop above just ran).
+        const decision: DecisionCode = stepsAboutToRun.some((s) => s && String(s.type).toUpperCase() !== "READ_ONLY") ? "OK_APPLIED" : "OK_PREVIEW_ONLY";
         receipt?.writeJson("governance.json", {
             decision_code: decision,
             write_gate: { env: cfg.writeEnabled, armed: true },
