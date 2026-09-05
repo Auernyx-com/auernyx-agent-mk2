@@ -42,7 +42,15 @@ export function isPathProtected(repoRoot: string, candidatePath: string, protect
     const abs = path.resolve(candidatePath);
     const repo = path.resolve(repoRoot);
     const rel = normalizeRel(path.relative(repo, abs));
-    if (!rel || rel.startsWith("..")) return false;
+    // A target that resolves outside the repo root entirely (rel === "" only
+    // happens when candidatePath IS repoRoot itself, which callers use for
+    // mkdir-style operations and is fine) is not merely "not on the
+    // protected list" — it's out of bounds for every guardedFs operation.
+    // The previous behavior returned false (unprotected = allowed) here,
+    // which meant this function provided zero containment for any path,
+    // traversal or otherwise, that escaped the repo — the opposite of what
+    // a "guarded" write function implies. Protected, not exempt.
+    if (rel.startsWith("..")) return true;
 
     // Hard protected paths (always enforced): never write into these.
     const relLower = rel.toLowerCase();
