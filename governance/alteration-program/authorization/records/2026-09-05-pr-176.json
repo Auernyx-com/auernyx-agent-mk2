@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-176",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #176: server.ts + daemonClient.ts coverage \u2014 the most severe bug of the whole pass",
+  "signature": "Ghostwolf101-2026-09-05-pr176",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #176: server.ts + daemonClient.ts coverage \u2014 the most severe bug of the whole pass",
+  "pullRequest": 176
+}
