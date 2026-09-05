@@ -1,0 +1,41 @@
+name: ci-tests
+
+# Runs the actual test suite on every PR and every push to main. Found
+# missing during an investor-readiness review, 2026-09-05: this repo had a
+# 186-test suite (built the same day) and zero CI enforcement of it — the
+# required "gate" check is governance-authorization, not test execution, and
+# CodeQL is static analysis, not tests. Nothing stopped a future PR from
+# merging with a broken build or a failing test. This closes that gap.
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: ci-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run test suite
+        run: npm test
