@@ -191,3 +191,29 @@ test("mondayInfractionReview skips (does not double-write) a disposition for an 
   assert.equal(result.dispositions_written, 0);
   assert.equal(readDispositions(repoRoot).length, 1);
 });
+
+// (the fix) alreadyDispositioned was only ever seeded from disk before the
+// loop started, never updated as the loop itself wrote new records — found
+// via an independent review, verified directly: submitting two conflicting
+// decisions for the *same* infraction_id in one dispositions array wrote
+// both, silently, with no indication which is authoritative, and produced a
+// nonsensical negative remaining_open count.
+test("mondayInfractionReview (the fix) rejects a second, contradictory decision for the same infraction within one request", async () => {
+  const repoRoot = makeRepoRoot();
+  appendInfraction(repoRoot, makeInfraction({ infraction_id: "inf-a" }));
+
+  const result = (await mondayInfractionReview(ctx(repoRoot), {
+    dispositions: [
+      { infraction_id: "inf-a", decision: "closed", rationale: "first" },
+      { infraction_id: "inf-a", decision: "false_positive", rationale: "second, contradictory" },
+    ],
+  })) as any;
+
+  assert.equal(result.dispositions_written, 1);
+  assert.deepEqual(result.dispositions_skipped, ["inf-a"]);
+  assert.equal(result.remaining_open, 0);
+
+  const stored = readDispositions(repoRoot).filter((d) => d.infraction_id === "inf-a");
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0].decision, "closed");
+});

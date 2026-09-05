@@ -833,9 +833,19 @@ export async function runLifecycle(args: {
         // happens to be mutating. stepsAboutToRun is exactly the step(s)
         // this invocation executed (same set the loop above just ran).
         const decision: DecisionCode = stepsAboutToRun.some((s) => s && String(s.type).toUpperCase() !== "READ_ONLY") ? "OK_APPLIED" : "OK_PREVIEW_ONLY";
+        // Was a literal `true`, not the actual computed `armed` variable —
+        // the catch block just below (armed: armed) already gets this
+        // right. Provably true by the time this line runs for a genuinely
+        // mutating step (executeStep's own apply_flag_required/confirm_required
+        // checks already enforced it), but a READ_ONLY step never goes
+        // through that enforcement, so a successful read-only run with no
+        // apply flag at all still claimed armed:true. Found chasing an
+        // independent review's "suspicious, unconfirmed" lead; confirmed
+        // real via a direct probe (fenerisPrep, a READ_ONLY step, no
+        // approval.apply anywhere, receipt still said armed:true).
         receipt?.writeJson("governance.json", {
             decision_code: decision,
-            write_gate: { env: cfg.writeEnabled, armed: true },
+            write_gate: { env: cfg.writeEnabled, armed },
             git_porcelain_pre: gitPre.ok ? (gitPre.porcelain ?? "") : "",
             git_porcelain_post: gitPost.ok ? (gitPost.porcelain ?? "") : "",
             canon_gitignore_ok: canon.ok,

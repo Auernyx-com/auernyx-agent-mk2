@@ -85,7 +85,21 @@ export function infractionStorePath(repoRoot: string): string {
     return path.join(fenerisDir(repoRoot), "infractions.ndjson");
 }
 
-export function appendInfraction(repoRoot: string, infraction: FenerisInfraction): void {
+// Found via an independent review pass, then verified directly: fenerisPrep
+// is tiered readOnly:true in policy.ts (correct — it's a pure monitor, never
+// enforces anything), so the router's own write_disabled gate
+// (!cfg.writeEnabled && !meta.readOnly) never applies to it at all. That's
+// fine for the monitoring itself, but this function's own disk write was
+// completely unconditional — it ran even with writeEnabled:false explicitly
+// set, the documented "read-only by default" global switch. core/ledger.ts,
+// this system's own primary audit-trail mechanism, already treats
+// writeEnabled as the thing that gates whether an audit record actually
+// persists (see its own writeEnabled-gated append path) — Feneris's
+// infraction log is the same kind of audit-trail write and should follow
+// the same rule, not bypass it. Verified before fixing: called with
+// writeEnabled:false, wrote 2 infraction files to disk anyway.
+export function appendInfraction(repoRoot: string, infraction: FenerisInfraction, options?: { writeEnabled?: boolean }): void {
+    if (options?.writeEnabled === false) return;
     const dir = fenerisDir(repoRoot);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.appendFileSync(
@@ -419,7 +433,7 @@ function checkGenesisRecord(repoRoot: string, ts: string): FenerisInfraction | n
 
 // ─── Sentinel scan ───────────────────────────────────────────────────────────
 
-export function runSentinelScan(repoRoot: string, sessionId: string): FenerisScanReport {
+export function runSentinelScan(repoRoot: string, sessionId: string, options?: { writeEnabled?: boolean }): FenerisScanReport {
     const ts = new Date().toISOString();
 
     const checks = [
@@ -434,7 +448,7 @@ export function runSentinelScan(repoRoot: string, sessionId: string): FenerisSca
     const infractions = checks.filter((c): c is FenerisInfraction => c !== null);
 
     for (const infraction of infractions) {
-        appendInfraction(repoRoot, infraction);
+        appendInfraction(repoRoot, infraction, options);
     }
 
     const criticalCount = infractions.filter((i) => i.severity === "critical").length;
