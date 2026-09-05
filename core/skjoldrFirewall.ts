@@ -35,6 +35,24 @@ function fileExists(filePath: string): boolean {
     }
 }
 
+// F_OK only tests existence, not type — a directory passes it too. The one
+// real caller below needs "is this actually a file to run," not "does
+// something exist at this path." Found via a test: when configuredPath
+// points at an install directory (the documented, intended shape for
+// auto-detection — "path" is a directory, "command" is left unset), the old
+// fileExists(base) check saw the directory existed and returned the
+// directory itself as the resolved command, without ever reaching the
+// candidate-filename search below. available: true with a directory as
+// resolvedCommand would then fail at spawn() time, not at this status
+// check — false confidence exactly where a health check should catch it.
+function isRegularFile(filePath: string): boolean {
+    try {
+        return fs.statSync(filePath).isFile();
+    } catch {
+        return false;
+    }
+}
+
 function isPs1(commandPath: string): boolean {
     return commandPath.toLowerCase().endsWith(".ps1");
 }
@@ -59,7 +77,7 @@ function resolveCommand(configuredPath: string, configuredCommand: string, allow
         return { command: undefined, notes };
     }
 
-    if (fileExists(base)) {
+    if (isRegularFile(base)) {
         notes.push("Path points directly to an existing file; using it as command.");
         return { command: base, notes };
     }
@@ -74,7 +92,7 @@ function resolveCommand(configuredPath: string, configuredCommand: string, allow
     ].map((name) => path.join(base, name));
 
     for (const candidate of candidates) {
-        if (fileExists(candidate)) {
+        if (isRegularFile(candidate)) {
             notes.push(`Auto-resolved command: ${candidate}`);
             return { command: candidate, notes };
         }
