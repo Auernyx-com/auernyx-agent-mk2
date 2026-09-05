@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-158",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #158: fix(security): guardedFs path-escape gap + first coverage for it",
+  "signature": "Ghostwolf101-2026-09-05-pr158",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #158: fix(security): guardedFs path-escape gap + first coverage for it",
+  "pullRequest": 158
+}
