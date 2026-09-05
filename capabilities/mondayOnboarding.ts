@@ -9,11 +9,24 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import * as crypto from "crypto";
 import { loadMondayPersona } from "../core/monday";
-import { sha256Hex } from "../core/crypto";
 import { getModuleOnboardingQuestions } from "../core/moduleRegistry";
 import type { RouterContext } from "../core/router";
 import type { CapabilityName } from "../core/policy";
+
+// Same collision-avoidance pattern already used by core/receipts.ts (runId)
+// and core/knownGood.ts (kgsId): Date.now() alone isn't unique enough — two
+// calls in the same millisecond produced the exact same session_id, since the
+// old id was sha256Hex(`onboarding:${ctx.sessionId}:${Date.now()}`).slice(0,16)
+// with no other source of entropy. Verified directly: two back-to-back phase 1
+// calls with the same ctx.sessionId returned identical session_id values in a
+// fast test run. That's a real collision, not just an ordering ambiguity —
+// readSession() would then return whichever of the two sessions was appended
+// last for *both* callers, silently mixing up two distinct onboarding flows.
+function generateSessionId(): string {
+    return `onboard-${Date.now().toString(16)}-${crypto.randomBytes(6).toString("hex")}`;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -144,6 +157,16 @@ const QUESTION_BANK: QuestionDef[] = [
             "Do you need Docker operations?",
             "Tier 2, HIGH_RISK. Only enable if this deployment actively manages containers.",
             "If you're not sure, the answer is no."
+        ].join("\n   ")
+    },
+    // ── Capability: Skjoldr Firewall ─────────────────────────────────────────
+    {
+        id: "enable_skjoldr",
+        type: "boolean",
+        question: [
+            "Do you need the Skjoldr firewall addon?",
+            "Adds firewall status, baseline export/restore, and profile/ruleset apply — the apply and restore operations are Tier 2, HIGH_RISK.",
+            "Only enable if this deployment has a Skjoldr CLI installed and configured. If you're not sure, the answer is no."
         ].join("\n   ")
     },
     // ── Production-specific ───────────────────────────────────────────────────
@@ -343,8 +366,7 @@ export async function mondayOnboarding(ctx: RouterContext, input?: unknown): Pro
 
     // ── Phase 1: Baseline scope questions ─────────────────────────────────────
     if (phase === 1) {
-        const sessionSeed = `onboarding:${ctx.sessionId}:${Date.now()}`;
-        const session_id = `onboard-${sha256Hex(sessionSeed).slice(0, 16)}`;
+        const session_id = generateSessionId();
 
         const intro = [
             `${persona.member}: Welcome to Avars. Four questions to start.`,
@@ -396,7 +418,7 @@ export async function mondayOnboarding(ctx: RouterContext, input?: unknown): Pro
         const questions = selectQuestions(scope, ctx.repoRoot);
 
         const session: OnboardingSession = {
-            session_id: onboardingInput.session_id ?? `onboard-${sha256Hex(`fallback:${Date.now()}`).slice(0, 16)}`,
+            session_id: onboardingInput.session_id ?? generateSessionId(),
             started_at: new Date().toISOString(),
             phase: 2,
             scope,

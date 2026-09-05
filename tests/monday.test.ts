@@ -3,7 +3,7 @@ import test from "node:test";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import type { FenerisInfraction } from "../core/feneris";
+import { appendInfraction, readOpenInfractions, type FenerisInfraction } from "../core/feneris";
 import {
   loadMondayPersona,
   loadMondayConfig,
@@ -12,6 +12,7 @@ import {
   formatInfractionForHuman,
   recordHilDisposition,
   readDispositions,
+  getTrulyOpenInfractions,
   formatGovernanceLockForHuman,
   formatJudgmentForHuman,
 } from "../core/monday";
@@ -155,6 +156,51 @@ test("multiple dispositions accumulate in order", () => {
   assert.equal(all.length, 2);
   assert.equal(all[0].infraction_id, "a");
   assert.equal(all[1].infraction_id, "b");
+});
+
+// getTrulyOpenInfractions — real gap found while adding coverage for
+// mondaySystemStatus/mondayInfractionReview: nothing anywhere ever marks a
+// Feneris infraction as no-longer-open once a human dispositions it, so
+// readOpenInfractions() keeps returning it forever. Verified directly:
+// disposition a real infraction, then readOpenInfractions still returns it.
+// getTrulyOpenInfractions reconciles Feneris's open infractions against
+// Monday's own disposition records at read time.
+
+test("getTrulyOpenInfractions excludes an infraction once it has been dispositioned (the fix)", () => {
+  const repoRoot = makeRepoRoot();
+  appendInfraction(repoRoot, makeInfraction({ infraction_id: "inf-open-then-closed" }));
+
+  // Confirms the underlying gap is real: Feneris's own store never clears.
+  assert.deepEqual(readOpenInfractions(repoRoot).map((i) => i.infraction_id), ["inf-open-then-closed"]);
+
+  recordHilDisposition(repoRoot, {
+    infraction_id: "inf-open-then-closed",
+    decision: "confirmed",
+    rationale: "reviewed",
+    assessed_by: "tester",
+  });
+
+  assert.deepEqual(readOpenInfractions(repoRoot).map((i) => i.infraction_id), ["inf-open-then-closed"]);
+  assert.deepEqual(getTrulyOpenInfractions(repoRoot), []);
+});
+
+test("getTrulyOpenInfractions leaves undispositioned infractions untouched", () => {
+  const repoRoot = makeRepoRoot();
+  appendInfraction(repoRoot, makeInfraction({ infraction_id: "inf-1" }));
+  appendInfraction(repoRoot, makeInfraction({ infraction_id: "inf-2" }));
+
+  recordHilDisposition(repoRoot, {
+    infraction_id: "inf-1",
+    decision: "false_positive",
+    rationale: "not real",
+    assessed_by: "tester",
+  });
+
+  assert.deepEqual(getTrulyOpenInfractions(repoRoot).map((i) => i.infraction_id), ["inf-2"]);
+});
+
+test("getTrulyOpenInfractions returns an empty array for a repo with no infractions at all", () => {
+  assert.deepEqual(getTrulyOpenInfractions(makeRepoRoot()), []);
 });
 
 test("formatGovernanceLockForHuman reports normal operation when not locked", () => {

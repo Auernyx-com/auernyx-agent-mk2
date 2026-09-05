@@ -1,8 +1,21 @@
 import * as net from "net";
 import type { RouterContext } from "../core/router";
 
-const SOCKET_PATH = "/run/feneris/feneris.sock";
+const DEFAULT_SOCKET_PATH = "/run/feneris/feneris.sock";
 const TIMEOUT_MS  = 5000;
+
+// Overridable the same way core/daemonClient.ts and core/server.ts already
+// override AUERNYX_HOST/AUERNYX_PORT/AUERNYX_SECRET — env var wins, falls
+// back to the real host path. Reading it lazily (inside queryFenerisSocket,
+// not as a module-level const) is what actually makes this capability
+// testable at all: there was previously no way for a test to reach this
+// capability without either running as root against the real system socket
+// path or connecting to a live Feneris daemon. A real Unix domain socket
+// server started under a test's own tmp dir, pointed at via this env var, now
+// exercises the genuine IPC exchange end to end.
+function socketPath(): string {
+    return process.env.AUERNYX_FENERIS_SOCKET_PATH || DEFAULT_SOCKET_PATH;
+}
 
 interface FenerisState {
   system_state: string;
@@ -19,7 +32,7 @@ interface FenerisStatusResult {
 
 function queryFenerisSocket(): Promise<FenerisState> {
   return new Promise((resolve, reject) => {
-    const sock  = net.createConnection(SOCKET_PATH);
+    const sock  = net.createConnection(socketPath());
     let buf     = "";
     const timer = setTimeout(() => {
       sock.destroy();

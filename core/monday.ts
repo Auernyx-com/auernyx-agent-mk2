@@ -5,7 +5,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { sha256Hex } from "./crypto";
-import type { FenerisInfraction, FenerisInfractionStatus } from "./feneris";
+import { readOpenInfractions, type FenerisInfraction, type FenerisInfractionStatus } from "./feneris";
 import type { GovernanceLock } from "./governanceLock";
 import type { JudgmentRecord } from "./provenance";
 
@@ -222,6 +222,27 @@ export function readDispositions(repoRoot: string): HilDispositionRecord[] {
     } catch {
         return [];
     }
+}
+
+// ─── Reconciled open infractions ──────────────────────────────────────────────
+// Found while adding test coverage for mondaySystemStatus/mondayInfractionReview,
+// not from a symptom: nothing anywhere ever marks a Feneris infraction as
+// no-longer-open once a human dispositions it. Feneris's own append-only
+// infractions.ndjson is correct to never self-close what it found — that's
+// FENERIS.INFRACTION.RAISE_OPEN_ONLY, a deliberate hard_refusal constraint,
+// watchdogs shouldn't editorialize on their own findings. But nothing on the
+// Monday/HIL side closed the loop either: readOpenInfractions() only ever
+// checks the infraction record's own status field, which recordHilDisposition
+// never touches. Verified directly: disposition a real infraction as
+// "confirmed", then call readOpenInfractions again — it still comes back.
+// mondaySystemStatus's whole job is to honestly tell a human what's still
+// actionable; reporting something as open forever after it was properly
+// reviewed defeats that. This reconciles the two append-only stores at read
+// time — the correct layer for the fix, not Feneris's own file format.
+export function getTrulyOpenInfractions(repoRoot: string): FenerisInfraction[] {
+    const open = readOpenInfractions(repoRoot);
+    const dispositionedIds = new Set(readDispositions(repoRoot).map((d) => d.infraction_id));
+    return open.filter((inf) => !dispositionedIds.has(inf.infraction_id));
 }
 
 // ─── Governance lock formatting ───────────────────────────────────────────────

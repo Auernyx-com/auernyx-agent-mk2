@@ -4,7 +4,6 @@
 
 import type { RouterContext } from "../core/router";
 import { loadConfig } from "../core/config";
-import { readOpenInfractions } from "../core/feneris";
 import {
     loadMondayPersona,
     loadMondayConfig,
@@ -12,6 +11,7 @@ import {
     formatInfractionForHuman,
     recordHilDisposition,
     readDispositions,
+    getTrulyOpenInfractions,
     type DispositionDecision,
     type HilDispositionRecord
 } from "../core/monday";
@@ -35,7 +35,9 @@ export async function mondayInfractionReview(ctx: RouterContext, input?: unknown
     const provider = createMondayProvider(mondayConfig);
     void provider;
 
-    const openInfractions = readOpenInfractions(ctx.repoRoot);
+    // Reconciled against recorded dispositions, not the raw Feneris feed — a
+    // properly-dispositioned infraction must not keep coming back for review.
+    const openInfractions = getTrulyOpenInfractions(ctx.repoRoot);
 
     if (openInfractions.length === 0) {
         return {
