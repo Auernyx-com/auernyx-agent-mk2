@@ -189,6 +189,38 @@ test("(the fix) the audit receipt's decision_code reflects only the step(s) actu
   assert.equal(governance.decision_code, "OK_PREVIEW_ONLY");
 });
 
+test("(the fix) the success-path receipt's write_gate.armed reflects the real approval, not a hardcoded true", async () => {
+  // Found via an independent review pass ("suspicious, unconfirmed" — the
+  // success-path governance.json hardcoded write_gate.armed to a literal
+  // `true`, unlike the catch block just below it which already used the
+  // real `armed` variable), then confirmed real with a direct probe:
+  // executing a READ_ONLY step successfully with an approval that never set
+  // apply:true anywhere still produced a receipt claiming armed:true —
+  // self-contradictory alongside a decision_code of OK_PREVIEW_ONLY.
+  const repoRoot = makeRepoRoot();
+  const router = createRouter(
+    createPolicy(repoRoot),
+    {
+      searchDocPreview: async () => ({ mode: "preview" }),
+      searchDocApply: async () => ({ mode: "applied" }),
+    } as any
+  );
+
+  const result = (await runLifecycle({
+    router,
+    ctx: { repoRoot, sessionId: "test-session" } as any,
+    intent: "search doc apply",
+    input: { action: "add", docPath: "docs/x.md", title: "X" },
+    executeStepId: "step-1",
+    // No apply/confirm anywhere — step-1 is READ_ONLY and doesn't need them.
+    stepApprovals: [{ ...approval, stepId: "step-1" }],
+  })) as any;
+
+  assert.equal(result.ok, true);
+  const governance = JSON.parse(fs.readFileSync(path.join(result.receipt.dirPath, "governance.json"), "utf8"));
+  assert.equal(governance.write_gate.armed, false);
+});
+
 test("without a matching step-2 approval, the same plan still correctly falls back to preview-only", async () => {
   const repoRoot = makeRepoRoot();
   const applyCalled = { value: false };

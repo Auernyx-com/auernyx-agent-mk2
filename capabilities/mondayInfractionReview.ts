@@ -105,6 +105,16 @@ export async function mondayInfractionReview(ctx: RouterContext, input?: unknown
             assessed_by: approverIdentity
         });
         written.push(record);
+        // alreadyDispositioned was only ever seeded from disk before this
+        // loop started, never updated as the loop itself writes — found via
+        // an independent review, verified directly: submitting two
+        // conflicting decisions ("closed" then "false_positive") for the
+        // *same* infraction_id in one dispositions array wrote both,
+        // silently, with no indication which one is authoritative, and
+        // produced a nonsensical negative remaining_open count. Updating
+        // this set as we go makes a same-request duplicate hit the existing
+        // "skipped" path instead, same as a duplicate against an earlier call.
+        alreadyDispositioned.add(d.infraction_id);
     }
 
     return {

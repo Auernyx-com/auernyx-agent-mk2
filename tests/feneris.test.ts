@@ -218,3 +218,74 @@ test(
     assert.equal(openLockInfractions.length, 3);
   }
 );
+
+// getGetTrulyOpenInfractions is covered in monday.test.ts. These cover a
+// separate real bug found via an independent review pass, then verified
+// directly: appendInfraction's own disk write was completely unconditional
+// — no writeEnabled gate at all — so fenerisPrep (tiered readOnly:true,
+// which is why the router's own write_disabled gate never applies to it)
+// wrote to disk even with writeEnabled:false explicitly set, the documented
+// "read-only by default" global switch. core/ledger.ts, this system's own
+// primary audit-trail mechanism, already gates whether an audit record
+// persists on this same flag — Feneris's infraction log is the same kind
+// of write and should follow the same rule.
+
+test("(the fix) appendInfraction is a no-op when writeEnabled:false, and writes normally when true or omitted", () => {
+  const blocked = makeInitializedRepoRoot();
+  appendInfraction(blocked, {
+    schema: "aesir.governance.infraction.v1",
+    infraction_id: "should-not-persist",
+    scope: "trunk",
+    rule_id: "TEST.BLOCKED",
+    severity: "warn",
+    status: "open",
+    detected_by: { actor_id: "feneris", method: "sentinel_scan" },
+    timestamps: { detected_at: new Date().toISOString() },
+    evidence: [],
+    feneris_assessment: { score: { scope: 1, severity: 1, sensitivity: 1, blast_radius: 1 }, origin_point: "x", rationale: "x" },
+  }, { writeEnabled: false });
+  assert.deepEqual(readOpenInfractions(blocked), []);
+
+  const allowedExplicit = makeInitializedRepoRoot();
+  appendInfraction(allowedExplicit, {
+    schema: "aesir.governance.infraction.v1",
+    infraction_id: "should-persist-explicit",
+    scope: "trunk",
+    rule_id: "TEST.ALLOWED",
+    severity: "warn",
+    status: "open",
+    detected_by: { actor_id: "feneris", method: "sentinel_scan" },
+    timestamps: { detected_at: new Date().toISOString() },
+    evidence: [],
+    feneris_assessment: { score: { scope: 1, severity: 1, sensitivity: 1, blast_radius: 1 }, origin_point: "x", rationale: "x" },
+  }, { writeEnabled: true });
+  assert.equal(readOpenInfractions(allowedExplicit).length, 1);
+
+  const allowedDefault = makeInitializedRepoRoot();
+  appendInfraction(allowedDefault, {
+    schema: "aesir.governance.infraction.v1",
+    infraction_id: "should-persist-default",
+    scope: "trunk",
+    rule_id: "TEST.ALLOWED",
+    severity: "warn",
+    status: "open",
+    detected_by: { actor_id: "feneris", method: "sentinel_scan" },
+    timestamps: { detected_at: new Date().toISOString() },
+    evidence: [],
+    feneris_assessment: { score: { scope: 1, severity: 1, sensitivity: 1, blast_radius: 1 }, origin_point: "x", rationale: "x" },
+  }); // no options at all — must default to writing, for every existing caller's sake
+  assert.equal(readOpenInfractions(allowedDefault).length, 1);
+});
+
+test("(the fix) runSentinelScan threads writeEnabled through to every infraction it raises", () => {
+  const repoRoot = makeInitializedRepoRoot();
+  writeGovernanceLock(repoRoot, { locked: true, reason: "ongoing maintenance" });
+
+  const report = runSentinelScan(repoRoot, "s1", { writeEnabled: false });
+  // The scan still *reports* what it found — this is about persistence, not detection.
+  assert.ok(report.infractions.length > 0);
+  assert.deepEqual(readOpenInfractions(repoRoot), []);
+
+  runSentinelScan(repoRoot, "s2", { writeEnabled: true });
+  assert.ok(readOpenInfractions(repoRoot).length > 0);
+});
