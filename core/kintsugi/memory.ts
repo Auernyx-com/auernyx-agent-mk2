@@ -329,32 +329,155 @@ export async function snapshotPolicyAndActivate(
     return writePolicySnapshotAndActivate(repoRoot, policy, meta);
 }
 
+// Read-prev-then-write-new must be atomic, or two calls racing (e.g. a
+// daemon handling overlapping requests, each producing a refusal/failure
+// record) can both read the same tail record before either has written,
+// and both then write with the same prev_hash — forking the chain. Found
+// this concretely, not by inspection: 5 concurrent recordRefusal calls
+// produced 4 records all claiming prev_hash: undefined (i.e. all claiming
+// to be the chain's genesis), not just a two-way fork. core/ledger.ts
+// already solves exactly this with a lock file + bounded busy-wait; this
+// mirrors that proven pattern rather than inventing a new one.
+function withLedgerLock<T>(base: string, fn: () => T): T {
+    const lockPath = path.join(base, ".ledger.lock");
+    const deadline = Date.now() + 5000;
+    while (true) {
+        try {
+            const fd = fs.openSync(lockPath, "wx");
+            try {
+                return fn();
+            } finally {
+                try {
+                    fs.closeSync(fd);
+                } catch {
+                    // ignore
+                }
+                try {
+                    fs.unlinkSync(lockPath);
+                } catch {
+                    // ignore
+                }
+            }
+        } catch {
+            if (Date.now() > deadline) {
+                // Unlike core/ledger.ts's Ledger class (which returns a
+                // computed-but-unpersisted entry for optional telemetry),
+                // a Kintsugi record often gates governance behavior
+                // downstream (validateLedgerChain, HIL review). Failing
+                // loudly here is safer than silently writing a record that
+                // might fork the chain.
+                throw new Error("kintsugi_ledger_lock_timeout: could not acquire ledger lock within 5s");
+            }
+            const start = Date.now();
+            while (Date.now() - start < 15) {
+                // spin
+            }
+        }
+    }
+}
+
+// The lock above serializes writes correctly (verified directly: traced
+// execution shows one call fully completing — read, write, release — before
+// the next one's read even starts). That alone did NOT fully fix the fork,
+// because "find the last record" was itself unreliable: it picked the
+// lexicographically-greatest filename, and filenames embed a millisecond
+// timestamp plus a random UUID. Two records written in the same millisecond
+// (routine under a fast, fully-serialized burst of writes, not just a race)
+// tie-break on that random UUID — not write order — so a correct, one-at-a-
+// time sequence of writes could still read back the WRONG record as "last."
+// A chain tip, updated atomically inside the same lock that does the write,
+// replaces that unreliable derivation with an explicit, correctly-ordered
+// pointer. Falls back to the old directory-scan only when no tip file exists
+// yet, so an existing repo's history is still read on first use after
+// upgrading.
+function chainTipPath(base: string): string {
+    // One directory level above the records dir, not inside it — readFailures
+    // and getLastLedgerRecord(Sync) both filter that directory's contents by
+    // f.endsWith(".json") to find real records, and this file's own name
+    // would otherwise match that filter and get misread as one.
+    return path.join(path.dirname(base), "chain-tip.json");
+}
+
+function readChainTip(base: string): string | undefined {
+    try {
+        const raw = fs.readFileSync(chainTipPath(base), "utf8");
+        const parsed = JSON.parse(raw) as { lastRecordHash?: string };
+        return typeof parsed.lastRecordHash === "string" ? parsed.lastRecordHash : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+function writeChainTip(base: string, lastRecordHash: string): void {
+    // Atomic write-then-rename, same pattern already used for
+    // active.policy.json — a crash mid-write must never leave a corrupt or
+    // half-written tip file behind to be read next time. Written alongside
+    // the final path (both outside records/), not inside it, for the same
+    // reason as chainTipPath itself.
+    const tmpPath = path.join(path.dirname(base), `chain-tip.json.tmp_${randomUUID()}`);
+    fs.writeFileSync(tmpPath, JSON.stringify({ lastRecordHash }) + "\n", "utf8");
+    fs.renameSync(tmpPath, chainTipPath(base));
+}
+
 async function recordLedger(repoRoot: string, record: KintsugiLedgerRecord): Promise<KintsugiLedgerRecord> {
     const base = path.join(repoRoot, LEDGER_RECORDS_DIR);
     fs.mkdirSync(base, { recursive: true });
 
-    const prev = await getLastLedgerRecord(repoRoot);
-    const prevHash = (prev as any)?.record_hash as string | undefined;
+    return withLedgerLock(base, () => {
+        const prevHash = readChainTip(base) ?? ((getLastLedgerRecordSync(base) as any)?.record_hash as string | undefined);
 
-    const normalized = normalizeLedgerRecord(record);
-    const withChain: KintsugiLedgerRecord = {
-        ...(normalized as any),
-        prev_hash: prevHash,
-    };
+        const normalized = normalizeLedgerRecord(record);
+        const withChain: KintsugiLedgerRecord = {
+            ...(normalized as any),
+            prev_hash: prevHash,
+        };
 
-    const recordHash = sha256Hex(stableStringify({ ...(withChain as any), record_hash: undefined }));
-    (withChain as any).record_hash = recordHash;
+        const recordHash = sha256Hex(stableStringify({ ...(withChain as any), record_hash: undefined }));
+        (withChain as any).record_hash = recordHash;
 
-    const id = ledgerRecordId(withChain);
-    const fileName = `${fileTimestamp(String((withChain as any).timestamp))}_${id}.json`;
-    const filePath = path.join(base, fileName);
+        const id = ledgerRecordId(withChain);
+        const fileName = `${fileTimestamp(String((withChain as any).timestamp))}_${id}.json`;
+        const filePath = path.join(base, fileName);
 
-    if (fs.existsSync(filePath)) {
-        throw new Error(`Ledger collision: ${fileName}`);
+        if (fs.existsSync(filePath)) {
+            throw new Error(`Ledger collision: ${fileName}`);
+        }
+
+        fs.writeFileSync(filePath, stableStringify(withChain) + "\n", { encoding: "utf8", flag: "wx" });
+        writeChainTip(base, recordHash);
+        return withChain;
+    });
+}
+
+// Synchronous twin of getLastLedgerRecord, used only inside the lock above —
+// the lock's critical section must not contain an await (this file's other
+// "async" fs helpers are synchronous fs calls underneath, but awaiting them
+// still yields a microtask turn, which is exactly the window that produced
+// the fork this lock exists to close).
+function getLastLedgerRecordSync(recordsDir: string): KintsugiLedgerRecord | undefined {
+    let files: string[];
+    try {
+        files = fs.readdirSync(recordsDir);
+    } catch {
+        return undefined;
     }
 
-    fs.writeFileSync(filePath, stableStringify(withChain) + "\n", { encoding: "utf8", flag: "wx" });
-    return withChain;
+    let lastFile: string | undefined;
+    for (const f of files) {
+        if (f.endsWith(".json")) {
+            if (!lastFile || f > lastFile) {
+                lastFile = f;
+            }
+        }
+    }
+
+    if (!lastFile) return undefined;
+    try {
+        const raw = fs.readFileSync(path.join(recordsDir, lastFile), { encoding: "utf8" });
+        return JSON.parse(raw) as KintsugiLedgerRecord;
+    } catch {
+        return undefined;
+    }
 }
 
 function sha256Hex(input: string): string {
@@ -491,30 +614,82 @@ async function writePolicySnapshotAndActivate(
     return { snapshotPath, hash };
 }
 
+// Previously walked `records` in whatever order readFailures's directory
+// listing produced (sorted by filename), and expected each record's
+// prev_hash to sequentially match the previous record IN THAT ORDER. That
+// assumes file-listing order equals true write order, which fails the same
+// way the write-side bug did: filenames embed a millisecond timestamp plus a
+// random UUID tie-breaker, so records written in the same millisecond can
+// sort in an order that doesn't match their actual prev_hash chain — a
+// perfectly healthy, unbroken chain then got flagged as broken. Verified
+// directly: 40 concurrent recordRefusal calls produced a genuinely correct
+// single chain (1 genesis, 39 unique prev_hash values, one per record) that
+// this function still reported as failed, with prev_hash "mismatches" that
+// weren't real. Fixed by validating true chain shape (via the prev_hash/
+// record_hash links themselves) rather than trusting listing order.
 async function validateLedgerChain(records: KintsugiLedgerRecord[]): Promise<{ ok: boolean; warnings: string[] }> {
     const warnings: string[] = [];
     if (!records.length) return { ok: true, warnings };
 
-    let prevHash: string | undefined = undefined;
-    let prevTime: number | undefined = undefined;
-
+    const byHash = new Map<string, KintsugiLedgerRecord>();
     for (const rec of records) {
         const computedHash = sha256Hex(stableStringify({ ...rec, record_hash: undefined }));
         if ((rec as any).record_hash !== computedHash) {
             warnings.push(`Ledger hash mismatch for ${ledgerRecordId(rec)}`);
         }
-        if ((rec as any).prev_hash !== prevHash) {
-            warnings.push(`Ledger prev_hash mismatch for ${ledgerRecordId(rec)}`);
-        }
-
         const t = Date.parse((rec as any).timestamp);
         if (!Number.isFinite(t)) warnings.push(`Invalid timestamp for ${ledgerRecordId(rec)}`);
-        if (prevTime !== undefined && Number.isFinite(t) && t < prevTime) {
-            warnings.push(`Timestamp out of order at ${ledgerRecordId(rec)}`);
-        }
+        byHash.set(String((rec as any).record_hash ?? ""), rec);
+    }
 
-        prevHash = (rec as any).record_hash;
-        prevTime = Number.isFinite(t) ? t : prevTime;
+    const genesisRecords = records.filter((r) => !(r as any).prev_hash);
+    if (genesisRecords.length === 0) {
+        warnings.push("No genesis record found — every record declares a prev_hash");
+    } else if (genesisRecords.length > 1) {
+        warnings.push(
+            `Ledger forked at its root: ${genesisRecords.length} records all have no prev_hash (${genesisRecords.map(ledgerRecordId).join(", ")})`
+        );
+    }
+
+    const childrenByPrevHash = new Map<string, KintsugiLedgerRecord[]>();
+    for (const rec of records) {
+        const p = (rec as any).prev_hash as string | undefined;
+        if (!p) continue;
+        const list = childrenByPrevHash.get(p) ?? [];
+        list.push(rec);
+        childrenByPrevHash.set(p, list);
+        if (!byHash.has(p)) {
+            warnings.push(`Dangling prev_hash reference from ${ledgerRecordId(rec)}: no record with hash ${p.slice(0, 8)}`);
+        }
+    }
+    for (const [prevHash, children] of childrenByPrevHash) {
+        if (children.length > 1) {
+            warnings.push(
+                `Ledger fork detected: ${children.length} records all declare prev_hash ${prevHash.slice(0, 8)} (${children.map(ledgerRecordId).join(", ")})`
+            );
+        }
+    }
+
+    // Walk the true chain from genesis to check timestamp ordering along
+    // actual linkage, not file-listing order. Only meaningful when there's
+    // exactly one genesis — a forked root is already reported above.
+    if (genesisRecords.length === 1) {
+        let current: KintsugiLedgerRecord | undefined = genesisRecords[0];
+        let prevTime: number | undefined = undefined;
+        let reached = 0;
+        while (current) {
+            reached++;
+            const t = Date.parse((current as any).timestamp);
+            if (prevTime !== undefined && Number.isFinite(t) && t < prevTime) {
+                warnings.push(`Timestamp out of order at ${ledgerRecordId(current)}`);
+            }
+            if (Number.isFinite(t)) prevTime = t;
+            const children = childrenByPrevHash.get(String((current as any).record_hash ?? ""));
+            current = children?.[0]; // any additional branch was already reported as a fork above
+        }
+        if (reached < records.length) {
+            warnings.push(`${records.length - reached} record(s) not reachable from genesis via prev_hash linkage`);
+        }
     }
 
     return { ok: warnings.length === 0, warnings };
