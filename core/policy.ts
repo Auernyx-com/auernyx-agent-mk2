@@ -51,11 +51,10 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
     // Tier 0: safe, read-only
     scanRepo: { name: "scanRepo", readOnly: true, tier: 0 },
     searchDocPreview: { name: "searchDocPreview", readOnly: true, tier: 0 },
-
     memoryCheck: { name: "memoryCheck", readOnly: true, tier: 0 },
-    governanceSelfTest: { name: "governanceSelfTest", readOnly: false, tier: 1 },
 
     // Tier 1+: mutating / privileged (approval required)
+    governanceSelfTest: { name: "governanceSelfTest", readOnly: false, tier: 1 },
     searchDocApply: { name: "searchDocApply", readOnly: false, tier: 1 },
     fenerisPrep: { name: "fenerisPrep", readOnly: true, tier: 1 },
     baselinePre: { name: "baselinePre", readOnly: false, tier: 1 },

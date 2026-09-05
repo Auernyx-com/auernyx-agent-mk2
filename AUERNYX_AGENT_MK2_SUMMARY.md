@@ -98,7 +98,7 @@ Connected branches (revenue/product side, not just internal governance):
 - **Kennr** (Design DNA Extractor) — `kennrDesignExtract`, `kennrDesignDnaSynthesize`, `kennrDesignDiff`, all calling a fixed Kennr CF Worker endpoint
 - **Skadi** (Western Slope CO lead gen) — `skadiLeadScan`, calling the Skadi CF Worker
 
-All six of the above still report `hil_gate.status: "BYPASSED_POC"` — a live system would pause for human approval before outbound action; that gate isn't built yet, but the bypass stays visible in every output and receipt rather than being silent.
+All five of the above, plus `fenerisSecurityStatus` (see the Feneris persona row above — six capabilities total), still report `hil_gate.status: "BYPASSED_POC"` — a live system would pause for human approval before outbound action; that gate isn't built yet, but the bypass stays visible in every output and receipt rather than being silent.
 
 ## Clients
 
