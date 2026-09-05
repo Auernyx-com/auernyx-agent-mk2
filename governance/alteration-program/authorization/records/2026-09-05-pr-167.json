@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-167",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #167: fix(feneris): checkAllowlistIntegrity missed a missing/corrupted allowlist",
+  "signature": "Ghostwolf101-2026-09-05-pr167",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #167: fix(feneris): checkAllowlistIntegrity missed a missing/corrupted allowlist",
+  "pullRequest": 167
+}
