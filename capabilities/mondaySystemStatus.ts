@@ -6,17 +6,19 @@ import type { RouterContext } from "../core/router";
 import {
     loadMondayPersona,
     formatGovernanceLockForHuman,
-    formatJudgmentForHuman
+    formatJudgmentForHuman,
+    getTrulyOpenInfractions
 } from "../core/monday";
 import { readGovernanceLock } from "../core/governanceLock";
 import { readJudgment } from "../core/provenance";
-import { readOpenInfractions } from "../core/feneris";
 
 export async function mondaySystemStatus(ctx: RouterContext, _input?: unknown): Promise<unknown> {
     const persona = loadMondayPersona(ctx.repoRoot);
     const lock = readGovernanceLock(ctx.repoRoot);
     const judgment = readJudgment(ctx.repoRoot);
-    const openInfractions = readOpenInfractions(ctx.repoRoot);
+    // Reconciled against recorded dispositions — see getTrulyOpenInfractions's
+    // own comment for why this isn't just readOpenInfractions directly.
+    const openInfractions = getTrulyOpenInfractions(ctx.repoRoot);
 
     const alerts: string[] = [];
     if (judgment?.active) alerts.push("OBSIDIAN_JUDGMENT");
