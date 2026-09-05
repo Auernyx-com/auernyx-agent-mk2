@@ -9,6 +9,13 @@ export interface LedgerEntry {
     data?: unknown;
     prevHash?: string;
     hash: string;
+    // Present and false only when the entry could not actually be written to
+    // disk (lock contention timed out). Absent — not merely true — for every
+    // normal, successfully-persisted append, so existing callers that never
+    // check this field see no shape change. Without this, a caller had no
+    // way to tell a real append apart from one that computed a valid-looking
+    // hash and then silently never touched the ledger file.
+    persisted?: false;
 }
 
 
@@ -109,7 +116,15 @@ export class Ledger {
         if (locked.acquired) return locked.value;
 
         // Could not acquire the lock: do not write (prevents hash-chain forks).
+        // This is a real, audit-relevant event — the caller asked for an
+        // observation to be recorded and it wasn't — so it's surfaced two
+        // ways: a console warning (visible operationally even if the caller
+        // ignores the return value) and persisted: false on the returned
+        // entry (visible programmatically to any caller that checks).
+        console.warn(
+            `[ledger] could not acquire lock within timeout — entry NOT written: session=${sessionId} event=${event}`
+        );
         const bestEffortPrev = this.getTailHashFromFile() ?? this.lastHash;
-        return computeEntry(bestEffortPrev);
+        return { ...computeEntry(bestEffortPrev), persisted: false };
     }
 }
