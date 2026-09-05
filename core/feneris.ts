@@ -134,47 +134,60 @@ function makeId(checkId: string, ts: string): string {
 
 function checkAllowlistIntegrity(repoRoot: string, ts: string): FenerisInfraction | null {
     const allowlistPath = path.join(repoRoot, "config", "allowlist.json");
+
+    // Missing entirely and unparseable both used to fall through this
+    // function untouched — only "file exists, parses, and is empty" raised
+    // an infraction. Verified directly: a repo with no allowlist.json at all
+    // raised zero allowlist-related infractions from a full sentinel scan.
+    // All three cases have the exact same practical effect this check
+    // exists to catch — "nothing can execute" — and the missing/unparseable
+    // cases are arguably more suspicious (the file itself is gone or
+    // corrupted, not just cleared), not less. Unified below so all three
+    // raise the same infraction, with `observed` distinguishing which
+    // actually occurred for diagnostic purposes.
     let observed: unknown;
-    let parsed: { allowedCapabilities?: unknown[] } | null = null;
+    let entryCount: number | "missing" | "unparseable" | "non-array";
 
-    try {
-        if (!fs.existsSync(allowlistPath)) {
-            observed = { exists: false };
-        } else {
+    if (!fs.existsSync(allowlistPath)) {
+        observed = { exists: false };
+        entryCount = "missing";
+    } else {
+        try {
             const raw = fs.readFileSync(allowlistPath, "utf8");
-            parsed = JSON.parse(raw) as { allowedCapabilities?: unknown[] };
-            observed = { exists: true, entry_count: Array.isArray(parsed?.allowedCapabilities) ? parsed.allowedCapabilities.length : "non-array" };
+            const parsed = JSON.parse(raw) as { allowedCapabilities?: unknown[] };
+            if (Array.isArray(parsed?.allowedCapabilities)) {
+                entryCount = parsed.allowedCapabilities.length;
+                observed = { exists: true, entry_count: entryCount };
+            } else {
+                entryCount = "non-array";
+                observed = { exists: true, entry_count: "non-array" };
+            }
+        } catch (e) {
+            entryCount = "unparseable";
+            observed = { exists: true, parse_error: e instanceof Error ? e.message : String(e) };
         }
-    } catch (e) {
-        observed = { exists: true, parse_error: e instanceof Error ? e.message : String(e) };
     }
 
-    if (!parsed) {
-        return null;
-    }
+    const isEmpty = entryCount === "missing" || entryCount === "unparseable" || entryCount === "non-array" || entryCount === 0;
+    if (!isEmpty) return null;
 
-    const entries = Array.isArray(parsed.allowedCapabilities) ? parsed.allowedCapabilities : [];
-    if (entries.length === 0) {
-        return {
-            schema: "aesir.governance.infraction.v1",
-            infraction_id: makeId("allowlist-empty", ts),
-            scope: "trunk",
-            rule_id: "FENERIS.ALLOWLIST.EMPTY",
-            severity: "critical",
-            status: "open",
-            detected_by: { actor_id: "feneris", method: "sentinel_scan" },
-            timestamps: { detected_at: ts },
-            evidence: makeEvidence("allowlist-empty", observed, ts),
-            feneris_assessment: {
-                score: { scope: 10, severity: 9, sensitivity: 8, blast_radius: 10 },
-                origin_point: `check:allowlist-integrity|component:policy|path:config/allowlist.json`,
-                rationale: "Allowlist is empty after system initialization. Nothing can execute. Either the file was cleared maliciously or the system was misconfigured. Scope and blast radius are maximum — the entire capability layer is disabled."
-            },
-            notes: "config/allowlist.json exists but allowedCapabilities is empty. No capabilities can run until this is restored."
-        };
-    }
-
-    return null;
+    return {
+        schema: "aesir.governance.infraction.v1",
+        infraction_id: makeId("allowlist-empty", ts),
+        scope: "trunk",
+        rule_id: "FENERIS.ALLOWLIST.EMPTY",
+        severity: "critical",
+        status: "open",
+        detected_by: { actor_id: "feneris", method: "sentinel_scan" },
+        timestamps: { detected_at: ts },
+        evidence: makeEvidence("allowlist-empty", observed, ts),
+        feneris_assessment: {
+            score: { scope: 10, severity: 9, sensitivity: 8, blast_radius: 10 },
+            origin_point: `check:allowlist-integrity|component:policy|path:config/allowlist.json`,
+            rationale: "The allowlist is missing, unparseable, or empty after system initialization. Nothing can execute. Either the file was cleared or deleted maliciously, corrupted, or the system was misconfigured. Scope and blast radius are maximum — the entire capability layer is disabled."
+        },
+        notes: `config/allowlist.json is ${entryCount === "missing" ? "missing entirely" : entryCount === "unparseable" ? "present but unparseable" : entryCount === "non-array" ? "present but allowedCapabilities is not an array" : "present but allowedCapabilities is empty"}. No capabilities can run until this is restored.`
+    };
 }
 
 function checkJudgmentActive(repoRoot: string, ts: string): FenerisInfraction | null {
