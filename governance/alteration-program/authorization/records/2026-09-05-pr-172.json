@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-172",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #172: test: round out runLifecycle.ts coverage (legitimacyGate, vague-intent, single-step)",
+  "signature": "Ghostwolf101-2026-09-05-pr172",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #172: test: round out runLifecycle.ts coverage (legitimacyGate, vague-intent, single-step)",
+  "pullRequest": 172
+}
