@@ -77,7 +77,18 @@ export async function proposeFixes(ctx: RouterContext, input?: unknown): Promise
         const loosening = isLooseningPolicy(before, after);
         const riskLevel = loosening ? "ELEVATED" : "CONTROLLED";
 
-        if (riskLevel === "CONTROLLED" && ctx.approval?.confirm !== "APPLY") {
+        // Was `riskLevel === "CONTROLLED"` — the inverse of what the refusal's
+        // own name and message say. loosening=true sets riskLevel="ELEVATED"
+        // two lines up; the condition as written required typed APPLY only for
+        // the *non*-loosening (tightening) suggestions, and let every loosening
+        // change through with zero confirmation. Verified directly before
+        // fixing: applying "disable-confirmArtifactWrites" (removes the human
+        // confirmation gate for workspace mutations — about as loosening as
+        // this list gets) succeeded with ok:true and no approval.confirm at
+        // all. The sibling capability (rollbackKnownGood.ts) gates its own
+        // typed-APPLY requirement on the higher-risk classification, matching
+        // plain reading of "ELEVATED" — this now does the same.
+        if (riskLevel === "ELEVATED" && ctx.approval?.confirm !== "APPLY") {
             throw new GovernanceRefusalError({
                 system: "kintsugi:policy",
                 requestedAction: `Apply policy suggestion ${picked.id}`,
