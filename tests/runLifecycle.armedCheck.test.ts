@@ -83,6 +83,40 @@ test("targeting step-2 of a real 2-step plan with a valid, armed approval for st
 
   assert.equal(applyCalled.value, true, "step-2's capability function should actually have run");
   assert.equal(result.ok, true);
+  // A separate, related bug found and fixed the same day: every return path
+  // in runLifecycle.ts reported plan.steps[0]'s tool name as "capability",
+  // regardless of which step actually executed. Verified directly before
+  // fixing: this exact scenario (step-2 targeted and successfully executed)
+  // reported capability: "searchDocPreview" (step-1's tool), never
+  // "searchDocApply" — the write operation that actually ran.
+  assert.equal(result.capability, "searchDocApply");
+});
+
+test("a missing approval for a later step (not step-0) reports THAT step as the capability, not step-0's", async () => {
+  const repoRoot = makeRepoRoot();
+  const router = createRouter(
+    createPolicy(repoRoot),
+    {
+      searchDocPreview: async () => ({ mode: "preview" }),
+      searchDocApply: async () => ({ mode: "applied" }),
+    } as any
+  );
+
+  const result = (await runLifecycle({
+    router,
+    ctx: { repoRoot, sessionId: "test-session" } as any,
+    intent: "search doc apply",
+    input: { action: "add", docPath: "docs/x.md", title: "X" },
+    // Full-plan run: step-1 has a valid, armed approval so execution enters
+    // the loop at all; step-2 (searchDocApply) has none, so the loop's own
+    // "approval missing" refusal fires specifically for step-2.
+    stepApprovals: [{ ...approval, stepId: "step-1", apply: true, confirm: "APPLY" }],
+  })) as any;
+
+  assert.equal(result.ok, false);
+  assert.equal(result.refusal.code, "REFUSE_WRITE_GATE_MISSING");
+  assert.equal(result.missingStepIds[0], "step-2");
+  assert.equal(result.capability, "searchDocApply");
 });
 
 test("without a matching step-2 approval, the same plan still correctly falls back to preview-only", async () => {
