@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-177",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #177: chore: remove stale Authorized_by_compliance file",
+  "signature": "Ghostwolf101-2026-09-05-pr177",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #177: chore: remove stale Authorized_by_compliance file",
+  "pullRequest": 177
+}
