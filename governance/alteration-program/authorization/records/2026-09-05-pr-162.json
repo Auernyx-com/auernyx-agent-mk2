@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-162",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #162: fix(kintsugi): eliminate a real, reproducible hash-chain fork",
+  "signature": "Ghostwolf101-2026-09-05-pr162",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #162: fix(kintsugi): eliminate a real, reproducible hash-chain fork",
+  "pullRequest": 162
+}
