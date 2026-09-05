@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-05-pr-160",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #160: test: coverage for knownGood/crypto/integrity + fix an approvals validation gap",
+  "signature": "Ghostwolf101-2026-09-05-pr160",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-05",
+  "reason": "PR #160: test: coverage for knownGood/crypto/integrity + fix an approvals validation gap",
+  "pullRequest": 160
+}
