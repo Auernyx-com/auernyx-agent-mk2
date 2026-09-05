@@ -79,8 +79,18 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
         // Risk tolerance gate: Tier 2 operations require the policy to be explicitly
         // elevated to CONTROLLED. WITHIN_TOLERANCE is the default operating mode and
         // does not authorize high-risk capabilities. Use proposeFixes to elevate.
+        //
+        // governanceUnlock is exempt from this specific gate, deliberately. Gating
+        // the unlock capability behind an already-CONTROLLED risk tolerance is
+        // circular: CONTROLLED is exactly the state governanceUnlock exists to help
+        // reach, and proposeFixes (the only capability that elevates risk tolerance)
+        // is not on the governance-lock allowlist below, so it cannot run while
+        // locked either. Without this exemption, a lock tripped at the default
+        // WITHIN_TOLERANCE risk tolerance could never be cleared through the
+        // capability system at all. governanceUnlock still enforces its own real
+        // gate — ledger integrity must verify — before it will actually unlock.
         const kintsugiPolicy = getKintsugiPolicy(ctx.repoRoot);
-        if (meta.tier >= 2 && kintsugiPolicy.riskTolerance !== "CONTROLLED") {
+        if (capability !== "governanceUnlock" && meta.tier >= 2 && kintsugiPolicy.riskTolerance !== "CONTROLLED") {
             throw new Error("risk_tolerance_insufficient");
         }
 
