@@ -38,13 +38,17 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout PR head branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          git fetch origin "${{ github.event.pull_request.head.ref }}"
-          git checkout "${{ github.event.pull_request.head.ref }}"
+          git fetch origin "$HEAD_REF"
+          git checkout "$HEAD_REF"
 
       - name: Fetch base ref for diff
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git fetch origin "${{ github.base_ref }}"
+          git fetch origin "$BASE_REF"
 
       - name: Fetch approved reviews
         id: fetch-reviews
@@ -95,15 +99,22 @@ jobs:
           reviewer_logins = parse_logins("REVIEWERS_JSON")
           approved_reviewer_logins = parse_logins("APPROVED_REVIEWERS_JSON")
 
+          # Being merely assigned or requested as a reviewer is not
+          # involvement -- either can happen with zero action from that
+          # person. Only an actual approval (or self-authorship by an
+          # allowlisted login) counts as authorization. Same fix as
+          # SQUAD's squad-alteration-gate.yml (this workflow's own source
+          # pattern), applied here after an independent audit found the
+          # same bug in this copy.
           authorized_by = None
-          for login in assignee_logins + reviewer_logins + approved_reviewer_logins + [actor]:
+          for login in approved_reviewer_logins + [actor]:
               if login in logins:
                   authorized_by = login
                   break
 
           is_allowed = authorized_by is not None
           print(f"Actor: {actor!r}")
-          print(f"Assignees: {assignee_logins}, Requested reviewers: {reviewer_logins}")
+          print(f"Assignees (not authorizing): {assignee_logins}, Requested reviewers (not authorizing): {reviewer_logins}")
           print(f"Approved reviewers: {approved_reviewer_logins}")
           print(f"authorizedLogins: {logins}")
           print(f"authorizedBy: {authorized_by!r}, allowed: {is_allowed}")
@@ -242,9 +253,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Pull latest branch state
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          git fetch origin "${{ github.event.pull_request.head.ref }}"
-          git reset --hard "origin/${{ github.event.pull_request.head.ref }}"
+          git fetch origin "$HEAD_REF"
+          git reset --hard "origin/$HEAD_REF"
 
       - name: Fetch Base Branch
         run: git fetch origin main:main
