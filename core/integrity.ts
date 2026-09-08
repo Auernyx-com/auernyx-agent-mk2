@@ -7,6 +7,21 @@ export type LedgerIntegrityResult = {
     warnings: string[];
     checkedEntries: number;
     lastHash?: string;
+    // Independent-audit finding (2026-09-08, round 10, medium): when the
+    // ledger has more lines than maxEntries, only the last maxEntries are
+    // ever read -- the hash-chain linkage check is explicitly skipped for
+    // the first entry of that slice ("we can't validate linkage unless it's
+    // the first ever"), and that entry's own prevHash can be anything,
+    // including nothing at all. Confirmed directly with a probe: a ledger
+    // whose entire prefix outside the window was a literally-invalid JSON
+    // line plus a fabricated hash still reported ok:true, checkedEntries
+    // equal to the window size, with zero indication the prefix was never
+    // looked at. This field lets a security-critical caller (see
+    // capabilities/governanceUnlock.ts) tell "verified from genesis" apart
+    // from "verified this recent window only" and fail closed on the
+    // latter, rather than treating a bounded, best-effort check the same
+    // as a real end-to-end guarantee.
+    truncated: boolean;
 };
 
 function stableStringify(value: unknown): string {
@@ -47,7 +62,14 @@ export function verifyLedgerIntegrity(repoRoot: string, options?: { maxEntries?:
 
     const warnings: string[] = [];
     const lines = readLinesSafe(ledgerPath);
-    const slice = lines.length > maxEntries ? lines.slice(lines.length - maxEntries) : lines;
+    const truncated = lines.length > maxEntries;
+    const slice = truncated ? lines.slice(lines.length - maxEntries) : lines;
+    if (truncated) {
+        warnings.push(
+            `Ledger has ${lines.length} entries, only the last ${maxEntries} were checked -- ` +
+            `linkage to genesis was NOT verified.`
+        );
+    }
 
     let prevHash: string | undefined;
     let checked = 0;
@@ -59,13 +81,13 @@ export function verifyLedgerIntegrity(repoRoot: string, options?: { maxEntries?:
             parsed = JSON.parse(line);
         } catch {
             warnings.push("Ledger contains non-JSON line.");
-            return { ok: false, warnings, checkedEntries: checked };
+            return { ok: false, warnings, checkedEntries: checked, truncated };
         }
 
         const { ts, sessionId, event, data, prevHash: entryPrevHash, hash } = parsed ?? {};
         if (typeof hash !== "string" || !hash) {
             warnings.push("Ledger entry missing hash.");
-            return { ok: false, warnings, checkedEntries: checked };
+            return { ok: false, warnings, checkedEntries: checked, truncated };
         }
 
         if (checked === 1) {
@@ -74,7 +96,7 @@ export function verifyLedgerIntegrity(repoRoot: string, options?: { maxEntries?:
         } else {
             if (entryPrevHash !== prevHash) {
                 warnings.push("Ledger chain prevHash mismatch.");
-                return { ok: false, warnings, checkedEntries: checked, lastHash: prevHash };
+                return { ok: false, warnings, checkedEntries: checked, lastHash: prevHash, truncated };
             }
         }
 
@@ -82,11 +104,11 @@ export function verifyLedgerIntegrity(repoRoot: string, options?: { maxEntries?:
         const computed = sha256Hex(toHash);
         if (computed !== hash) {
             warnings.push("Ledger entry hash mismatch.");
-            return { ok: false, warnings, checkedEntries: checked, lastHash: prevHash };
+            return { ok: false, warnings, checkedEntries: checked, lastHash: prevHash, truncated };
         }
 
         prevHash = hash;
     }
 
-    return { ok: true, warnings, checkedEntries: checked, lastHash: prevHash };
+    return { ok: true, warnings, checkedEntries: checked, lastHash: prevHash, truncated };
 }

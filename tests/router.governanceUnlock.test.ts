@@ -111,3 +111,51 @@ test("governanceUnlock is still blocked while locked if ledger integrity fails",
   assert.equal(result.ok, false);
   assert.equal(result.error, "AUDIT_INVARIANT_VIOLATION");
 });
+
+test("governanceUnlock refuses when the ledger is too long to verify from genesis (truncated check)", async () => {
+  // Independent-audit finding (2026-09-08, round 10, medium): verifyLedgerIntegrity()
+  // only checks the last maxEntries (10_000 by default) lines when the
+  // ledger is longer than that, and never verifies linkage to genesis in
+  // that case -- see integrity.test.ts's "fabricated/tampered prefix" test
+  // for what a caller trusting integrity.ok alone would miss. governanceUnlock
+  // is the one place in the codebase where this result actually gates a real
+  // governance decision -- it must fail closed on a truncated check instead
+  // of unlocking on one that only covers recent history.
+  //
+  // Builds a real, self-consistent 10,001-entry chain directly (bypassing
+  // Ledger.append()'s per-write file locking, which would make 10,001
+  // individual appends impractically slow for a test) so this exercises
+  // governanceUnlock's actual default maxEntries, not a shortcut.
+  const repoRoot = makeTempRepoRoot();
+  writeGovernanceLock(repoRoot, { locked: true, reason: "test lock" });
+  fs.mkdirSync(path.join(repoRoot, "logs"), { recursive: true });
+
+  const { sha256Hex, stableStringify } = await import("../core/crypto");
+  const lines: string[] = [];
+  let prevHash: string | undefined;
+  for (let i = 0; i < 10_001; i++) {
+    const entry = { ts: `t${i}`, sessionId: "s1", event: `event.${i}`, data: undefined, prevHash };
+    const hash = sha256Hex(stableStringify(entry));
+    lines.push(JSON.stringify({ ...entry, hash }));
+    prevHash = hash;
+  }
+  fs.writeFileSync(path.join(repoRoot, "logs", "ledger.ndjson"), lines.join("\n") + "\n");
+
+  const router = createRouter(createPolicy(repoRoot), {
+    governanceUnlock
+  } as any);
+
+  const ctx = {
+    repoRoot,
+    sessionId: "test-session",
+    execution: { planId: "p1", stepId: "s1" }
+  };
+
+  const result = (await router.run("governanceUnlock" as any, ctx as any, undefined, approval)) as {
+    ok: boolean;
+    error?: string;
+  };
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "AUDIT_LEDGER_UNVERIFIED_PREFIX");
+});
