@@ -31,6 +31,9 @@ jobs:
       github.actor != 'github-actions[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    outputs:
+      is_allowed: ${{ steps.check-allowlist.outputs.is_allowed }}
+      record_commit_sha: ${{ steps.record-commit.outputs.record_commit_sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,13 +41,17 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout PR head branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          git fetch origin "${{ github.event.pull_request.head.ref }}"
-          git checkout "${{ github.event.pull_request.head.ref }}"
+          git fetch origin "$HEAD_REF"
+          git checkout "$HEAD_REF"
 
       - name: Fetch base ref for diff
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git fetch origin "${{ github.base_ref }}"
+          git fetch origin "$BASE_REF"
 
       - name: Fetch approved reviews
         id: fetch-reviews
@@ -95,15 +102,22 @@ jobs:
           reviewer_logins = parse_logins("REVIEWERS_JSON")
           approved_reviewer_logins = parse_logins("APPROVED_REVIEWERS_JSON")
 
+          # Being merely assigned or requested as a reviewer is not
+          # involvement -- either can happen with zero action from that
+          # person. Only an actual approval (or self-authorship by an
+          # allowlisted login) counts as authorization. Same fix as
+          # SQUAD's squad-alteration-gate.yml (this workflow's own source
+          # pattern), applied here after an independent audit found the
+          # same bug in this copy.
           authorized_by = None
-          for login in assignee_logins + reviewer_logins + approved_reviewer_logins + [actor]:
+          for login in approved_reviewer_logins + [actor]:
               if login in logins:
                   authorized_by = login
                   break
 
           is_allowed = authorized_by is not None
           print(f"Actor: {actor!r}")
-          print(f"Assignees: {assignee_logins}, Requested reviewers: {reviewer_logins}")
+          print(f"Assignees (not authorizing): {assignee_logins}, Requested reviewers (not authorizing): {reviewer_logins}")
           print(f"Approved reviewers: {approved_reviewer_logins}")
           print(f"authorizedLogins: {logins}")
           print(f"authorizedBy: {authorized_by!r}, allowed: {is_allowed}")
@@ -196,6 +210,40 @@ jobs:
           git commit -m "chore: add governance authorization for PR #${{ github.event.pull_request.number }}"
           git push
 
+      # Independent-audit finding (2026-09-07, round 8, critical, found via
+      # SQUAD's independent audit of this same pattern -- see SQUAD#69):
+      # ci_gate.py used to accept ANY well-formed authorization record whose
+      # authorizedBy matched an allowlisted login -- it never verified the
+      # record was actually produced by this job. A hand-written record
+      # committed directly as part of an attacker's own PR (no real review,
+      # no real approval) passed every check.
+      #
+      # This step vouches for exactly one thing: whichever commit currently
+      # introduces this PR's authorization record, at the moment this job's
+      # OWN live, this-run GitHub API-based authorization check (is_allowed,
+      # above) says true. It runs whether this run just created the record
+      # or one already existed from an earlier legitimate run on this same
+      # PR -- either way, is_allowed was independently recomputed from live
+      # GitHub state THIS run, not read back from the record file itself.
+      # The output only reaches ci_gate.py through GitHub Actions' own
+      # job-to-job data plane (needs.auto-authorize.outputs.*) -- a value an
+      # attacker's own PR-branch commits cannot inject, unlike git commit
+      # author/committer metadata, which is trivially spoofable locally.
+      - name: Determine trusted record commit
+        id: record-commit
+        if: steps.check-allowlist.outputs.is_allowed == 'true'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          RECORD_FILE=$(ls governance/alteration-program/authorization/records/*-pr-"${PR_NUMBER}".json 2>/dev/null | head -n1 || true)
+          if [ -z "$RECORD_FILE" ]; then
+            echo "No authorization record file found for PR #${PR_NUMBER} -- nothing to vouch for."
+            exit 0
+          fi
+          RECORD_SHA=$(git log -1 --format=%H -- "$RECORD_FILE")
+          echo "record_commit_sha=${RECORD_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Vouching for ${RECORD_FILE} at commit ${RECORD_SHA} (is_allowed=true this run)."
+
       - name: Comment on PR
         if: >
           steps.check-allowlist.outputs.is_allowed == 'true' &&
@@ -242,9 +290,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Pull latest branch state
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          git fetch origin "${{ github.event.pull_request.head.ref }}"
-          git reset --hard "origin/${{ github.event.pull_request.head.ref }}"
+          git fetch origin "$HEAD_REF"
+          git reset --hard "origin/$HEAD_REF"
 
       - name: Fetch Base Branch
         run: git fetch origin main:main
@@ -252,6 +302,7 @@ jobs:
       - name: Run Alteration Gate (Fail-Closed)
         env:
           MK2_BASE_REF: ${{ github.event.pull_request.base.sha || 'main' }}
+          MK2_RECORD_COMMIT_SHA: ${{ needs.auto-authorize.outputs.record_commit_sha }}
         run: python3 tools/ci_gate.py
 
       # ── Permanent fix for HEAD-mismatch bug ─────────────────────────────────
