@@ -972,12 +972,40 @@ async function computeTreeHealth(repoRoot: string): Promise<TreeHealth> {
     };
 }
 
+// Independent-audit finding (2026-09-08, round 10, medium): requireSecretIfConfigured()
+// fails OPEN when no secret is configured -- every /run, /plan, /step, and
+// every other route is reachable with zero authentication at all. That is a
+// reasonable default for the actual default (host 127.0.0.1 -- only local
+// processes on the same machine can reach it), but nothing here stops an
+// operator from setting AUERNYX_HOST to a non-loopback address (to expose
+// the daemon on a LAN or the open internet) without ALSO setting
+// AUERNYX_SECRET, silently combining "reachable from anywhere" with
+// "requires nothing to control it" -- including every controlled operation
+// this daemon gates behind an Approval object, since approverIdentity is a
+// plain string match, not a real credential, and provides no protection on
+// its own against a caller who can just supply a matching value. Fail
+// closed, not fail open, matching this file's own governance-identity
+// check's stated reasoning (see runInternal in router.ts) and
+// acquireSingleInstanceLock's existing throw-at-startup pattern below.
+export function assertSafeToBind(host: string, secretConfigured: boolean): void {
+    const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost", "[::1]"]);
+    if (LOOPBACK_HOSTS.has(host) || secretConfigured) return;
+    throw new Error(
+        `refusing to start: AUERNYX_HOST is ${JSON.stringify(host)} (not loopback) with no ` +
+        `AUERNYX_SECRET/daemon.secret configured -- this would expose every capability, ` +
+        `including controlled operations, to anyone who can reach ${host} with zero ` +
+        `authentication. Set AUERNYX_SECRET (or config daemon.secret) before binding to a ` +
+        `non-loopback host, or bind to 127.0.0.1 instead.`
+    );
+}
+
 export function startDaemon(repoRoot: string) {
     const instance = acquireSingleInstanceLock(repoRoot);
     const cfg = loadConfig(repoRoot);
     const host = process.env.AUERNYX_HOST ?? cfg.daemon.host;
     const port = process.env.AUERNYX_PORT ? Number(process.env.AUERNYX_PORT) : cfg.daemon.port;
     const secret = process.env.AUERNYX_SECRET ?? (cfg.daemon.secret ?? "");
+    assertSafeToBind(host, secret.trim().length > 0);
     const maxBodyBytes = Number(process.env.AUERNYX_MAX_BODY_BYTES ?? cfg.daemon.maxBodyBytes ?? 65536);
 
     const windowMs = Number(process.env.AUERNYX_RATE_WINDOW_MS ?? cfg.daemon.rateLimit?.windowMs ?? 10_000);
