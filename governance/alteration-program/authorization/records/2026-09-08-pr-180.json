@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-08-pr-180",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #180: fix: daemon refuses to bind a non-loopback host with no secret configured (medium)",
+  "signature": "Ghostwolf101-2026-09-08-pr180",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-08",
+  "reason": "PR #180: fix: daemon refuses to bind a non-loopback host with no secret configured (medium)",
+  "pullRequest": 180
+}
