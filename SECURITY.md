@@ -100,13 +100,20 @@ python3 tools/ci_gate.py
 ## Known Security Considerations
 
 ### Local Daemon Server (Port 43117)
-- The daemon server (`core/server.ts`) binds to **127.0.0.1 only** (localhost)
-- No external network access by design
-- Optional secret-based authentication via `AUERNYX_SECRET` environment variable
+- The daemon server (`core/server.ts`) binds to **127.0.0.1 by default** (localhost)
+- No external network access by default
+- Secret-based authentication via `AUERNYX_SECRET` environment variable — optional
+  on the loopback default, but **enforced** the moment `AUERNYX_HOST` is set to
+  anything non-loopback: `startDaemon()` refuses to start (throws before the HTTP
+  listener ever binds) if the host isn't `127.0.0.1`/`::1`/`localhost` and no
+  secret is configured (`assertSafeToBind()`, added 2026-09-08 after an
+  independent audit — see `tests/assertSafeToBind.test.ts`). Every route,
+  including controlled operations gated behind an `Approval` object, was
+  otherwise reachable with zero authentication once bound off-loopback.
 - Rate limiting: 30 requests per 10-second window (configurable)
 - Max request body: 64 KB (configurable)
 
-**Risk:** Local privilege escalation if an attacker gains local user access. Mitigation: Use `AUERNYX_SECRET` for production deployments.
+**Risk:** Local privilege escalation if an attacker gains local user access. Mitigation: `AUERNYX_SECRET` is required (not just recommended) for any non-loopback deployment — the daemon will not start without it.
 
 ### File System Access
 - Capabilities have controlled file system access scoped to `scanAllowedRoots` (configured in `config/auernyx.config.json`)
