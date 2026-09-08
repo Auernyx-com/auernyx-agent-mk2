@@ -96,4 +96,51 @@ test("maxEntries limits how much of a long ledger gets checked, from the tail", 
   const result = verifyLedgerIntegrity(repoRoot, { maxEntries: 3 });
   assert.equal(result.ok, true);
   assert.equal(result.checkedEntries, 3);
+  // Independent-audit finding (2026-09-08, round 10, medium): a windowed
+  // check like this one never verifies linkage to genesis -- see the
+  // "tampered prefix" test below for what that means in practice. `ok:true`
+  // here must not be read as an end-to-end integrity guarantee; `truncated`
+  // is what actually distinguishes the two, and callers gating a real
+  // security decision on this result (governanceUnlock) must check it.
+  assert.equal(result.truncated, true);
+});
+
+test("a check that covers the WHOLE ledger is not marked truncated", () => {
+  const repoRoot = makeRepoRoot();
+  const ledger = new Ledger(repoRoot);
+  for (let i = 0; i < 10; i++) ledger.append("s1", `event.${i}`);
+
+  const result = verifyLedgerIntegrity(repoRoot, { maxEntries: 10 });
+  assert.equal(result.ok, true);
+  assert.equal(result.checkedEntries, 10);
+  assert.equal(result.truncated, false);
+});
+
+test("a fabricated/tampered prefix entirely outside the checked window is NOT caught", () => {
+  // Independent-audit finding (2026-09-08, round 10, medium): confirmed
+  // directly before this fix -- a ledger whose prefix (outside maxEntries)
+  // contains a literally-invalid JSON line and a fabricated hash still
+  // reported ok:true with zero indication that prefix was never read. The
+  // `truncated` flag exists precisely because THIS case cannot be told
+  // apart from a genuinely clean, fully-verified ledger by `ok` alone.
+  const repoRoot = makeRepoRoot();
+  fs.mkdirSync(path.join(repoRoot, "logs"), { recursive: true });
+  const p = path.join(repoRoot, "logs", "ledger.ndjson");
+
+  const bogusPrefix = [
+    "{this is not even valid json",
+    JSON.stringify({ ts: "x", sessionId: "x", event: "TAMPERED", data: {}, prevHash: "anything", hash: "deadbeef" }),
+  ];
+
+  const ledger = new Ledger(repoRoot);
+  ledger.append("s1", "real.event.one");
+  ledger.append("s1", "real.event.two");
+  ledger.append("s1", "real.event.three");
+  const realLines = fs.readFileSync(p, "utf8").trim().split("\n");
+
+  fs.writeFileSync(p, [...bogusPrefix, ...realLines].join("\n") + "\n");
+
+  const result = verifyLedgerIntegrity(repoRoot, { maxEntries: 3 });
+  assert.equal(result.ok, true, "the windowed check itself still reports ok -- that's the point of this test");
+  assert.equal(result.truncated, true, "but it MUST be flagged as truncated so a caller can refuse to trust it");
 });
