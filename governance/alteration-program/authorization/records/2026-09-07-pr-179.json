@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-07-pr-179",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #179: fix: mk2-alteration-gate.yml script injection and mere-request auth bypass (high)",
+  "signature": "Ghostwolf101-2026-09-07-pr179",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-07",
+  "reason": "PR #179: fix: mk2-alteration-gate.yml script injection and mere-request auth bypass (high)",
+  "pullRequest": 179
+}
