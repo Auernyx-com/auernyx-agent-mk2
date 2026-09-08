@@ -102,3 +102,39 @@ Mk2 commit (Sovreth addition):
 ## Notes
 - This change set strengthens auditability and prevents “usability edits” from bypassing author/core governance protection.
 - STOP/PAUSE remains the only pre-authorized decision; any non-stop decision requires HITL approval and must be receipted.
+
+## Update (2026-09-08) — the SQUAD-side mechanism this describes has had two further critical fixes
+
+Both the "Behavioral change" section above and the "Reasons" list under it describe
+the mechanism as it stood after the original 2026-01-05 commit
+(`583ab9d716632684bd957b78894df300fedf5c1f`). An independent audit of the SQUAD repo
+found and fixed two more severe gaps in the exact same `clear_judgment()` /
+`rotate_genesis_record()` pair since then — this record is the closest thing to a
+canonical description of that mechanism living in this repo, so it's worth stating
+both here, not just in SQUAD's own copy (`MODULES/OBSIDIAN_JUDGMENT/EVIDENCE.clear-gating.md`):
+
+1. **The `restoration_proof` check described above (line 53-55) was a tautology
+   (SQUAD PR #38, critical).** `ref` + `sha256` only proved *some* file matched its
+   own hash — trivially true of any file paired with its own digest. It never
+   checked that the actual tampered file had been restored to anything. Confirmed
+   with a direct probe: tamper a real governance file, let the judgment activate,
+   craft a `restoration_proof` pointing at a completely unrelated, untouched file
+   plus that file's own real hash — `clear_judgment()` returned `True` while
+   `verify_provenance()` still reported the same tamper immediately afterward.
+   Fixed by having `clear_judgment()` re-run `verify_provenance(repo_root)` after
+   the ref/sha checks and refuse unless governance state actually matches genesis
+   *right now*. ref/sha remain a required audit trail but no longer stand in for
+   verification.
+
+2. **The tamper-code check above (line 50, `failure.code == "governance_hash_mismatch"`)
+   only covered 1 of 4 real tamper codes (SQUAD PR #46, critical).**
+   `verify_provenance()` can also fail with `genesis_hash_mismatch`,
+   `project_id_mismatch`, or `genesis_parse_error` — all at least as severe, all
+   previously requiring zero restoration proof to clear. Fixed by treating any
+   non-empty failure code other than `genesis_missing` (an uninitialized repo, not
+   tamper) as requiring proof.
+
+Both fixes apply to the SQUAD repo's module specifically — this Mk2-repo record
+was never itself executable code, so nothing here needed a corresponding code
+change. Recorded so a future reader of this evidence chain doesn't stop at the
+2026-01-05 state and assume it's still current.

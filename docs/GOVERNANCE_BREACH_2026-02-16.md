@@ -193,11 +193,36 @@ This breach, while serious, was discovered quickly and remediated thoroughly. Th
 
 The retroactive intent files restore the audit trail, and the removal of the bypass ensures this specific vulnerability cannot recur.
 
-**Status:** REMEDIATED  
+**Status:** REMEDIATED (for the dependabot bypass specifically — see 2026-09-08 update below)  
 **Audit Trail:** RESTORATION TOOLING AVAILABLE  
 **Prevention:** AUTOMATED
 
 **Follow-up Required:** Generate and commit retroactive intent files using `tools/restore-dependabot-governance.py` in a separate PR.
+
+---
+
+### Update (2026-09-08) — this same workflow file had further, more severe gaps
+
+The "REMEDIATED" status above is accurate for the dependabot bypass this report
+covers. It is not a statement that `.github/workflows/mk2-alteration-gate.yml` was
+fully secure afterward — an independent audit later found and fixed real gaps in
+the exact same file, unrelated to dependabot:
+
+- **PR #179 (critical):** script injection via unquoted `${{ }}` expression
+  splicing into a `run:` block, a "mere request authorizes" bug (assignee/reviewer
+  logins counted toward authorization, meaning requesting review from the wrong
+  person could self-authorize a merge), and authorization records that were never
+  verified as actually coming from the real auto-authorize job — a forgeable
+  audit trail. All three fixed in one pass.
+- **PR #156:** the `mk2-alteration-gate` / `dependabot-gate` workflows (the
+  latter created by the remediation below) could cancel each other's in-progress
+  run via a self-triggered `synchronize` event, occasionally leaving a PR's
+  required checks permanently incomplete.
+
+Recorded here rather than only in the audit's own changelog because this report
+is the canonical "is the alteration gate safe" reference for this file, and
+stopping at the dependabot fix would leave a reader believing more was verified
+than actually was at the time.
 
 ---
 
