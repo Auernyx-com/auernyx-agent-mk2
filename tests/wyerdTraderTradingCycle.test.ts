@@ -167,6 +167,44 @@ test("2/3 consensus (not unanimous) still approves with the correct consensus_co
   assert.equal(result.confidence, 75); // average of the 2 concurring verdicts, not all 3
 });
 
+// Independent-audit finding (2026-09-08, round 11, medium): this file's own
+// comment on the consensus check says "need 2/3 agreement on both action
+// AND asset," but the code only ever checked action for a 2-vote majority
+// -- the asset was whichever got the most votes WITHIN that action group,
+// even if that was just 1 vote. Confirmed directly before this fix: the
+// exact split below (2/3 agree on BUY, but split DOGE/AVAX) returned
+// approved:true, asset:"DOGE", "2/3 consensus — BUY DOGE" -- a real 2/3
+// action agreement misrepresented as 2/3 asset agreement it never had.
+test("2/3 agreement on action but a split on asset within that group is NOT approved", async () => {
+  const result = await wyerdTraderTradingCycle(
+    ctx,
+    cycleInput([
+      verdict("AUENRIX", { verdict: "BUY", asset: "DOGE", confidence: 80 }),
+      verdict("GHOST", { verdict: "BUY", asset: "AVAX", confidence: 80 }),
+      verdict("BASTION", { verdict: "SELL", asset: "DOGE", confidence: 80 }),
+    ])
+  );
+  assert.equal(result.approved, false);
+  assert.equal(result.action, "HOLD");
+});
+
+test("all 3 agree on action but split 2-1 on asset: consensus reflects the real 2-vote asset agreement, not all 3", async () => {
+  const result = await wyerdTraderTradingCycle(
+    ctx,
+    cycleInput([
+      verdict("AUENRIX", { verdict: "BUY", asset: "DOGE", confidence: 90 }),
+      verdict("GHOST", { verdict: "BUY", asset: "DOGE", confidence: 70 }),
+      verdict("BASTION", { verdict: "BUY", asset: "AVAX", confidence: 80 }),
+    ])
+  );
+  assert.equal(result.approved, true);
+  assert.equal(result.asset, "DOGE");
+  // Must be 2 (the two who actually agreed on DOGE), not 3 (everyone who
+  // said BUY regardless of asset).
+  assert.equal(result.consensus_count, 2);
+  assert.equal(result.confidence, 80); // average of the 2 concurring DOGE votes, not all 3
+});
+
 test("every result honestly self-reports hil_gate: BYPASSED_POC, approved or not", async () => {
   const approved = await wyerdTraderTradingCycle(
     ctx,

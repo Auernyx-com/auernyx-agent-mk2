@@ -121,15 +121,31 @@ export async function wyerdTraderTradingCycle(ctx: RouterContext, input?: unknow
         };
     }
 
-    // Consensus check: need 2/3 agreement on both action AND asset
-    const actionCounts: Record<string, { count: number; assets: Record<string, number>; confidences: number[] }> = {};
+    // Consensus check: need 2/3 agreement on both action AND asset.
+    //
+    // Independent-audit finding (2026-09-08, round 11, medium): this comment
+    // always said "both action AND asset," but the code only ever checked
+    // action for a 2-vote majority -- the asset was whichever got the most
+    // votes WITHIN that action group, even if that was just 1 vote (e.g.
+    // AUENRIX: BUY DOGE, GHOST: BUY AVAX -- 2/3 on BUY, but DOGE and AVAX
+    // each have only 1/3 real support). Confirmed directly: that exact split
+    // returned approved:true, asset:"DOGE", reasoning "2/3 consensus — BUY
+    // DOGE," misrepresenting a real 2/3 action agreement as also being 2/3
+    // asset agreement it never had. A human reviewing that output (this
+    // capability's whole HIL-gate design) would reasonably read "2/3
+    // consensus" as covering the specific asset named, not just the verb.
+    // Fixed by bucketing on the (action, asset) PAIR directly -- consensus
+    // now means at least 2 of the 3 votes matched on exactly the same
+    // action and asset, and consensus_count/avg confidence reflect only
+    // those matching votes, not the whole action group.
+    const decisionCounts: Record<string, { action: string; asset: string; count: number; confidences: number[] }> = {};
     for (const v of data.verdicts) {
-        if (!actionCounts[v.verdict]) {
-            actionCounts[v.verdict] = { count: 0, assets: {}, confidences: [] };
+        const key = `${v.verdict}|${v.asset}`;
+        if (!decisionCounts[key]) {
+            decisionCounts[key] = { action: v.verdict, asset: v.asset, count: 0, confidences: [] };
         }
-        actionCounts[v.verdict].count++;
-        actionCounts[v.verdict].assets[v.asset] = (actionCounts[v.verdict].assets[v.asset] ?? 0) + 1;
-        actionCounts[v.verdict].confidences.push(v.confidence);
+        decisionCounts[key].count++;
+        decisionCounts[key].confidences.push(v.confidence);
     }
 
     let majorityAction: string | null = null;
@@ -137,26 +153,28 @@ export async function wyerdTraderTradingCycle(ctx: RouterContext, input?: unknow
     let consensusCount = 0;
     let avgConfidence = 0;
 
-    for (const [action, info] of Object.entries(actionCounts)) {
+    for (const info of Object.values(decisionCounts)) {
         if (info.count >= 2) {
-            majorityAction = action;
+            majorityAction = info.action;
+            majorityAsset = info.asset;
             consensusCount = info.count;
             avgConfidence = info.confidences.reduce((a, b) => a + b, 0) / info.confidences.length;
-            const assetEntries = Object.entries(info.assets).sort((a, b) => b[1] - a[1]);
-            majorityAsset = assetEntries[0]?.[0] ?? "NONE";
             break;
         }
     }
 
     if (!majorityAction || majorityAction === "HOLD" || !majorityAsset || majorityAsset === "NONE") {
+        const actionCounts: Record<string, number> = {};
+        for (const v of data.verdicts) actionCounts[v.verdict] = (actionCounts[v.verdict] ?? 0) + 1;
         ctx.ledger?.append(ctx.sessionId, "wyerd-trader.cycle.no_consensus", {
             cycle_id: data.cycle_id,
             action_counts: actionCounts,
+            decision_counts: decisionCounts,
         });
         return {
             approved: false,
             action: "HOLD",
-            reasoning: `No actionable consensus — votes: ${JSON.stringify(Object.fromEntries(Object.entries(actionCounts).map(([k, v]) => [k, v.count])))}`,
+            reasoning: `No actionable consensus — votes: ${JSON.stringify(actionCounts)}`,
             consensus_count: consensusCount,
             hil_gate: HIL_GATE,
         };
