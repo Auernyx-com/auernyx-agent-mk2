@@ -192,7 +192,7 @@ By default it binds to `127.0.0.1:43117`.
 Environment overrides:
 - `AUERNYX_HOST` (default: `127.0.0.1`)
 - `AUERNYX_PORT` (default: `43117`)
-- `AUERNYX_SECRET` (default: empty/disabled)
+- `AUERNYX_SECRET` (default: empty/disabled on the loopback default — but **enforced**, not optional, the moment `AUERNYX_HOST` is set to anything non-loopback: the daemon refuses to start without it, see `SECURITY.md`)
 - `AUERNYX_MAX_BODY_BYTES` (default: `65536`)
 - `AUERNYX_RATE_WINDOW_MS` (default: `10000`)
 - `AUERNYX_RATE_MAX` (default: `30`)

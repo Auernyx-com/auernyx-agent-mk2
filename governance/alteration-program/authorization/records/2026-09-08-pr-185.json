@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-09-08-pr-185",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #185: docs: note AUERNYX_SECRET enforcement in capabilities quick-reference",
+  "signature": "Ghostwolf101-2026-09-08-pr185",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-09-08",
+  "reason": "PR #185: docs: note AUERNYX_SECRET enforcement in capabilities quick-reference",
+  "pullRequest": 185
+}
