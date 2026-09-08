@@ -1,5 +1,82 @@
 # Changelog
 
+## 2026-09-04 to 2026-09-08 — Independent Security & Correctness Audit
+
+A multi-day, multi-round independent audit (fresh-agent cold reads, every finding
+reproduced with a real probe before being called a bug) across the daemon core,
+capabilities, governance gate, and Kintsugi ledger. 33 PRs (#153–#185), all merged.
+No high/mid-tier bugs outstanding as of the last round.
+
+**Recovery from the 2026-09-04 auth incident**
+- #153 — restored the public AVRS demo endpoints, switched inference to Workers AI
+  (the frontend/backend drift and missing `ANTHROPIC_API_KEY` behind the broken
+  public demo, see [[auernyx-architecture-detail]])
+- #154 — resolved `fast-uri`/`browserslist` high-severity dependency advisories
+
+**Alteration-gate governance (critical)**
+- #179 — the same class of bug found and fixed in SQUAD: `mk2-alteration-gate.yml`
+  script injection via unquoted `${{ }}` splicing, a mere-request-authorizes bypass
+  (assignee/reviewer logins counted as authorization), and forged authorization
+  records not tied to a real auto-authorize commit — bundled together since #179
+  wasn't merged yet when the record-forgery fix was ready
+- #156 — stopped the mk2-alteration-gate / dependabot-gate self-retrigger race
+
+**Governance/audit-trail review pass** (top-down read of the whole lock/receipt/
+ledger/policy stack, one file at a time, with new test coverage added alongside
+every fix so the bug can't come back silently)
+- #155 — a real lock-recovery deadlock plus 5 more findings from a full top-down
+  governance logic review
+- #158 — `guardedFs` path-escape gap, first test coverage for it
+- #159 — provenance/receipts/ledger coverage + fixed a silent ledger-drop
+- #160 — knownGood/crypto/integrity coverage + fixed an approvals validation gap
+- #161 — coverage for `evidence.ts` and `moduleRegistry.ts`
+- #162 — eliminated a real, reproducible Kintsugi hash-chain fork
+- #163 — hardening pass on `protectedPaths.ts` + first coverage for `config.ts`
+- #164 — coverage for `vscodePolicy.ts`
+- #165 — Skjoldr's `resolveCommand` mistook a directory for the resolved command
+- #166 — Monday's persona cache wasn't keyed by `repoRoot` + first coverage
+- #167 — Feneris's `checkAllowlistIntegrity` missed a missing/corrupted allowlist
+- #168 — Known Good creator identity fix + rollback/knownGood coverage
+- #169 — coverage for `ghostVerification.ts` and `governanceSelfTest.ts`
+- #170, #171 — `runLifecycle`'s armed-check and every return path both only ever
+  looked at `plan.steps[0]`, regardless of which step actually failed
+- #172 — rounded out `runLifecycle.ts` coverage (legitimacyGate, vague-intent,
+  single-step cases)
+- #173 — CI was configured to run the test suite but wasn't actually running it
+- #174 — test coverage for the remaining 25 capabilities + 6 real bug fixes found
+  along the way
+- #175 — `planner.ts` coverage + 3 real bugs in `searchDocApply`/`searchDocPreview`
+- #176 — `server.ts` + `daemonClient.ts` coverage — surfaced the most severe bug of
+  the whole pass (see #180)
+- #178 — `fenerisPrep` write-gate bypass + 2 audit-honesty bugs, found via an
+  independent review pass separate from the file-by-file sweep above
+
+**Round 8–13 (post-coverage-pass targeted fixes)**
+- #180 — the daemon now refuses to bind a non-loopback host with no
+  `AUERNYX_SECRET` configured (`assertSafeToBind()`) — every route, including
+  approval-gated ones, was otherwise reachable with zero authentication once
+  bound off-loopback (medium)
+- #181 — `verifyLedgerIntegrity`'s windowed check silently trusted an unverified
+  prefix when the ledger exceeded `maxEntries`; governance-unlock now refuses on
+  a truncated read instead of treating it as clean (medium)
+- #182 — the Wyerd Trader trading-cycle consensus check bucketed verdicts by
+  action only, never actually enforcing 2/3 agreement on *asset* — a 2-1 split
+  across two different assets could pass as consensus (medium)
+
+**Housekeeping**
+- #157 — added a proprietary LICENSE, marked the package private
+- #177 — removed a stale `Authorized_by_compliance` file
+
+**Docs**
+- #183 — `SECURITY.md`'s daemon section described `AUERNYX_SECRET` as
+  optional-only; corrected to reflect the #180 enforcement
+- #184 — `SECURITY_INCIDENT_2026-08-29.md` Open Items #2/#3 updated: the SQUAD
+  long-term fix's backend half is now built (pathfinder-worker), and
+  `squad.wyerd.org` staying down is now solely blocked on the Cloudflare Access
+  identity provider, not a missing fix
+- #185 — `mk2-capabilities.md`'s env-var quick-reference brought in line with
+  `SECURITY.md` on `AUERNYX_SECRET` enforcement
+
 ## 2026-05-04 — v1.0.0 · A.Varsity
 
 ### Auernyx Varsity 1.0.0
