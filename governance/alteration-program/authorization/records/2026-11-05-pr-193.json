@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-05-pr-193",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #193: fix(feneris-trap): keep honeypot writes alive with ctx.waitUntil",
+  "signature": "Ghostwolf101-2026-11-05-pr193",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-05",
+  "reason": "PR #193: fix(feneris-trap): keep honeypot writes alive with ctx.waitUntil",
+  "pullRequest": 193
+}
