@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-01-pr-192",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #192: Preview-first publishing for this Worker (./deploy.sh preview | live)",
+  "signature": "Ghostwolf101-2026-11-01-pr192",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-01",
+  "reason": "PR #192: Preview-first publishing for this Worker (./deploy.sh preview | live)",
+  "pullRequest": 192
+}
