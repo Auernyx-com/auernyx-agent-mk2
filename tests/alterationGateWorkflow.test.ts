@@ -91,3 +91,13 @@ test("assignees and requested reviewers are still parsed for logging only", () =
   assert.ok(content.includes('assignee_logins = parse_logins("ASSIGNEES_JSON")'));
   assert.ok(content.includes('reviewer_logins = parse_logins("REVIEWERS_JSON")'));
 });
+
+test("record commit gets a real test run, dispatched with the branch via env", () => {
+  const content = readWorkflow();
+  assert.ok(content.includes("gh workflow run ci-tests.yml"), "gate must dispatch ci-tests after pushing the record");
+  assert.ok(content.includes('--ref "$HEAD_REF"'), "dispatch must take the branch from env, not a ${{ }} splice");
+  assert.ok(content.includes("actions: write"), "dispatch needs actions: write");
+  assert.ok(!/name:\s*['"]?test['"]?,\s*\n\s*head_sha/.test(content), "gate must never register a `test` check itself");
+  const ci = fs.readFileSync(path.join(path.dirname(WORKFLOW_PATH), "ci-tests.yml"), "utf8");
+  assert.ok(/\n\s*workflow_dispatch:/.test(ci), "ci-tests must accept workflow_dispatch");
+});

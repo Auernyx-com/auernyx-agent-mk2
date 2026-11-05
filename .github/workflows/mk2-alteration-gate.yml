@@ -21,6 +21,7 @@ permissions:
   contents: write
   pull-requests: write
   checks: write
+  actions: write   # dispatch ci-tests on the record commit (see below)
 
 jobs:
   # Runs first — creates the authorization record if the actor is allowlisted
@@ -196,6 +197,7 @@ jobs:
           TITLE:         ${{ github.event.pull_request.title }}
 
       - name: Commit authorization record
+        id: commit-record
         if: >
           steps.check-allowlist.outputs.is_allowed == 'true' &&
           steps.check-record.outputs.record_count == '0'
@@ -209,6 +211,26 @@ jobs:
           fi
           git commit -m "chore: add governance authorization for PR #${{ github.event.pull_request.number }}"
           git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      # The record commit above becomes the PR's new HEAD, but the pull_request
+      # runs it triggers land in "action_required" and never report, so the
+      # required `test` check was missing on HEAD and every auto-authorized PR
+      # sat BLOCKED until someone closed and reopened it (#192, #193, #194).
+      # The `gate` check is re-registered on the new HEAD further down; `test`
+      # must not be faked that way, so this runs the real suite on that commit.
+      # workflow_dispatch is the documented exception that GITHUB_TOKEN may
+      # trigger. Non-fatal: if the dispatch fails, the old close+reopen still
+      # works, and `test` stays missing (fail-closed), never falsely green.
+      - name: Run the test suite on the record commit
+        if: steps.commit-record.outputs.pushed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          gh workflow run ci-tests.yml --repo "$GITHUB_REPOSITORY" --ref "$HEAD_REF"
+          echo "Dispatched ci-tests on $HEAD_REF (the record commit)."
 
       # Independent-audit finding (2026-09-07, round 8, critical, found via
       # SQUAD's independent audit of this same pattern -- see SQUAD#69):
