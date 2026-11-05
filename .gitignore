@@ -13,3 +13,4 @@ var/canon/
 docs/SEARCH.md
 __pycache__/
 *.pyc
+.preview-state*
