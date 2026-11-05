@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-05-pr-194",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #194: fix(deploy): health check a real route; ignore .wrangler/",
+  "signature": "Ghostwolf101-2026-11-05-pr194",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-05",
+  "reason": "PR #194: fix(deploy): health check a real route; ignore .wrangler/",
+  "pullRequest": 194
+}
