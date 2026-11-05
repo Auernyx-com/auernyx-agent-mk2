@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-05-pr-195",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #195: fix(gate): run the real test suite on the authorization record commit",
+  "signature": "Ghostwolf101-2026-11-05-pr195",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-05",
+  "reason": "PR #195: fix(gate): run the real test suite on the authorization record commit",
+  "pullRequest": 195
+}
