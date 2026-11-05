@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-05-pr-189",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #189: deps: bump @types/node from 25.9.4 to 26.5.1",
+  "signature": "Ghostwolf101-2026-11-05-pr189",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-05",
+  "reason": "PR #189: deps: bump @types/node from 25.9.4 to 26.5.1",
+  "pullRequest": 189
+}
