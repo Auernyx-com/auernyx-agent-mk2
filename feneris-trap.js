@@ -5,6 +5,9 @@
  * Hit state and event log live in R2 (AVRS_DATA). Two-tier escalation under the
  * Feneris persona. No external dependencies — requires only env.AVRS_DATA (R2).
  *
+ * Writes are handed to ctx.waitUntil(): an un-awaited promise can be cancelled
+ * once the response is returned, which silently dropped every hit and log.
+ *
  * Silent phase (hits 1–2): fake 200, canary ID in body.
  * Tier 1 (hit 3):          mask drops — Knight's Tale / Daniel 5:27.
  * Tier 2 (hit 4+, canary): door closes — "you're marked."
@@ -40,20 +43,24 @@ async function getState(env, ip) {
   return { count: 0, traps: [] };
 }
 
-function saveState(env, ip, state) {
-  env.AVRS_DATA.put(
-    `honeypot/state/${ip}.json`,
-    JSON.stringify(state),
-  ).catch(() => {});
+function keepAlive(ctx, promise) {
+  if (ctx?.waitUntil) ctx.waitUntil(promise);
 }
 
-function logEvent(env, type, ip, tid, extra = {}) {
+function saveState(env, ctx, ip, state) {
+  keepAlive(ctx, env.AVRS_DATA.put(
+    `honeypot/state/${ip}.json`,
+    JSON.stringify(state),
+  ).catch(err => console.error('feneris-trap: state write failed', err)));
+}
+
+function logEvent(env, ctx, type, ip, tid, extra = {}) {
   const ts   = new Date().toISOString();
   const date = ts.split('T')[0];
-  env.AVRS_DATA.put(
+  keepAlive(ctx, env.AVRS_DATA.put(
     `honeypot/events/${date}/${Date.now()}-${tid.slice(8, 16)}.json`,
     JSON.stringify({ timestamp: ts, type, ip, trap_id: tid, system_state: 'FAILED_CLOSED', ...extra }),
-  ).catch(() => {});
+  ).catch(err => console.error('feneris-trap: event write failed', err)));
 }
 
 function checkCanary(state, bodyText) {
@@ -70,9 +77,10 @@ function checkCanary(state, bodyText) {
  * @param {Request}  request
  * @param {object}   env          - CF Worker env bindings (needs env.AVRS_DATA)
  * @param {Function} fakeResponse - (tid: string) => Response — surface-specific fake
+ * @param {object}   ctx          - CF Worker ExecutionContext (keeps R2 writes alive)
  * @returns {Promise<Response>}
  */
-export async function fenerisTrap(request, env, fakeResponse) {
+export async function fenerisTrap(request, env, fakeResponse, ctx) {
   const ip       = sourceIp(request);
   const bodyText = await request.clone().text().catch(() => '');
   const state    = await getState(env, ip);
@@ -86,7 +94,7 @@ export async function fenerisTrap(request, env, fakeResponse) {
   const forceEscalate = canaryHit !== null;
 
   if (canaryHit) {
-    logEvent(env, 'HONEYPOT_FOLLOW', ip, canaryHit, {
+    logEvent(env, ctx, 'HONEYPOT_FOLLOW', ip, canaryHit, {
       follow_payload: bodyText.slice(0, 512),
       hit_number: hitNumber,
     });
@@ -100,14 +108,14 @@ export async function fenerisTrap(request, env, fakeResponse) {
     const msg      = firstHit ? ESCALATION_MESSAGE_FIRST : ESCALATION_MESSAGE_CONTINUED;
     const tier     = firstHit ? 1 : 2;
 
-    logEvent(env, 'HONEYPOT_ESCALATION', ip, tid, { tier, hit_number: hitNumber, message: msg });
+    logEvent(env, ctx, 'HONEYPOT_ESCALATION', ip, tid, { tier, hit_number: hitNumber, message: msg });
 
     response = new Response(
       JSON.stringify({ error: msg }),
       { status: 403, headers: { 'Content-Type': 'application/json' } },
     );
   } else {
-    logEvent(env, 'HONEYPOT_TRAP', ip, tid, { hit_number: hitNumber });
+    logEvent(env, ctx, 'HONEYPOT_TRAP', ip, tid, { hit_number: hitNumber });
 
     response = fakeResponse
       ? fakeResponse(tid)
@@ -117,6 +125,6 @@ export async function fenerisTrap(request, env, fakeResponse) {
         );
   }
 
-  saveState(env, ip, state);
+  saveState(env, ctx, ip, state);
   return response;
 }

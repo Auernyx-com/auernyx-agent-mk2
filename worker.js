@@ -131,7 +131,7 @@ async function callClaude(env, userMessage, conversationHistory = []) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
@@ -335,6 +335,6 @@ export default {
       receipt_id: tid.slice(0, 12),
       stage: 'queued',
       message: 'Capability routed. Awaiting governance validation.',
-    }));
+    }), ctx);
   },
 };
