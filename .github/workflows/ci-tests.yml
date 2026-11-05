@@ -13,6 +13,9 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches: [ main ]
+  # Dispatched by mk2-alteration-gate after it pushes an authorization
+  # record, so the required `test` check runs on the PR's real HEAD.
+  workflow_dispatch:
 
 concurrency:
   group: ci-tests-${{ github.event.pull_request.number || github.ref }}
