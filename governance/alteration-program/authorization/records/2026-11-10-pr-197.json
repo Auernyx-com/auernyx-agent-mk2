@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-10-pr-197",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #197: deps: bump @types/vscode from 1.125.0 to 1.145.0",
+  "signature": "Ghostwolf101-2026-11-10-pr197",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-10",
+  "reason": "PR #197: deps: bump @types/vscode from 1.125.0 to 1.145.0",
+  "pullRequest": 197
+}
