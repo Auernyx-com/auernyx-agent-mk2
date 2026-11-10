@@ -209,7 +209,13 @@ jobs:
             echo "No authorization record changes to commit."
             exit 0
           fi
-          git commit -m "chore: add governance authorization for PR #${{ github.event.pull_request.number }}"
+          # [skip ci]: a push made with GITHUB_TOKEN cannot start real
+          # pull_request runs. On #197 (2026-11-09) it still created four
+          # failed 0-job runs ("workflow file issue") on the record commit,
+          # and the PR stayed stuck until close+reopen. Skipping them leaves
+          # only the real checks: `test` (dispatched below) and `gate`
+          # (registered on the new HEAD at the end of the gate job).
+          git commit -m "chore: add governance authorization for PR #${{ github.event.pull_request.number }} [skip ci]"
           git push
           echo "pushed=true" >> "$GITHUB_OUTPUT"
 
