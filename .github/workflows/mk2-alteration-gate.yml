@@ -36,10 +36,19 @@ jobs:
       is_allowed: ${{ steps.check-allowlist.outputs.is_allowed }}
       record_commit_sha: ${{ steps.record-commit.outputs.record_commit_sha }}
     steps:
+      # MK2_RECORD_PUSH_TOKEN: a fine-grained PAT (this repo only, Contents
+      # read/write). A push made with the built-in GITHUB_TOKEN cannot start
+      # pull_request runs, and GitHub's PR rollup ignores the
+      # workflow_dispatch suite, so the record commit never got a `test` the
+      # PR would count (confirmed on #198, 2026-11-09). A push made with
+      # the PAT fires normal pull_request runs on the record commit, the
+      # same thing close+reopen did by hand. Without the secret, the old
+      # fallback below still runs (PR then needs close+reopen).
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.MK2_RECORD_PUSH_TOKEN || github.token }}
 
       - name: Checkout PR head branch
         env:
@@ -201,6 +210,8 @@ jobs:
         if: >
           steps.check-allowlist.outputs.is_allowed == 'true' &&
           steps.check-record.outputs.record_count == '0'
+        env:
+          HAS_PUSH_TOKEN: ${{ secrets.MK2_RECORD_PUSH_TOKEN != '' }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -209,13 +220,16 @@ jobs:
             echo "No authorization record changes to commit."
             exit 0
           fi
-          # [skip ci]: a push made with GITHUB_TOKEN cannot start real
-          # pull_request runs. On #197 (2026-11-09) it still created four
-          # failed 0-job runs ("workflow file issue") on the record commit,
-          # and the PR stayed stuck until close+reopen. Skipping them leaves
-          # only the real checks: `test` (dispatched below) and `gate`
-          # (registered on the new HEAD at the end of the gate job).
-          git commit -m "chore: add governance authorization for PR #${{ github.event.pull_request.number }} [skip ci]"
+          MSG="chore: add governance authorization for PR #${{ github.event.pull_request.number }}"
+          # Fallback only: a GITHUB_TOKEN push creates failed 0-job runs
+          # ("workflow file issue") on the record commit, so tag it skip-ci.
+          # With the PAT, the record commit must run CI normally.
+          if [ "$HAS_PUSH_TOKEN" != "true" ]; then
+            MSG="$MSG [skip ci]"
+            echo "fallback=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::MK2_RECORD_PUSH_TOKEN not set: PR will need close+reopen after this push."
+          fi
+          git commit -m "$MSG"
           git push
           echo "pushed=true" >> "$GITHUB_OUTPUT"
 
@@ -229,7 +243,7 @@ jobs:
       # trigger. Non-fatal: if the dispatch fails, the old close+reopen still
       # works, and `test` stays missing (fail-closed), never falsely green.
       - name: Run the test suite on the record commit
-        if: steps.commit-record.outputs.pushed == 'true'
+        if: steps.commit-record.outputs.pushed == 'true' && steps.commit-record.outputs.fallback == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
