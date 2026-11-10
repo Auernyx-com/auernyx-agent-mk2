@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-10-pr-196",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #196: deps: bump webpack-cli from 7.2.3 to 7.3.1",
+  "signature": "Ghostwolf101-2026-11-10-pr196",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-10",
+  "reason": "PR #196: deps: bump webpack-cli from 7.2.3 to 7.3.1",
+  "pullRequest": 196
+}
