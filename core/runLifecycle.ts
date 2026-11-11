@@ -8,6 +8,7 @@ import { evidenceFromExternalRef, evidenceFromFileHash, evidenceFromPastedText, 
 import { ApprovalRequiredError } from "./approvals";
 import { activateJudgment, appendProvenanceAudit, clearJudgment, ensureGenesisRecord, verifyProvenance } from "./provenance";
 import { sha256Hex, stableStringify } from "./crypto";
+import { computeReceiptHash, RECEIPT_HASH_VERSION } from "./receiptHash";
 import { gitStatusPorcelain, isDirtyPorcelain } from "./git";
 import { canonGitignoreStatus, computePlanHash, computePseudoDiff, loadVsCodePolicy } from "./vscodePolicy";
 import { GovernanceRefusalError } from "./governanceRefusal";
@@ -168,7 +169,8 @@ export async function runLifecycle(args: {
             protected_path_violation: false,
             plan_hash_sha256: "",
             diff_hash_sha256: "",
-            receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${refusal.message}`),
+            receipt_hash_sha256: computeReceiptHash(refusal.code, "", "", refusal.message),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
             message: refusal.message,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
@@ -204,7 +206,8 @@ export async function runLifecycle(args: {
             protected_path_violation: false,
             plan_hash_sha256: "",
             diff_hash_sha256: "",
-            receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${refusal.message}`),
+            receipt_hash_sha256: computeReceiptHash(refusal.code, "", "", refusal.message),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
             message: refusal.message,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
@@ -292,7 +295,8 @@ export async function runLifecycle(args: {
                 protected_path_violation: false,
                 plan_hash_sha256: planHashSha256,
                 diff_hash_sha256: diffPreview.sha256,
-                receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+                receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+                receipt_hash_version: RECEIPT_HASH_VERSION,
                 message: refusal.message,
                 timestamp_local: timestampLocal,
                 timestamp_utc: timestampUtc,
@@ -333,7 +337,8 @@ export async function runLifecycle(args: {
             protected_path_violation: false,
             plan_hash_sha256: planHashSha256,
             diff_hash_sha256: diffPreview.sha256,
-            receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${refusal.message}:${planHashSha256}:${diffPreview.sha256}`),
+            receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
             message: refusal.message,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
@@ -441,7 +446,8 @@ export async function runLifecycle(args: {
             protected_path_violation: false,
             plan_hash_sha256: planHashSha256,
             diff_hash_sha256: diffPreview.sha256,
-            receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+            receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
             message: refusal.message,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
@@ -494,7 +500,8 @@ export async function runLifecycle(args: {
             protected_path_violation: false,
             plan_hash_sha256: planHashSha256,
             diff_hash_sha256: diffPreview.sha256,
-            receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+            receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
             message: refusal.message,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
@@ -564,6 +571,7 @@ export async function runLifecycle(args: {
                 }
             ]
         });
+        const okMessage = "preview_only_not_armed";
         receipt?.writeJson("governance.json", {
             decision_code: decision,
             write_gate: { env: cfg.writeEnabled, armed: false },
@@ -573,8 +581,9 @@ export async function runLifecycle(args: {
             protected_path_violation: false,
             plan_hash_sha256: planHashSha256,
             diff_hash_sha256: diffPreview.sha256,
-            receipt_hash_sha256: sha256Hex(`OK:${decision}:${planHashSha256}:${diffPreview.sha256}`),
-            message: "preview_only_not_armed",
+            receipt_hash_sha256: computeReceiptHash(decision, planHashSha256, diffPreview.sha256, okMessage),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
+            message: okMessage,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
             repo_root: args.ctx.repoRoot,
@@ -645,7 +654,8 @@ export async function runLifecycle(args: {
                     protected_path_violation: false,
                     plan_hash_sha256: planHashSha256,
                     diff_hash_sha256: diffPreview.sha256,
-                    receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+                    receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+                    receipt_hash_version: RECEIPT_HASH_VERSION,
                     message: refusal.message,
                     timestamp_local: timestampLocal,
                     timestamp_utc: timestampUtc,
@@ -709,7 +719,8 @@ export async function runLifecycle(args: {
                     protected_path_violation: false,
                     plan_hash_sha256: planHashSha256,
                     diff_hash_sha256: diffPreview.sha256,
-                    receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+                    receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+                    receipt_hash_version: RECEIPT_HASH_VERSION,
                     message: refusal.message,
                     timestamp_local: timestampLocal,
                     timestamp_utc: timestampUtc,
@@ -767,7 +778,8 @@ export async function runLifecycle(args: {
                         protected_path_violation: false,
                         plan_hash_sha256: planHashSha256,
                         diff_hash_sha256: diffPreview.sha256,
-                        receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+                        receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+                        receipt_hash_version: RECEIPT_HASH_VERSION,
                         message: refusal.message,
                         timestamp_local: timestampLocal,
                         timestamp_utc: timestampUtc,
@@ -843,6 +855,7 @@ export async function runLifecycle(args: {
         // independent review's "suspicious, unconfirmed" lead; confirmed
         // real via a direct probe (fenerisPrep, a READ_ONLY step, no
         // approval.apply anywhere, receipt still said armed:true).
+        const okMessage = vscodePolicy.closeout_reminder.enabled ? vscodePolicy.closeout_reminder.message : "";
         receipt?.writeJson("governance.json", {
             decision_code: decision,
             write_gate: { env: cfg.writeEnabled, armed },
@@ -852,8 +865,9 @@ export async function runLifecycle(args: {
             protected_path_violation: false,
             plan_hash_sha256: planHashSha256,
             diff_hash_sha256: diffPreview.sha256,
-            receipt_hash_sha256: sha256Hex(`OK:${decision}:${planHashSha256}:${diffPreview.sha256}:${changedFiles.join("|")}`),
-            message: vscodePolicy.closeout_reminder.enabled ? vscodePolicy.closeout_reminder.message : "",
+            receipt_hash_sha256: computeReceiptHash(decision, planHashSha256, diffPreview.sha256, okMessage),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
+            message: okMessage,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
             repo_root: args.ctx.repoRoot,
@@ -897,7 +911,8 @@ export async function runLifecycle(args: {
             protected_path_violation: refusal.protectedPathViolation,
             plan_hash_sha256: planHashSha256,
             diff_hash_sha256: diffPreview.sha256,
-            receipt_hash_sha256: sha256Hex(`REFUSED:${refusal.code}:${planHashSha256}:${diffPreview.sha256}:${refusal.message}`),
+            receipt_hash_sha256: computeReceiptHash(refusal.code, planHashSha256, diffPreview.sha256, refusal.message),
+            receipt_hash_version: RECEIPT_HASH_VERSION,
             message: refusal.message,
             timestamp_local: timestampLocal,
             timestamp_utc: timestampUtc,
