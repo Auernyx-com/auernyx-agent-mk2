@@ -17,6 +17,10 @@ on:
   # record, so the required `test` check runs on the PR's real HEAD.
   workflow_dispatch:
 
+# Tests only read the repo; never give this workflow's token write access.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-tests-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
