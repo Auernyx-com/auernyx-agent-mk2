@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-11-pr-199",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #199: ci(kotlin): run the Kotlin proof battery + TS<->Kotlin parity on every PR",
+  "signature": "Ghostwolf101-2026-11-11-pr199",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-11",
+  "reason": "PR #199: ci(kotlin): run the Kotlin proof battery + TS<->Kotlin parity on every PR",
+  "pullRequest": 199
+}
