@@ -15,13 +15,10 @@
 //      write-gate matrix gives the expected locked codes
 //   4. Live: Kotlin's plan_hash_sha256 (sha256 of the envelope text) equals
 //      TypeScript's sha256Hex of the same text
-//
-// KNOWN, NOT CHECKED (open decision, see PR): receipt_hash_sha256 string
-// formulas are not uniform. Kotlin always hashes PREFIX:code:plan:diff:message.
-// runLifecycle.ts uses that on most paths but differs on a few (all written
-// 2026-01-05): message-before-plan on one refusal path, OK receipts omit the
-// message, pre-plan refusals omit plan/diff. Changing either side changes how
-// receipts verify, so it needs an explicit decision, not a silent CI fix.
+//   5. Live: every receipt_hash_sha256 Kotlin writes equals TypeScript's
+//      computeReceiptHash (core/receiptHash.ts) over the same receipt fields.
+//      (Until 2026-11-10 the TS formula was non-uniform across 12 inline
+//      sites; core/receiptHash.ts is now the single formula, matching Kotlin.)
 //
 // Requires: npm run compile (for dist/), Java 17, and the Kotlin app built with
 //   (cd branches/kotlin-consumer && ./gradlew installDist)
@@ -76,18 +73,19 @@ if (lockedFields.length === 0) {
 }
 
 // ---- 3 & 4. Live cross-implementation run ---------------------------------
-let tsSha256Hex;
+let tsSha256Hex, tsComputeReceiptHash;
 try {
     ({ sha256Hex: tsSha256Hex } = require(path.join(repoRoot, "dist", "core", "crypto.js")));
+    ({ computeReceiptHash: tsComputeReceiptHash } = require(path.join(repoRoot, "dist", "core", "receiptHash.js")));
 } catch (e) {
-    fail(`could not load dist/core/crypto.js (run npm run compile first): ${e.message}`);
+    fail(`could not load dist/core (run npm run compile first): ${e.message}`);
 }
 
 const bin = path.join(kotlinRoot, "build", "install", "ygg-kotlin-consumer", "bin",
     process.platform === "win32" ? "ygg-kotlin-consumer.bat" : "ygg-kotlin-consumer");
 if (!fs.existsSync(bin)) fail(`Kotlin app not built at ${bin} (run ./gradlew installDist in branches/kotlin-consumer)`);
 
-if (tsSha256Hex && fs.existsSync(bin)) {
+if (tsSha256Hex && tsComputeReceiptHash && fs.existsSync(bin)) {
     const work = fs.mkdtempSync(path.join(os.tmpdir(), "mk2-kotlin-parity-"));
     // Non-ASCII on purpose: proves both sides hash the same UTF-8 bytes.
     const payloadText = JSON.stringify({ intent: "parity", note: "Yggdrasil — ᚢ root/trunk/branch/leaf", n: 7 });
@@ -137,12 +135,19 @@ if (tsSha256Hex && fs.existsSync(bin)) {
         if (out.receipt.plan_hash_sha256 !== tsPlanHash) {
             fail(`${c.name}: plan hash differs. Kotlin=${out.receipt.plan_hash_sha256} TypeScript=${tsPlanHash}`);
         }
+        const r = out.receipt;
+        const tsReceiptHash = tsComputeReceiptHash(r.decision_code, r.plan_hash_sha256, r.diff_hash_sha256, r.message);
+        if (r.receipt_hash_sha256 !== tsReceiptHash) {
+            fail(`${c.name}: receipt hash differs. Kotlin=${r.receipt_hash_sha256} TypeScript=${tsReceiptHash}`);
+        }
     }
-    if (failures === 0) pass("plan_hash_sha256: Kotlin and TypeScript hash identical bytes identically");
+    if (failures === 0) {
+        pass("plan_hash_sha256: Kotlin and TypeScript hash identical bytes identically");
+        pass("receipt_hash_sha256: Kotlin and TypeScript use the identical receipt formula");
+    }
     fs.rmSync(work, { recursive: true, force: true });
 }
 
-console.log("NOTE  receipt_hash_sha256 formula parity is a known open item, not checked here (see header).");
 if (failures) {
     console.error(`\n${failures} parity failure(s). TypeScript and Kotlin disagree; do not merge until resolved.`);
     process.exit(1);
