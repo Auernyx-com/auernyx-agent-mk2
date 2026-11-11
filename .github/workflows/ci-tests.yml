@@ -42,3 +42,47 @@ jobs:
 
       - name: Run test suite
         run: npm test
+
+  # Kotlin proof layer. branches/kotlin-consumer/ is the independent second
+  # implementation of the locked governance contract. Found 2026-11-10:
+  # verify:kotlin was in no workflow (manual only, last run 2026-01-09), and
+  # gradlew was committed non-executable, so it could not even start on Linux.
+  # Runs the Kotlin proof battery, then the TypeScript <-> Kotlin parity check
+  # (tools/kotlin-parity.mjs) so the two implementations can't drift silently.
+  kotlin-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+          cache-dependency-path: |
+            branches/kotlin-consumer/*.gradle.kts
+            branches/kotlin-consumer/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Kotlin proof battery
+        run: npm run verify:kotlin
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Build Kotlin verifier
+        working-directory: branches/kotlin-consumer
+        run: ./gradlew --no-daemon installDist
+
+      - name: TypeScript <-> Kotlin parity
+        run: npm run verify:kotlin-parity
