@@ -42,8 +42,13 @@ jobs:
       # workflow_dispatch suite, so the record commit never got a `test` the
       # PR would count (confirmed on #198, 2026-11-09). A push made with
       # the PAT fires normal pull_request runs on the record commit, the
-      # same thing close+reopen did by hand. Without the secret, the old
-      # fallback below still runs (PR then needs close+reopen).
+      # same thing close+reopen used to do by hand. Repo policy is no secrets
+      # on GitHub, so this secret is intentionally NOT configured and the
+      # fallback below is the normal path. After the fallback push, someone
+      # must push one more commit whose message has no skip-ci marker (an
+      # empty commit is fine). Close+reopen does NOT work: the marker also
+      # suppresses reopen-triggered runs (seen on #200). See
+      # governance/alteration-program/TRUNK_ENFORCEMENT.md.
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -227,7 +232,7 @@ jobs:
           if [ "$HAS_PUSH_TOKEN" != "true" ]; then
             MSG="$MSG [skip ci]"
             echo "fallback=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::MK2_RECORD_PUSH_TOKEN not set: PR will need close+reopen after this push."
+            echo "::warning::Record commit pushed with [skip ci]. Required checks won't run on it. Push one more commit whose message has no skip-ci marker (git commit --allow-empty), then checks run. Close+reopen does NOT work."
           fi
           git commit -m "$MSG"
           git push
@@ -240,8 +245,10 @@ jobs:
       # The `gate` check is re-registered on the new HEAD further down; `test`
       # must not be faked that way, so this runs the real suite on that commit.
       # workflow_dispatch is the documented exception that GITHUB_TOKEN may
-      # trigger. Non-fatal: if the dispatch fails, the old close+reopen still
-      # works, and `test` stays missing (fail-closed), never falsely green.
+      # trigger. The PR rollup ignores this dispatched run, so it does not
+      # unblock the PR on its own; the extra no-skip-ci commit does. Non-fatal:
+      # if the dispatch fails, `test` stays missing (fail-closed), never
+      # falsely green.
       - name: Run the test suite on the record commit
         if: steps.commit-record.outputs.pushed == 'true' && steps.commit-record.outputs.fallback == 'true'
         continue-on-error: true
