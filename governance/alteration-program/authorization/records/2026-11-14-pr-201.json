@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-14-pr-201",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #201: docs(governance): make TRUNK_ENFORCEMENT.md match what CI enforces",
+  "signature": "Ghostwolf101-2026-11-14-pr201",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-14",
+  "reason": "PR #201: docs(governance): make TRUNK_ENFORCEMENT.md match what CI enforces",
+  "pullRequest": 201
+}
