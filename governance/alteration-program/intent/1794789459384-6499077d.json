@@ -1,0 +1,35 @@
+{
+  "intentId": "1794789459384-6499077d",
+  "title": "Automated dependency update: package-lock.json, package.json",
+  "system": "dependency-management",
+  "changeClass": "leaf",
+  "scope": {
+    "in": [
+      "package-lock.json",
+      "package.json"
+    ],
+    "out": [
+      "No manual source logic changes",
+      "No governance file changes",
+      "No API contract changes"
+    ]
+  },
+  "riskClass": "low",
+  "governanceImpact": false,
+  "actorId": "dependabot-automation",
+  "createdAt": "2026-11-16T00:37:39.384244Z",
+  "status": "in_review",
+  "verification": {
+    "plan": "Automated dependency update for commit fe1da32b18ec. Changed files: package-lock.json, package.json. Verify CI checks pass and no governance paths are unexpectedly modified.",
+    "requiredChecks": [
+      "mk2-alteration-gate",
+      "typescript-compile"
+    ]
+  },
+  "evidence": {
+    "required": false,
+    "receiptRefs": [],
+    "notes": "Auto-generated intent for dependabot-automation commit fe1da32b18ec620e9be4841462c5e32ae0381d6e.\nChanged files (2): package-lock.json, package.json.\nGovernance paths touched: False."
+  },
+  "amendments": []
+}
