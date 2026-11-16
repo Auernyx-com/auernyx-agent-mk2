@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-16-pr-205",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for PR #205: ci(dependabot-gate): push intent commit to an explicit branch",
+  "signature": "Ghostwolf101-2026-11-16-pr205",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-16",
+  "reason": "PR #205: ci(dependabot-gate): push intent commit to an explicit branch",
+  "pullRequest": 205
+}

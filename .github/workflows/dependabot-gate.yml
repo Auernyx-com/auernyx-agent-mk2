@@ -35,10 +35,15 @@ jobs:
         with:
           fetch-depth: 0
       
+      # Branch name goes through env, not ${{ }} inside the script, so a
+      # crafted ref name can't inject shell (same pattern as
+      # mk2-alteration-gate.yml).
       - name: Checkout PR head branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          git fetch origin "${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}"
-          git checkout "${{ github.event.pull_request.head.ref }}"
+          git fetch origin "$HEAD_REF"
+          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
       
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -47,9 +52,11 @@ jobs:
       
       - name: Check if intent already exists
         id: check-intent
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           # Check if this PR already has an intent file
-          INTENT_COUNT=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -c "governance/alteration-program/intent/.*\.json" || true)
+          INTENT_COUNT=$(git diff --name-only "origin/$BASE_REF"...HEAD | grep -c "governance/alteration-program/intent/.*\.json" || true)
           echo "intent_count=$INTENT_COUNT" >> $GITHUB_OUTPUT
           
           if [ "$INTENT_COUNT" -gt 0 ]; then
@@ -79,6 +86,8 @@ jobs:
       
       - name: Commit intent file
         if: steps.check-intent.outputs.intent_count == '0'
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -93,7 +102,9 @@ jobs:
           fi
           
           git commit -m "chore: add governance intent for Dependabot update"
-          git push
+          # Explicit target: the local branch has no upstream, and a bare
+          # `git push` died with exit 128 on #203/#204 (2026-11-15).
+          git push origin "HEAD:refs/heads/$HEAD_REF"
       
       - name: Comment on PR
         if: steps.check-intent.outputs.intent_count == '0'
