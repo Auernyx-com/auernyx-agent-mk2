@@ -148,19 +148,22 @@ async function fetchJson<T>(url: string, options?: { method?: string; body?: str
         }
 
         const response = await fetch(url, fetchOptions);
-        clearTimeout(timeout);
 
         if (!response.ok) {
             throw new Error(`http_${response.status}`);
         }
 
+        // The timeout must cover reading the BODY too, not just the headers:
+        // a server that sends headers and then stalls would otherwise make
+        // response.json() wait forever. Cleared in finally, after the body.
         return (await response.json()) as T;
     } catch (err) {
-        clearTimeout(timeout);
         if (err instanceof Error && err.name === "AbortError") {
             throw new Error("timeout");
         }
         throw err;
+    } finally {
+        clearTimeout(timeout);
     }
 }
 
