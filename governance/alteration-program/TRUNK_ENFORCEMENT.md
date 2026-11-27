@@ -13,6 +13,10 @@ admins too:
 - `test` (`ci-tests.yml`: `npm ci`, typecheck, test suite)
 - `kotlin-proof` (`ci-tests.yml`: Kotlin proof battery + TS/Kotlin parity)
 - `Analyze (javascript-typescript)` and `Analyze (python)` (CodeQL)
+- `changelog` (`changelog-required.yml`): the PR must change `CHANGELOG.md`.
+  Two ways past it, both visible on the PR: the `no-changelog` label (for a
+  PR that truly needs no entry), or a Dependabot author (authorized by the
+  `dependabot-approval` job). If the PR's file list can't be read, it fails.
 
 The "avars" ruleset also requires `gate`, linear history, and a pull request.
 
