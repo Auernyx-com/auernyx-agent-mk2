@@ -1,0 +1,54 @@
+name: changelog-required
+
+# Justin's rule: every PR to main updates CHANGELOG.md in the SAME PR, never in
+# a later sweep. Memory alone missed it on 18 PRs (found 2026-11-27), so CI
+# enforces it now.
+#
+# Two ways past it, both visible on the PR itself:
+#   - the `no-changelog` label, for a PR that truly needs no entry;
+#   - Dependabot PRs, which are dependency bumps authorized by the
+#     dependabot-approval job in mk2-alteration-gate.yml.
+#
+# Fails closed: if the PR's file list can't be read, the check fails.
+# Adding or removing the label re-runs the check (labeled/unlabeled events).
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: CHANGELOG.md changed in this PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          HAS_SKIP_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
+        run: |
+          if [ "$AUTHOR" = "dependabot[bot]" ]; then
+            echo "Dependabot PR: exempt (authorized by the dependabot-approval job)."
+            exit 0
+          fi
+          if [ "$HAS_SKIP_LABEL" = "true" ]; then
+            echo "::notice::'no-changelog' label is set: CHANGELOG.md not required for this PR."
+            exit 0
+          fi
+          # Paginated: the API returns at most 100 files per page.
+          if ! files=$(gh api --paginate "repos/$GH_REPO/pulls/$PR/files" --jq '.[].filename'); then
+            echo "::error::Could not read this PR's file list. Failing closed."
+            exit 1
+          fi
+          if printf '%s\n' "$files" | grep -qx 'CHANGELOG.md'; then
+            echo "CHANGELOG.md is updated in this PR."
+          else
+            echo "::error::CHANGELOG.md is not changed in this PR. Add an entry in this same PR, or add the 'no-changelog' label if this PR truly needs none."
+            exit 1
+          fi
