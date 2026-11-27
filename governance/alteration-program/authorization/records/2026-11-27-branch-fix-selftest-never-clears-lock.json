@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-selftest-never-clears-lock",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/selftest-never-clears-lock: fix(governance): the self-test trips the lock but never clears it; only unlock does (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/selftest-never-clears-lock",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/selftest-never-clears-lock: fix(governance): the self-test trips the lock but never clears it; only unlock does",
+  "branch": "fix/selftest-never-clears-lock"
+}
