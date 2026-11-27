@@ -90,10 +90,28 @@ test("a real config file's values are read through correctly", () => {
   assert.equal(cfg.addons.skjoldrFirewall.command, "python3");
 });
 
-test("an invalid riskTolerance value falls back to WITHIN_TOLERANCE, not left as-is", () => {
+// Item 10 (2026-11-27 /code-review high): the normalizer only recognized
+// CONTROLLED, so FAILED_CLOSED (the strictest state) and any unknown value
+// both became WITHIN_TOLERANCE (the loosest). Fail closed instead.
+test("riskTolerance FAILED_CLOSED is kept, not normalized down to WITHIN_TOLERANCE", () => {
+  const repoRoot = makeRepoRoot();
+  writeConfig(repoRoot, { governance: { riskTolerance: "failed_closed" } });
+  assert.equal(loadConfig(repoRoot).governance.riskTolerance, "FAILED_CLOSED");
+});
+
+test("an invalid riskTolerance value falls back to FAILED_CLOSED (strictest), not WITHIN_TOLERANCE", () => {
   const repoRoot = makeRepoRoot();
   writeConfig(repoRoot, { governance: { riskTolerance: "NONSENSE" } });
-  assert.equal(loadConfig(repoRoot).governance.riskTolerance, "WITHIN_TOLERANCE");
+  assert.equal(loadConfig(repoRoot).governance.riskTolerance, "FAILED_CLOSED");
+});
+
+test("a missing riskTolerance still defaults to WITHIN_TOLERANCE, and WITHIN_TOLERANCE/CONTROLLED pass through", () => {
+  const a = makeRepoRoot();
+  writeConfig(a, { governance: {} });
+  assert.equal(loadConfig(a).governance.riskTolerance, "WITHIN_TOLERANCE");
+  const b = makeRepoRoot();
+  writeConfig(b, { governance: { riskTolerance: "within_tolerance" } });
+  assert.equal(loadConfig(b).governance.riskTolerance, "WITHIN_TOLERANCE");
 });
 
 test("a non-positive or non-numeric port falls back to the default rather than being used as-is", () => {

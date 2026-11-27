@@ -61,6 +61,17 @@ export interface AuernyxConfig {
 
 export type RiskTolerance = "WITHIN_TOLERANCE" | "CONTROLLED" | "FAILED_CLOSED";
 
+// Missing = the default. Any of the three canonical states (case-insensitive)
+// passes through. Anything else is unknown, so it fails closed to the
+// STRICTEST state, never the loosest (it used to collapse FAILED_CLOSED and
+// garbage alike to WITHIN_TOLERANCE).
+function normalizeRiskTolerance(raw: unknown): RiskTolerance {
+    if (raw === undefined || raw === null) return DEFAULT_GOVERNANCE.riskTolerance;
+    const v = String(raw).trim().toUpperCase();
+    if (v === "WITHIN_TOLERANCE" || v === "CONTROLLED" || v === "FAILED_CLOSED") return v;
+    return "FAILED_CLOSED";
+}
+
 export interface RollbackPolicyConfig {
     allowRollback: boolean;
     rollbackWindowDays: number;
@@ -203,10 +214,7 @@ export function loadConfig(repoRoot: string): {
         const governance: GovernanceConfig = {
             approverIdentity:
                 typeof (govRaw as any)?.approverIdentity === "string" ? String((govRaw as any).approverIdentity) : DEFAULT_GOVERNANCE.approverIdentity,
-            riskTolerance:
-                (String((govRaw as any)?.riskTolerance ?? DEFAULT_GOVERNANCE.riskTolerance).toUpperCase() as RiskTolerance) === "CONTROLLED"
-                    ? "CONTROLLED"
-                    : "WITHIN_TOLERANCE",
+            riskTolerance: normalizeRiskTolerance((govRaw as any)?.riskTolerance),
             protectedPaths: Array.isArray((govRaw as any)?.protectedPaths)
                 ? (govRaw as any).protectedPaths.filter((p: any) => typeof p === "string" && p.trim().length > 0)
                 : DEFAULT_GOVERNANCE.protectedPaths,
