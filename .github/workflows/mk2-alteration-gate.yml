@@ -232,7 +232,7 @@ jobs:
           if [ "$HAS_PUSH_TOKEN" != "true" ]; then
             MSG="$MSG [skip ci]"
             echo "fallback=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::Record commit pushed with [skip ci]. Required checks won't run on it. Push one more commit whose message has no skip-ci marker (git commit --allow-empty), then checks run. Close+reopen does NOT work."
+            echo "::warning::Record commit pushed with [skip ci]. Required checks won't run on it. Push one more commit whose message has no skip-ci marker (git commit --allow-empty), then checks run. Close+reopen does NOT work. To avoid this next time, open PRs with tools/open-pr.sh."
           fi
           git commit -m "$MSG"
           git push
@@ -281,14 +281,24 @@ jobs:
       - name: Determine trusted record commit
         id: record-commit
         if: steps.check-allowlist.outputs.is_allowed == 'true'
+        # The record is found by what THIS PR adds (base...HEAD), not by file
+        # name, so a record committed by the author in the PR's first push
+        # (tools/open-pr.sh, named by branch because the PR number doesn't
+        # exist yet) is vouched for the same way as one this job pushed.
+        # Trust still comes only from is_allowed above, recomputed live this
+        # run. Exactly one record or nothing is vouched (gate fails closed).
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          RECORD_FILE=$(ls governance/alteration-program/authorization/records/*-pr-"${PR_NUMBER}".json 2>/dev/null | head -n1 || true)
-          if [ -z "$RECORD_FILE" ]; then
-            echo "No authorization record file found for PR #${PR_NUMBER} -- nothing to vouch for."
+          RECORDS=$(git diff --name-only --diff-filter=AM "${BASE_SHA}...HEAD" \
+            | grep -E "^governance/alteration-program/authorization/records/.*\.json$" || true)
+          COUNT=$(printf '%s' "$RECORDS" | grep -c . || true)
+          if [ "$COUNT" -ne 1 ]; then
+            echo "PR #${PR_NUMBER} adds ${COUNT} authorization records (need exactly 1) -- nothing vouched."
             exit 0
           fi
+          RECORD_FILE="$RECORDS"
           RECORD_SHA=$(git log -1 --format=%H -- "$RECORD_FILE")
           echo "record_commit_sha=${RECORD_SHA}" >> "$GITHUB_OUTPUT"
           echo "Vouching for ${RECORD_FILE} at commit ${RECORD_SHA} (is_allowed=true this run)."

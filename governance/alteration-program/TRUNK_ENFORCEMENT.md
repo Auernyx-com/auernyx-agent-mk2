@@ -42,18 +42,29 @@ The "avars" ruleset also requires `gate`, linear history, and a pull request.
 A PR with zero changed files passes as a no-op.
 
 ## How a PR gets authorized
-You don't write the record by hand. The `auto-authorize` job writes and pushes
-it when either:
+Normal path: open the PR with **`tools/open-pr.sh "<title>" [body-file]`**
+from your feature branch. It writes the authorization record
+(`records/<date>-branch-<branch>.json`), commits it as you, pushes, and opens
+the PR. Because the record arrives in your own push, `auto-authorize` finds it
+and pushes nothing, your commit stays the PR head, and every required check
+runs on the first try. The script refuses if your GitHub login is not on the
+allowlist.
+
+The record only counts when `auto-authorize`, on that run, checks live that
+either:
 - the PR author is on the allowlist, or
 - an allowlisted login has **approved** the PR.
 
-Being assigned, or requested as a reviewer, does not count.
+Being assigned, or requested as a reviewer, does not count. A record written
+by anyone else still fails the gate (forged-record check above).
 
-## Known snag: the record commit doesn't start checks
-The record is pushed with `GITHUB_TOKEN` and tagged `[skip ci]`, so the new
-HEAD gets no `test` / `kotlin-proof` runs that count toward the PR. Closing
-and reopening the PR does **not** fix it (the skip marker suppresses those
-runs too).
+## Fallback: PR opened without the script
+If the PR has no record (opened by hand, or a Dependabot PR after approval),
+`auto-authorize` writes it and pushes it with `GITHUB_TOKEN`, tagged
+`[skip ci]`. GitHub never starts check runs for that push, so the new head
+gets no `test` / `kotlin-proof` runs that count toward the PR. Closing and
+reopening the PR does **not** fix it (the skip marker suppresses those runs
+too).
 
 **Workaround:** push one more commit on top whose message does not contain
 the skip-ci marker anywhere (an empty commit is fine). That starts a normal
