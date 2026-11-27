@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-release-v1.1.0-restore",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch release/v1.1.0-restore: release: restore v1.1.0 notes, version and Monday persona (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-release/v1.1.0-restore",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "release/v1.1.0-restore: release: restore v1.1.0 notes, version and Monday persona",
+  "branch": "release/v1.1.0-restore"
+}

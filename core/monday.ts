@@ -64,7 +64,7 @@ export function loadMondayPersona(repoRoot: string): MondayPersona {
             member: "Monday",
             role: "Bridge",
             council_title: "Dancer in Chaos",
-            vow: { short: "I build, repair, and build again.", architects_mark: "Build. Repair. Return." },
+            vow: { short: "I build, repair, and build again.", architects_mark: "Build. Return. Repair." },
             personality: { surface: "direct", core: "honesty without softening" }
         };
     }

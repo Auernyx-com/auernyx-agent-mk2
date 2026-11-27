@@ -1,6 +1,25 @@
 # Changelog
 
-## 2026-11-27 — CHANGELOG.md required on every PR
+## 2026-11-27 — v1.1.0 restored: release notes, version, Monday's mark
+
+The v1.1.0 release (2026-05-06) was written on branch `Ghostwolf101-patch-1`
+but its release commit (`5e0908e`) never reached `main`. The features did;
+the notes, the version number and the persona changes didn't. This brings
+them in.
+
+- The v1.1.0 section is restored below, between 2026-09-04 and v1.0.0. Its
+  wording is kept; mistakes are corrected in place and marked
+  *[corrected 2026-11-27: …]*.
+- `package.json` / `package-lock.json`: version `1.0.0` → `1.1.0`. Work after
+  2026-05-06 is not given a version here.
+- `personas/monday.json`: the architect's mark is `Build. Return. Repair.` in
+  both places (it read `Build. Repair. Return.` and `Build. Destroy. Return.`),
+  persona version `1.1.0`, and `authored_by` no longer says "LLC" (there is no
+  LLC). `core/monday.ts`'s fallback persona uses the same mark.
+- `CHANGELOG.md`: #227 had added a #226 bullet that repeated #226's own
+  section; it now points to that section.
+
+## 2026-11-27 — CHANGELOG.md required on every PR (#226)
 
 The rule "update CHANGELOG.md in the same PR" lived only in memory, and it was
 missed: 11 of the last 12 merged PRs (#213–#224, all but #219) didn't touch
@@ -70,10 +89,7 @@ fixed, one PR per finding. Suite at 476 tests, all passing, after #218.
   get the required `Analyze` checks. GitHub's default CodeQL setup is turned
   off and must stay off.
 - #203, #204 — Dependabot: `@types/node` 26.6.6, `@types/vscode` 1.146.0.
-- #226 — new required check `changelog` (`changelog-required.yml`): any PR to
-  `main` that doesn't change `CHANGELOG.md` fails. Exceptions: the
-  `no-changelog` label and Dependabot PRs. If it can't tell, it fails. Before
-  this, 11 of the 12 PRs merged from #213 to #224 skipped the CHANGELOG.
+- #226 — the required `changelog` check; see its own section above.
 
 **Kintsugi fail-closed and governance lock**
 Each fix was proven with tests that failed on `main` first.
@@ -233,6 +249,61 @@ every fix so the bug can't come back silently)
   identity provider, not a missing fix
 - #185 — `mk2-capabilities.md`'s env-var quick-reference brought in line with
   `SECURITY.md` on `AUERNYX_SECRET` enforcement
+
+## 2026-05-06 — v1.1.0 · A.Varsity
+
+### Auernyx Varsity 1.1.0
+
+Monday is wired. The trunk accepts branches. The human is never out of the loop.
+
+**Monday — Human-in-the-Loop Layer** (`capabilities/mondayOnboarding.ts`, `capabilities/mondayTier2Review.ts`, `core/monday.ts`) *[corrected 2026-11-27: the infraction loop is in `capabilities/mondayInfractionReview.ts`]*
+
+The HIL layer is complete. Monday is not a chatbot — he is the surface between governance events and the human who must decide them. Four capabilities now live under his name:
+
+- **Infraction disposition loop** (`34f4bbc` *[corrected 2026-11-27: was `eecc4ab`, which is the health-check commit]*) — Monday surfaces open Feneris infractions in plain language, presents the dual-score side by side, and holds the door open until the human makes an actual decision. Not a checkbox. A verdict.
+- **Governance lock + Judgment status** (`527bfde`) — One call shows the full system state: what is locked, what Obsidian has blocked, what open infractions exist, and what the human must do next. Plain English, no translation required.
+- **Tier 2 approval briefing** (`68167db`) — Before any high-risk operation executes, Monday presents a full briefing: what the action does, whether it is reversible, current risk tolerance, and the exact approval payload required. If `WITHIN_TOLERANCE`, Monday blocks and redirects. No Tier 2 operation runs without a briefed human.
+- **Onboarding skeleton** (`78f371f`) — Three-phase onboarding, Monday-voiced. Phase 1: fixed baseline questions (deployment name, vertical, approver identity, environment). Phase 2: dynamic scope-driven questions — healthcare gets PHI questions, finance gets audit questions, production gets genesis-seal verification. Phase 3: recommended config output, human applies deliberately. Sessions append to `.auernyx/onboarding/sessions.ndjson` — full audit trail.
+
+**Obsidian — Judgment Overlay Restored** (`core/server.ts`, `7c9fbb5` *[corrected 2026-11-27: was `capabilities/obsidianJudgment.ts`, which never existed]*)
+
+Genesis tamper confrontation restored. When provenance fails, Obsidian's Judgment activates and Monday surfaces the confrontation in plain language — what failed, what is blocked, what the human must do to restore trust. Judgment is not silent.
+
+**Health Check — Tree Topology** (`core/server.ts`, `eecc4ab` *[corrected 2026-11-27: was `capabilities/healthCheck.ts`, which never existed]*)
+
+System health now maps the full tree: leaf → branch → trunk → root. Each node reports independently. A dead branch does not silence the trunk.
+
+**Module Registry — Standardized Branching Sockets** (`config/module-registry.json`, `config/branches.json`)
+
+Clean attachment points for any module joining the trunk. The registry defines the contract — name, path, consumer, governance boundary. No module wires itself in — it registers and waits for the trunk to invoke it.
+
+**SQUAD Battalion — First Branch Module Registered** (`consumers/branches/Invoke-SquadBat.ps1`)
+
+SQUAD Battalion is the first external module to register against the trunk. The founding law hash travels with it. Every Division genesis record inherits it.
+
+**Fixes**
+
+- Gate: auto-authorize now sequences before the gate — race condition closed that could let an unauthorized operation slip through the window between check and execute (`cc90d98` *[corrected 2026-11-27: reached `main` as #120, `4433221`]*)
+- Router: safe default for search doc — preview before apply, no silent destructive write (`970c49d`)
+
+**Governance**
+
+- Direct-push bypass incidents documented and remediated — 2026-04-04 to 2026-05-05 (`3be07c9`). Thirteen direct pushes identified, intent files generated retroactively, governance record sealed.
+- Stale issue and PR automation added — housekeeping runs without human overhead
+- Monday persona file formalized — architects mark corrected to canonical `Build. Return. Repair.`, authored_by corrected pending LLC filing *[corrected 2026-11-27: these persona changes only reached `main` with the 2026-11-27 restore; there is no LLC, so `authored_by` has none]*
+
+**What 1.1.0 means**
+
+- Monday HIL layer: complete
+- Onboarding: complete
+- Branch/module registry: complete
+- SQUAD Battalion: registered
+- Obsidian confrontation surface: restored
+- Foundation from 1.0.0: untouched
+
+The governance rail holds. The human is in the loop at every decision point that matters.
+
+---
 
 ## 2026-05-04 — v1.0.0 · A.Varsity
 
