@@ -4,10 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-# This workflow makes no commits of its own, but mk2-alteration-gate.yml and
-# dependabot-gate.yml do (they push a record/intent file mid-run), which fires
-# a second, near-simultaneous synchronize event on the same PR that this
-# workflow is also triggered by. Queue rather than let two evaluations race.
+# This workflow makes no commits of its own. On non-Dependabot PRs opened
+# without tools/open-pr.sh, mk2-alteration-gate.yml may push a record file
+# mid-run, which fires a second synchronize event. Queue rather than race.
+# (dependabot-gate.yml, which pushed intent files, was removed 2026-11-27.)
 concurrency:
   group: auernyx-dependency-review-${{ github.event.pull_request.number }}
   cancel-in-progress: false

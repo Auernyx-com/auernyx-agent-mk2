@@ -27,6 +27,19 @@ PREFIX = repo_prefix(GIT_ROOT)
 AUTH_RECORD_DIR = f"{PREFIX}governance/alteration-program/authorization/records"
 ALLOWLIST_PATH = REPO_ROOT / "governance/alteration-program/authorization/allowlist.json"
 
+# Dependabot PRs (2026-11-27): authorized by a live allowlisted approval, not
+# a record commit on Dependabot's branch (any foreign push there stalls checks
+# and makes Dependabot stop managing the PR). The record is filed right after
+# the merge as records/<date>-dependabot-pr-<N>.json (tools/open-pr.sh does it),
+# and every non-Dependabot PR is blocked until it is. Merges before this date
+# predate the rule (they got record commits the old way).
+DEPENDABOT_AUTHOR = "dependabot[bot]"
+DEPENDABOT_RECORD_SINCE = "2026-11-27"
+MANIFEST_FILES = {f"{PREFIX}package.json", f"{PREFIX}package-lock.json"}
+BACKFILL_NAME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-dependabot-pr-(\d+)\.json$")
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+PR_SUFFIX_RE = re.compile(r"\(#(\d+)\)\s*$")
+
 GITHUB_LOGIN_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 
 def fail(msg: str) -> None:
@@ -132,6 +145,96 @@ def validate_auth_record(record_path: str) -> None:
             f"verifiably created by the real authorization job"
         )
 
+def is_backfill_record(path: str) -> bool:
+    return BACKFILL_NAME_RE.match(os.path.basename(path)) is not None
+
+def load_allowlist() -> list[str]:
+    if not ALLOWLIST_PATH.exists():
+        fail(f"allowlist not found at {ALLOWLIST_PATH}")
+    try:
+        return load_json(ALLOWLIST_PATH).get("authorizedLogins", [])
+    except Exception as e:
+        fail(f"could not parse allowlist {ALLOWLIST_PATH}: {e}")
+
+def validate_backfill_record(record_path: str) -> None:
+    """Extra checks for an after-merge Dependabot record. The facts inside were
+    re-derived from GitHub by auto-authorize (verifyBackfillRecord); this job
+    has no API, so it requires that verification's job output."""
+    m = BACKFILL_NAME_RE.match(os.path.basename(record_path))
+    record = load_json(GIT_ROOT / record_path)
+    if record.get("kind") != "dependabot-merge":
+        fail(f"{record_path}: kind must be 'dependabot-merge'")
+    if record.get("pullRequest") != int(m.group(1)):
+        fail(f"{record_path}: pullRequest does not match the file name")
+    if not isinstance(record.get("mergeCommit"), str) or not SHA_RE.match(record["mergeCommit"]):
+        fail(f"{record_path}: mergeCommit must be a full commit SHA")
+    if not isinstance(record.get("approvalReviewId"), int):
+        fail(f"{record_path}: approvalReviewId must be an integer")
+    if record.get("approvedBy") not in load_allowlist():
+        fail(f"{record_path}: approvedBy {record.get('approvedBy')!r} is not in the allowlist")
+    if os.environ.get("MK2_BACKFILL_VERIFIED", "").strip() != "true":
+        fail(
+            f"{record_path}: auto-authorize did not verify this Dependabot record against GitHub "
+            f"(MK2_BACKFILL_VERIFIED is not 'true') -- refusing to trust it"
+        )
+
+def recorded_dependabot_prs() -> set[int]:
+    rec_dir = GIT_ROOT / AUTH_RECORD_DIR
+    found: set[int] = set()
+    if rec_dir.exists():
+        for p in rec_dir.iterdir():
+            m = BACKFILL_NAME_RE.match(p.name)
+            if m:
+                found.add(int(m.group(1)))
+    return found
+
+def unrecorded_dependabot_merges(ref: str) -> list[tuple[int, str, str]]:
+    """Dependabot squash merges on `ref`'s first-parent line since the rule
+    started, with no records/*-dependabot-pr-<N>.json in the working tree."""
+    out = run([
+        "git", "-C", str(GIT_ROOT), "log", "--first-parent",
+        f"--author={re.escape(DEPENDABOT_AUTHOR)}",
+        f"--since={DEPENDABOT_RECORD_SINCE}T00:00:00Z",
+        "--format=%H%x09%s", ref,
+    ])
+    recorded = recorded_dependabot_prs()
+    missing = []
+    for line in out.splitlines():
+        if not line.strip():
+            continue
+        sha, _, subject = line.partition("\t")
+        m = PR_SUFFIX_RE.search(subject)
+        if not m:
+            fail(f"Dependabot commit {sha[:7]} on {ref} has no (#PR) suffix -- cannot tell which PR it records")
+        n = int(m.group(1))
+        if n not in recorded:
+            missing.append((n, sha, subject))
+    return missing
+
+def assert_dependabot_merges_recorded(ref: str) -> None:
+    missing = unrecorded_dependabot_merges(ref)
+    if missing:
+        listed = "; ".join(f"#{n} ({sha[:7]} {subj})" for n, sha, subj in missing)
+        fail(
+            f"Dependabot merge(s) on main have no AVRS record yet: {listed}. "
+            f"Open this PR with tools/open-pr.sh -- it files the record(s) from GitHub."
+        )
+
+def dependabot_gate(files: list[str]) -> None:
+    """A Dependabot PR: authorized only by the approval the dependabot-approval
+    job verified live this run (its output, not anything on the branch)."""
+    approved_by = os.environ.get("MK2_DEPENDABOT_APPROVED_BY", "").strip()
+    if not approved_by:
+        reason = os.environ.get("MK2_DEPENDABOT_REASON", "").strip() or "no allowlisted approval"
+        fail(f"Dependabot PR not authorized: {reason}")
+    if approved_by not in load_allowlist():
+        fail(f"Dependabot approval by {approved_by!r}, who is not in the allowlist")
+    extra = [f for f in files if f not in MANIFEST_FILES]
+    if extra:
+        fail(f"Dependabot PR may change only package.json/package-lock.json; also changes: {extra}")
+    print(f"Mk2 Alteration Gate: PASS (Dependabot update approved by {approved_by}; "
+          f"AVRS record is filed after merge, see job summary)")
+
 def assert_updates_inbox_clean() -> None:
     inbox = REPO_ROOT / "updates" / "incoming"
     if not inbox.exists():
@@ -204,24 +307,39 @@ def main():
         files, source = get_working_files()
         append_only_base = None
 
+    if os.environ.get("MK2_IS_DEPENDABOT_PR", "").strip() == "true":
+        dependabot_gate(files)
+        return
+
     if not files:
         print("Mk2 Alteration Gate: PASS (no-op diff, zero changes)")
         return
 
     assert_append_only_trace_files(files, append_only_base)
+    assert_dependabot_merges_recorded(base_ref or "HEAD")
 
     auth_records = get_changed_auth_records(files)
-    if len(auth_records) < 1:
+    if not [r for r in auth_records if not is_backfill_record(r)]:
         raise SystemExit(
             f"Fail-closed: must change/add at least ONE authorization record under "
-            f"{AUTH_RECORD_DIR}/ (from {source}). "
+            f"{AUTH_RECORD_DIR}/ (from {source}). Dependabot after-merge records "
+            f"don't count as this PR's own authorization. "
             f"Found: {auth_records}"
         )
 
     for record in auth_records:
         validate_auth_record(record)
+        if is_backfill_record(record):
+            validate_backfill_record(record)
 
     print("Mk2 Alteration Gate: PASS")
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if sys.argv[1:2] == ["--list-unrecorded-dependabot"]:
+        # Used by tools/backfill-dependabot-records.js: one PR number per line.
+        ref = sys.argv[2] if len(sys.argv) > 2 else "origin/main"
+        for n, _sha, _subj in unrecorded_dependabot_merges(ref):
+            print(n)
+    else:
+        main()

@@ -53,17 +53,40 @@ if sys.argv[2] not in logins:
 PY
 
 git fetch -q origin main
-EXISTING="$(git diff --name-only origin/main...HEAD | grep -E "^${RECORD_DIR}/.*\.json$" || true)"
+
+# File the AVRS record for any Dependabot merge on main that lacks one. The
+# gate blocks this PR until they exist, and they must land in the SAME commit
+# as this PR's own record: auto-authorize vouches for exactly one commit.
+BACKFILL_OUT="$(node tools/backfill-dependabot-records.js --ref origin/main)"
+echo "$BACKFILL_OUT"
+BACKFILLED="$(printf '%s\n' "$BACKFILL_OUT" | sed -n 's/^wrote .*-dependabot-pr-\([0-9]*\)\.json$/\1/p' | paste -sd, -)"
+
+EXISTING="$(git diff --name-only origin/main...HEAD | grep -E "^${RECORD_DIR}/.*\.json$" | grep -vE -- '-dependabot-pr-[0-9]+\.json$' || true)"
 if [ -n "$EXISTING" ]; then
   echo "authorization record already on this branch: $EXISTING"
+  if [ -n "$BACKFILLED" ]; then
+    # Touch this PR's own record in the same commit as the new Dependabot
+    # records, so one commit introduces them all.
+    python3 - "$EXISTING" "$BACKFILLED" <<'PY'
+import json, sys
+path, prs = sys.argv[1], [int(x) for x in sys.argv[2].split(",")]
+rec = json.load(open(path, encoding="utf-8"))
+rec["backfilledDependabotPRs"] = sorted(set(rec.get("backfilledDependabotPRs", []) + prs))
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(rec, f, indent=2)
+    f.write("\n")
+PY
+    git add "$RECORD_DIR"
+    git commit -q -m "chore: file AVRS records for Dependabot PR(s) ${BACKFILLED}"
+  fi
 else
   # UTC date: ci_gate.py rejects a future authorizedAt, and the runner is UTC.
   TODAY="$(date -u +%F)"
   SLUG="$(printf '%s' "$BRANCH" | tr -c 'A-Za-z0-9._-' '-' | tr -s '-' | sed 's/^-//; s/-$//')"
   RECORD_FILE="${RECORD_DIR}/${TODAY}-branch-${SLUG}.json"
-  python3 - "$RECORD_FILE" "$LOGIN" "$TODAY" "$BRANCH" "$TITLE" <<'PY'
+  python3 - "$RECORD_FILE" "$LOGIN" "$TODAY" "$BRANCH" "$TITLE" "$BACKFILLED" <<'PY'
 import json, os, sys
-path, login, today, branch, title = sys.argv[1:6]
+path, login, today, branch, title, backfilled = sys.argv[1:7]
 name = os.path.basename(path)[:-5]
 record = {
     "governance_record": name,
@@ -74,14 +97,18 @@ record = {
     "reason": f"{branch}: {title}",
     "branch": branch,
 }
+if backfilled:
+    record["backfilledDependabotPRs"] = [int(x) for x in backfilled.split(",")]
 os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w", encoding="utf-8") as f:
     json.dump(record, f, indent=2)
     f.write("\n")
 print(f"wrote {path}")
 PY
-  git add "$RECORD_FILE"
-  git commit -q -m "chore: add governance authorization for ${BRANCH}"
+  git add "$RECORD_DIR"
+  MSG="chore: add governance authorization for ${BRANCH}"
+  [ -n "$BACKFILLED" ] && MSG="$MSG (+ AVRS records for Dependabot PR(s) ${BACKFILLED})"
+  git commit -q -m "$MSG"
 fi
 
 git push -q -u origin HEAD

@@ -111,7 +111,7 @@ test("trusted record step finds the record by the PR diff, not by PR-number file
   assert.ok(!content.includes('records/*-pr-"${PR_NUMBER}".json'), "old PR-number lookup still present");
   assert.ok(content.includes('git diff --name-only --diff-filter=AM "${BASE_SHA}...HEAD"'), "must look at what the PR adds");
   assert.ok(content.includes("BASE_SHA: ${{ github.event.pull_request.base.sha }}"), "base sha must come through env");
-  assert.ok(content.includes('if [ "$COUNT" -ne 1 ]'), "must vouch for exactly one record or none");
+  assert.ok(content.includes('if [ "$OWN" -ne 1 ]'), "must vouch for exactly one own record or none");
   const step = content.slice(content.indexOf("name: Determine trusted record commit"));
   assert.ok(/if: steps\.check-allowlist\.outputs\.is_allowed == 'true'/.test(step.slice(0, 200)), "vouching must stay behind the live is_allowed check");
 });
@@ -123,4 +123,38 @@ test("open-pr.sh commits the record as the author, without a skip-ci marker", ()
   assert.ok(script.includes("date -u +%F"), "authorizedAt must use the UTC date (gate rejects future dates)");
   assert.ok(!/skip[ -]?ci/i.test(script.split("\n").filter((l) => l.includes("git commit")).join("\n")), "record commit must not carry a skip-ci marker");
   assert.ok(script.includes('"$BRANCH" = "main"'), "must refuse to run on main");
+});
+
+// Dependabot approval path (2026-11-27): nothing may push to a Dependabot
+// branch; an approval re-runs the gate; the record is filed after merge.
+test("Dependabot PRs: no robot pushes to their branch, approval re-runs the gate", () => {
+  const content = readWorkflow();
+  const dir = path.dirname(WORKFLOW_PATH);
+  assert.ok(!fs.existsSync(path.join(dir, "dependabot-gate.yml")), "the intent-file robot must stay removed");
+  assert.ok(/pull_request_review:\s*\n\s*types: \[submitted, dismissed\]/.test(content), "an approval must re-run the gate");
+  const auto = content.slice(content.indexOf("  auto-authorize:"), content.indexOf("    runs-on:", content.indexOf("  auto-authorize:")));
+  assert.ok(auto.includes("github.event.pull_request.user.login != 'dependabot[bot]'"), "record robot must skip Dependabot PRs");
+  const job = content.slice(content.indexOf("  dependabot-approval:"), content.indexOf("  gate:\n"));
+  assert.ok(job.includes("contents: read") && !job.includes("contents: write"), "approval job must be read-only");
+  assert.ok(!/git push|git commit/.test(job), "approval job must never push");
+  assert.ok(job.includes("ref: ${{ github.event.pull_request.base.sha }}"), "approval job must use main's rules, not the PR's");
+  assert.ok(content.includes("MK2_DEPENDABOT_APPROVED_BY: ${{ needs.dependabot-approval.outputs.approved_by }}"));
+  assert.ok(content.includes("MK2_IS_DEPENDABOT_PR: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}"));
+});
+
+test("on a review event the reviewer is not mistaken for the PR author", () => {
+  const content = readWorkflow();
+  assert.ok(
+    content.includes("ACTOR:                  ${{ github.event_name == 'pull_request_review' && github.event.pull_request.user.login || github.actor }}"),
+    "a review by an allowlisted login must not count as self-authorship of someone else's PR"
+  );
+});
+
+test("after-merge Dependabot records are verified against GitHub and vouched with the PR's own record", () => {
+  const content = readWorkflow();
+  assert.ok(content.includes("rules.verifyBackfillRecord"), "backfill records must be re-checked against GitHub");
+  assert.ok(content.includes("backfill_verified: ${{ steps.verify-backfill.outputs.backfill_verified }}"));
+  assert.ok(content.includes("MK2_BACKFILL_VERIFIED: ${{ needs.auto-authorize.outputs.backfill_verified }}"));
+  assert.ok(content.includes("records come from more than one commit -- nothing vouched."), "one commit must introduce all records");
+  assert.ok(content.includes("const triggeredSha = context.payload.pull_request.head.sha;"), "gate re-register must compare with the PR head");
 });
