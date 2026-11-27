@@ -132,13 +132,18 @@ export function loadConfig(repoRoot: string): {
         return cached;
     }
     
-    try {
+    {
         let stat: fs.Stats;
         let raw: string;
         try {
             stat = fs.statSync(filePath);
             raw = fs.readFileSync(filePath, "utf8");
-        } catch {
+        } catch (err) {
+            // Only a MISSING file means "use defaults". A file that exists but
+            // can't be read (permissions, it's a directory, ...) fails closed.
+            if ((err as NodeJS.ErrnoException)?.code !== "ENOENT") {
+                throw new Error(`refusing to load config: ${filePath} exists but could not be read: ${(err as Error)?.message ?? String(err)}`);
+            }
             const defaultConfig = {
                 daemon: DEFAULT_DAEMON,
                 paths: { scanAllowedRoots: [] },
@@ -150,7 +155,19 @@ export function loadConfig(repoRoot: string): {
             return defaultConfig;
         }
 
-        const parsed = JSON.parse(raw) as AuernyxConfig;
+        // Fail closed on a broken file. Silently falling back to defaults here
+        // used to turn daemon auth off (secret ""), reset protectedPaths and
+        // blank approverIdentity on a single typo, with no warning.
+        let parsedUnknown: unknown;
+        try {
+            parsedUnknown = JSON.parse(raw);
+        } catch (err) {
+            throw new Error(`refusing to load config: ${filePath} is not valid JSON (${(err as Error)?.message ?? String(err)}). Fix or remove the file.`);
+        }
+        if (parsedUnknown === null || typeof parsedUnknown !== "object" || Array.isArray(parsedUnknown)) {
+            throw new Error(`refusing to load config: ${filePath} must be a JSON object at the top level. Fix or remove the file.`);
+        }
+        const parsed = parsedUnknown as AuernyxConfig;
 
         const writeEnabled =
             process.env.AUERNYX_WRITE_ENABLED === "1"
@@ -268,14 +285,5 @@ export function loadConfig(repoRoot: string): {
 
         setCachedConfig(filePath, result, stat.mtimeMs);
         return result;
-    } catch {
-        return {
-            daemon: DEFAULT_DAEMON,
-            paths: { scanAllowedRoots: [] },
-            governance: DEFAULT_GOVERNANCE,
-            addons: { skjoldrFirewall: DEFAULT_SKJOLDR },
-            writeEnabled: process.env.AUERNYX_WRITE_ENABLED === "1",
-            receiptsEnabled: process.env.AUERNYX_RECEIPTS_ENABLED === "0" ? false : true
-        };
     }
 }
