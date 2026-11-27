@@ -102,6 +102,13 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
 - `skjoldrFirewallExportBaseline` — export baseline
 - `skjoldrFirewallRestoreBaseline` — restore baseline
 - `skjoldrFirewallAdviseInboundRuleSets` — analyze inbound rules and provide recommendations (read-only)
+
+How the configured Skjoldr command is launched (`buildSkjoldrSpawnSpec` in `core/skjoldrFirewall.ts`, since 2026-11-27):
+- `.py` → `python3` (`python` on Windows). Auto-detect finds `SkjoldrCLI.py`, the Linux CLI, first off Windows.
+- `.ps1` → `powershell.exe` on Windows, `pwsh` elsewhere.
+- `.cmd` / `.bat` → `cmd.exe /d /s /c`, Windows only. Any argument containing a character cmd.exe would interpret (`" & | < > ^ % !` or a newline) is refused.
+- Anything else runs directly.
+- The status check reports `available: false`, with a note, when the file type can't run on this platform or the interpreter it needs isn't on PATH.
 - `analyzeDependency` — dependency risk analysis scaffold (read-only)
 
 ### 12) Search doc index

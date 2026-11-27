@@ -109,5 +109,5 @@ Older versions of this file required exactly one intent file
 `governanceImpact` / `evidence.required` / `receiptRefs` rules. `ci_gate.py`
 no longer checks any of these. The authorization record above replaced the
 intent file on 2026-02-20 (#60, #61); the forged-record check was added
-2026-09-07 (#179). `dependabot-gate.yml` still generates
-intent files for Dependabot PRs, but nothing enforces them.
+2026-09-07 (#179). `dependabot-gate.yml`, which kept generating unenforced
+intent files for Dependabot PRs, was removed 2026-11-27 (#209).
