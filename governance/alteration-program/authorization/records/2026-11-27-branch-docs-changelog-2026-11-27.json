@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-docs-changelog-2026-11-27",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch docs/changelog-2026-11-27: docs: changelog for 2026-11-27 fixes; Skjoldr launch rules; drop stale dependabot-gate line (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-docs/changelog-2026-11-27",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "docs/changelog-2026-11-27: docs: changelog for 2026-11-27 fixes; Skjoldr launch rules; drop stale dependabot-gate line",
+  "branch": "docs/changelog-2026-11-27"
+}

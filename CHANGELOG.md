@@ -1,5 +1,70 @@
 # Changelog
 
+## 2026-11-27 — Review fixes, Dependabot gate, CodeQL
+
+A `/code-review high` pass on `proposeFixes.ts`, `core/skjoldrFirewall.ts`,
+`analyzeDependency.ts`, `core/config.ts` and `ghostVerification.ts` turned up 10
+findings. Each one was proven with a test that failed on `main` before it was
+fixed, one PR per finding. Suite at 476 tests, all passing, after #218.
+
+**Review fixes**
+- #206 — `proposeFixes`: any move to `CONTROLLED`, including from `FAILED_CLOSED`,
+  now requires the typed APPLY confirmation. Before, only `WITHIN_TOLERANCE → CONTROLLED` did.
+- #207 — `analyzeDependency`: a failed security-advisory lookup now fails closed
+  (reject). Before, it read as "no advisories" and could approve.
+- #212 — `analyzeDependency`: an update whose new version still carries any known
+  advisory (left over from a partial fix, or carried over unchanged) is never
+  approved. It goes to `review`: HIGH if any remaining advisory is
+  high/critical/unknown or the bump is already high-risk, otherwise MEDIUM.
+- #217 — `analyzeDependency`: the fetch timeout now covers reading the response
+  body. Before, a registry that sent headers and then stalled hung the capability forever.
+- #211 — `config`: a config file that exists but can't be read, isn't valid JSON,
+  or isn't a JSON object now stops with an error naming the file. Before, it
+  silently fell back to defaults: daemon secret `""` (auth off), default
+  protected paths, blank approver identity. No config file at all still means defaults.
+- #213 — `config`: `AUERNYX_WRITE_ENABLED` / `AUERNYX_RECEIPTS_ENABLED` are applied
+  on every `loadConfig` call. Before, they were frozen in the config cache
+  until the file changed. The test daemon helper now keeps the write flag set
+  until `close()`.
+- #218 — `config`: `governance.riskTolerance` keeps `FAILED_CLOSED`, and unknown
+  values become `FAILED_CLOSED`. Before, both became `WITHIN_TOLERANCE`, the
+  loosest state. A missing value still defaults to `WITHIN_TOLERANCE`.
+- #214 — Ghost: a narrower child path in Mnema's list no longer counts as
+  covering the parent threat path. Mnema's list is enforced by prefix, so a
+  child entry only protects its own subtree.
+- #215 — Kintsugi: the default `protectedPaths` entry and Ghost's threat model
+  now name the real active policy file,
+  `.auernyx/kintsugi/policy/active.policy.json`. Both used to name a path one
+  folder short and agreed with each other, so the drift was never flagged. The
+  hard-coded Kintsugi fallback was still protecting the real file.
+- #216 — Skjoldr: `.ps1`, `.cmd`/`.bat` and `.py` are launched correctly per
+  platform (see `docs/mk2-capabilities.md` §11). The status check only reports
+  `available` when the command can actually start here. Auto-detect knows the
+  real `SkjoldrCLI.py` / `SkjoldrCLI.ps1`. Real Windows is not tested yet
+  (CI is Linux).
+
+**Gate, Dependabot and CI**
+- #208 — `tools/open-pr.sh` commits the authorization record in the author's
+  first push, so every required check runs the first time, with no bot commit
+  and no empty-commit workaround.
+- #209 — Dependabot PRs are authorized by Justin's approval (the
+  `dependabot-approval` job). The AVRS record is filed after merge by the next
+  PR opened with `open-pr.sh`, and the gate verifies it against GitHub. First
+  live run: #211 filed and verified the records for #203 and #204.
+  `dependabot-gate.yml` removed.
+- #210 — CodeQL now runs from `.github/workflows/codeql.yml`, so Dependabot PRs
+  get the required `Analyze` checks. GitHub's default CodeQL setup is turned
+  off and must stay off.
+- #203, #204 — Dependabot: `@types/node` 26.6.6, `@types/vscode` 1.146.0.
+
+**Still open (design questions, not bugs)**
+- `config.governance.riskTolerance` drives no enforcement. The router and
+  capabilities read the Kintsugi active policy, and the config value only shows
+  in `/config` and the UI.
+- In the Kintsugi policy, `FAILED_CLOSED` currently behaves like
+  `WITHIN_TOLERANCE`: the router only checks for `CONTROLLED` on tier-2
+  capabilities.
+
 ## 2026-09-04 to 2026-09-08 — Independent Security & Correctness Audit
 
 A multi-day, multi-round independent audit (fresh-agent cold reads, every finding
