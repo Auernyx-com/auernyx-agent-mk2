@@ -15,7 +15,11 @@ type ProposeFixesInput = {
 };
 
 function isLooseningPolicy(before: any, after: any): boolean {
-    if (before?.riskTolerance === "WITHIN_TOLERANCE" && after?.riskTolerance === "CONTROLLED") return true;
+    // Any move TO CONTROLLED unlocks Tier 2 (router.ts), whatever the starting
+    // value: FAILED_CLOSED, WITHIN_TOLERANCE, or an unvalidated string from
+    // active.policy.json. Previously only WITHIN_TOLERANCE -> CONTROLLED was
+    // caught, so FAILED_CLOSED -> CONTROLLED skipped typed APPLY.
+    if (before?.riskTolerance !== "CONTROLLED" && after?.riskTolerance === "CONTROLLED") return true;
     if (before?.confirmArtifactWrites === true && after?.confirmArtifactWrites === false) return true;
     if (before?.rollbackRequiresIntegrityPass === true && after?.rollbackRequiresIntegrityPass === false) return true;
     if (before?.allowRollback === false && after?.allowRollback === true) return true;

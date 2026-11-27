@@ -111,3 +111,25 @@ test("enabling riskTolerance CONTROLLED is itself classified as a loosening chan
   assert.equal(result.ok, true);
   assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, "CONTROLLED");
 });
+
+// 2026-11-27 code review finding: isLooseningPolicy only flagged
+// WITHIN_TOLERANCE -> CONTROLLED. Starting from FAILED_CLOSED (or any
+// unvalidated value, since getKintsugiPolicy spreads raw JSON), the move to
+// CONTROLLED — which unlocks Tier 2 in router.ts — skipped typed APPLY.
+function seedPolicy(repoRoot: string, patch: Record<string, unknown>) {
+  const dir = path.join(repoRoot, ".auernyx", "kintsugi", "policy");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "active.policy.json"), JSON.stringify({ ...getKintsugiPolicy(repoRoot), ...patch }));
+}
+
+for (const start of ["FAILED_CLOSED", "within_tolerance", "SOMETHING_ELSE"]) {
+  test(`moving riskTolerance from ${start} to CONTROLLED requires typed APPLY`, async () => {
+    const repoRoot = makeRepoRoot();
+    seedPolicy(repoRoot, { riskTolerance: start });
+    await assert.rejects(
+      () => proposeFixes(ctx(repoRoot, validApproval), { apply: true, suggestionId: "enable-riskTolerance-controlled" }),
+      (err: unknown) => err instanceof GovernanceRefusalError
+    );
+    assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, start);
+  });
+}
