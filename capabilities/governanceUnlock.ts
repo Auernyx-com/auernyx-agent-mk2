@@ -1,6 +1,7 @@
 import type { RouterContext } from "../core/router";
 import { verifyLedgerIntegrity } from "../core/integrity";
 import { readGovernanceLock, writeGovernanceLock } from "../core/governanceLock";
+import { runSelfTestChecks } from "../core/selfTestChecks";
 
 export async function governanceUnlock(ctx: RouterContext, _input?: unknown): Promise<unknown> {
     const current = readGovernanceLock(ctx.repoRoot);
@@ -33,7 +34,31 @@ export async function governanceUnlock(ctx: RouterContext, _input?: unknown): Pr
         };
     }
 
-    const unlocked = { locked: false, reason: undefined, lastSelfTest: current.lastSelfTest };
+    // 2026-11-27: the lock used to clear on the audit-ledger check above
+    // alone. Only the self-test trips the lock, and none of its causes
+    // (Kintsugi ledger integrity, the protected-path tripwire, a critical
+    // Ghost deviation) live in the audit ledger, so unlock cleared every one
+    // of them while the cause was still there. Re-run the self-test's own
+    // checks and stay locked if any still fails.
+    const checks = await runSelfTestChecks(ctx);
+    if (!checks.ok) {
+        ctx.ledger?.append(ctx.sessionId, "governance.unlock.refused", {
+            reason: "PRECONDITIONS_NOT_MET",
+            failedChecks: checks.failedChecks,
+            warnings: checks.warnings,
+        });
+        return {
+            ok: false,
+            error: "PRECONDITIONS_NOT_MET",
+            failedChecks: checks.failedChecks,
+            whatWouldBeRequired: "Every self-test check must pass again before the lock clears: fix what failed " +
+                "(see failedChecks and warnings), then retry",
+            warnings: checks.warnings,
+            lockReason: current.reason,
+        };
+    }
+
+    const unlocked = { locked: false, reason: undefined, lastSelfTest: { timestamp: checks.timestamp, ok: true, warnings: checks.warnings } };
     writeGovernanceLock(ctx.repoRoot, unlocked);
     ctx.ledger?.append(ctx.sessionId, "governance.unlock", { unlockedFrom: current.reason ?? "(unset)" });
     return { ok: true, unlockedFrom: current.reason ?? "(unset)" };

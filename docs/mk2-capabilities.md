@@ -85,6 +85,9 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
 - Purpose: Clear governance lock only if integrity checks pass.
 - Writes:
   - `logs/governance.lock.json`
+  - Kintsugi evidence records from the re-run self-test checks (tripwire MRR, Ghost MFR)
+- Notes:
+  - Clears the lock only when (1) the main audit ledger (`logs/ledger.ndjson`) verifies from genesis and (2) the self-test's own checks pass again: Kintsugi ledger integrity, the protected-path tripwire, and no critical Ghost deviation (shared code: `core/selfTestChecks.ts`). If any still fails it stays locked, keeps the original lock reason, and returns `PRECONDITIONS_NOT_MET` with `failedChecks`. A lock never clears while its cause is still there.
 
 ### 10) rollbackKnownGood
 - Purpose: List or restore a Kintsugi Known Good Snapshot (policy rollback).
