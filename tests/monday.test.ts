@@ -236,3 +236,25 @@ test("formatJudgmentForHuman reports the failure code, reason, and that governan
   assert.ok(text.includes("tampered"));
   assert.ok(text.includes("will not clear it"));
 });
+
+// 2026-11-27 (provenance re-seal): the Judgment text used to send the human
+// to governanceSelfTest, which Judgment itself refuses (it isn't read-only),
+// and named no way out. The way out is restoring the sealed files exactly, or
+// an approved provenanceReseal.
+test("formatJudgmentForHuman names provenanceReseal as the way out and no longer sends the human to governanceSelfTest", () => {
+  const text = formatJudgmentForHuman(
+    {
+      active: true,
+      activated_at: "2026-01-01T00:00:00.000Z",
+      failure: { code: "governance_hash_mismatch", reason: "Governance hash mismatch" },
+    },
+    makeRepoRoot()
+  );
+  assert.ok(text.includes("provenanceReseal"));
+  assert.ok(!text.includes("Run governanceSelfTest"), "governanceSelfTest is refused under Judgment; don't send the human there");
+});
+
+test("formatGovernanceLockForHuman lists provenanceReseal among what may run while locked", () => {
+  const text = formatGovernanceLockForHuman({ locked: true, reason: "integrity failure" }, makeRepoRoot());
+  assert.ok(text.includes("provenanceReseal"));
+});

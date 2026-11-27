@@ -7,7 +7,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { sha256Hex, stableStringify } from "./crypto";
-import { isJudgmentActive, judgmentPath, genesisPath, priorSealEvidence } from "./provenance";
+import { isJudgmentActive, judgmentPath, genesisPath, priorSealEvidence, genesisAbsenceApproved } from "./provenance";
 import { readGovernanceLock } from "./governanceLock";
 import { getKintsugiPolicy } from "./kintsugi/memory";
 import type { CapabilityName } from "./policy";
@@ -411,6 +411,8 @@ function checkKintsugiPolicy(repoRoot: string, ts: string): FenerisInfraction | 
 function checkGenesisRecord(repoRoot: string, ts: string): FenerisInfraction | null {
     const p = genesisPath(repoRoot);
     if (fs.existsSync(p)) return null;
+    // An approved provenanceReseal anchor accepted the absence (2026-11-27).
+    if (genesisAbsenceApproved(repoRoot)) return null;
 
     return {
         schema: "aesir.governance.infraction.v1",
@@ -428,7 +430,7 @@ function checkGenesisRecord(repoRoot: string, ts: string): FenerisInfraction | n
             rationale: "The genesis record is missing. Every run verifies provenance against genesis.json — its absence means the next run will trigger Obsidian's Judgment and block all privileged operations. On an initialized system, genesis should always be present. Its absence after initialization is a serious signal."
         },
         notes: priorSealEvidence(repoRoot).length > 0
-            ? "genesis.json was deleted after this install was sealed (genesis_deleted). It is not re-created: Obsidian's Judgment stays active until an authorized re-seal."
+            ? "genesis.json was deleted after this install was sealed (genesis_deleted). It is not re-created: Obsidian's Judgment stays active until genesis.json is restored from a backup or provenanceReseal (typed APPLY, the approver named in the last surviving sealed copy) anchors a new seal."
             : "genesis.json is missing and this install was never sealed. The first write-enabled run creates it; until then Obsidian's Judgment blocks privileged operations."
     };
 }

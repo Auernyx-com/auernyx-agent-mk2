@@ -20,6 +20,7 @@ export type CapabilityName =
     | "proposeFixes"
     | "governanceSelfTest"
     | "governanceUnlock"
+    | "provenanceReseal"
     | "rollbackKnownGood"
     | "skjoldrFirewallStatus"
     | "skjoldrFirewallApplyProfile"
@@ -64,6 +65,9 @@ const CAPABILITY_META: Record<CapabilityName, CapabilityMeta> = {
 
     rollbackKnownGood: { name: "rollbackKnownGood", readOnly: false, tier: 2 },
     governanceUnlock: { name: "governanceUnlock", readOnly: false, tier: 2 },
+    // Accepts a changed governance config (or repairs a damaged seal) under
+    // Obsidian's Judgment, with typed APPLY + the sealed approver (2026-11-27).
+    provenanceReseal: { name: "provenanceReseal", readOnly: false, tier: 2 },
     docker: { name: "docker", readOnly: false, tier: 2 },
 
     skjoldrFirewallStatus: { name: "skjoldrFirewallStatus", readOnly: true, tier: 0 },

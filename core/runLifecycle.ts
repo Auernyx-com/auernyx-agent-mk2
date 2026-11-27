@@ -6,7 +6,7 @@ import { createReceiptWriter } from "./receipts";
 import { loadConfig } from "./config";
 import { evidenceFromExternalRef, evidenceFromFileHash, evidenceFromPastedText, type Evidence } from "./evidence";
 import { ApprovalRequiredError } from "./approvals";
-import { activateJudgment, appendProvenanceAudit, clearJudgment, ensureGenesisRecord, verifyProvenance } from "./provenance";
+import { activateJudgment, appendProvenanceAudit, clearJudgment, ensureGenesisRecord, recordSealedCopyIfMissing, verifyProvenance } from "./provenance";
 import { sha256Hex, stableStringify } from "./crypto";
 import { computeReceiptHash, RECEIPT_HASH_VERSION } from "./receiptHash";
 import { gitStatusPorcelain, isDirtyPorcelain } from "./git";
@@ -125,7 +125,8 @@ export async function runLifecycle(args: {
 
     // Provenance verification happens before any human-facing response.
     // If provenance fails, enter Obsidian's Judgment and restrict privileged execution.
-    ensureGenesisRecord(args.ctx.repoRoot, { writeEnabled: loadConfig(args.ctx.repoRoot).writeEnabled });
+    const provenanceWriteEnabled = loadConfig(args.ctx.repoRoot).writeEnabled;
+    ensureGenesisRecord(args.ctx.repoRoot, { writeEnabled: provenanceWriteEnabled });
     const prov = verifyProvenance(args.ctx.repoRoot);
     if (!prov.ok) {
         appendProvenanceAudit(args.ctx.repoRoot, { kind: "provenance.fail", data: prov });
@@ -148,6 +149,10 @@ export async function runLifecycle(args: {
         // Provenance ok => clear any prior judgment marker.
         clearJudgment(args.ctx.repoRoot);
         receipt?.appendEvent("provenance.ok");
+        // A seal from before sealed copies gets its copy now (config proven by hash).
+        if (recordSealedCopyIfMissing(args.ctx.repoRoot, { writeEnabled: provenanceWriteEnabled }).written) {
+            receipt?.appendEvent("provenance.sealed_copy_restored");
+        }
     }
 
     const gitPre = vscodePolicy.git_rules.capture_status_porcelain_pre ? captureGit("pre") : { ok: false, error: "git_capture_disabled" };
@@ -250,6 +255,9 @@ export async function runLifecycle(args: {
             case "governanceUnlock":
                 // Also lifts Kintsugi FAILED_CLOSED (policy snapshot + active policy).
                 return ["logs/governance.lock.json", ".auernyx/kintsugi/policy/history/*.policy.json", ".auernyx/kintsugi/policy/active.policy.json"];
+            case "provenanceReseal":
+                // Apply only; the preview writes nothing.
+                return [".auernyx/provenance/seals/*.json", ".auernyx/provenance/sealed/*.json", ".auernyx/kintsugi/ledger/records/*"];
             case "rollbackKnownGood":
                 return [".auernyx/kintsugi/policy/history/*.policy.json", ".auernyx/kintsugi/policy/active.policy.json"];
             default:

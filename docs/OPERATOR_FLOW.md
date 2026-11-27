@@ -96,9 +96,17 @@ Quick recovery options:
   - Expect Judgment to activate
   - Verify UI + refusal behavior
 
-- **Genesis deleted on an install that was already sealed** (`genesis_deleted`, since 2026-11-27): genesis is **not** re-created, even with writes enabled, so Judgment stays active (fail closed). "Already sealed" means any of: a `genesis.created` entry in `.auernyx/provenance/audit.ndjson`, Kintsugi ledger records, or entries in `logs/ledger.ndjson`. The refusal is logged as `genesis.recreate_refused` with that evidence.
-  - There is no authorized re-seal command yet (planned: a human-approved, receipted re-seal).
-  - Until then: restore the original `genesis.json` from a backup, or, on a dev/test install only, wipe `.auernyx/` and `logs/` entirely (a full reset; all local audit history is lost).
+- **Config changed on a sealed install** (`governance_hash_mismatch`; `project_id_mismatch` after renaming the package): any edit to `config/auernyx.config.json` or `config/allowlist.json` after sealing trips Judgment. That includes a `git pull` that changes them.
+  - Not intended: put the files back exactly as sealed. Judgment clears on the next run.
+  - Intended: run `provenanceReseal` (intent text `reseal provenance`, since 2026-11-27):
+    1. Preview with input `{}`: it shows why Judgment tripped, what changed in each file (compared with the sealed copy; secrets only as `[redacted]`) and `confirm.governanceHash`. Nothing is written.
+    2. Apply with `{ "apply": true, "governanceHash": "<from the preview>" }`, typed APPLY, approved by the approver named in the seal (not the one in the edited config). The audit ledger and every self-test check must pass. If the config changes after the preview it refuses (`PREVIEW_STALE`). If the change isn't committed yet, the lifecycle also needs `allowDirty`.
+  - It writes `.auernyx/provenance/seals/NNNNNN.json` (chained to the seal before it; `genesis.json` is never rewritten), a sealed copy in `.auernyx/provenance/sealed/`, a Kintsugi record and the receipt. It runs under Judgment, the governance lock and Kintsugi FAILED_CLOSED, but never clears the lock or FAILED_CLOSED (that's `governanceUnlock`).
+  - A seal made before 2026-11-27 has no sealed copy, so it can't name its approver (`SEALED_APPROVER_UNKNOWN`): put the config back as sealed, run once with writes enabled (the copy is written then), then make the change again and re-seal.
+
+- **Genesis deleted on an install that was already sealed** (`genesis_deleted`, since 2026-11-27): genesis is **not** re-created, even with writes enabled, so Judgment stays active (fail closed). "Already sealed" means any of: a `genesis.created` entry in `.auernyx/provenance/audit.ndjson`, Kintsugi ledger records, entries in `logs/ledger.ndjson`, seal records, or sealed copies. The refusal is logged as `genesis.recreate_refused` with that evidence.
+  - Way out: `provenanceReseal`, same two steps. Damage to the seal itself is re-sealable with approval: genesis deleted, edited (`genesis_hash_mismatch`) or unreadable (`genesis_parse_error`), or a broken seal chain (`seal_chain_broken`: an edited, missing or out-of-order seal record). The approver is checked against the last surviving sealed copy, and the new seal is an anchor: verification restarts there, pinning `genesis.json` as it is now (or as absent).
+  - If no sealed copy survived, it refuses (`NO_SEALED_COPY`): restore the original `genesis.json` from a backup, or, on a dev/test install only, wipe `.auernyx/` and `logs/` entirely (a full reset; all local audit history is lost).
   - A never-sealed install (only read-only runs so far) still seals normally on its first write-enabled run.
 
 ## 6) Debug (F5) profiles

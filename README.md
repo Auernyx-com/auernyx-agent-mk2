@@ -29,12 +29,12 @@ auernyx-agent/
 │   ├── policy.ts            # allowlist, approvals, safeguards
 │   ├── state.ts             # session + working memory
 │   └── ledger.ts            # append-only logs + hashes
-├── capabilities/          # 28 governed capabilities as of 2026-08-29 — see docs/mk2-capabilities.md
+├── capabilities/          # 30 governed capabilities as of 2026-11-27 — see docs/mk2-capabilities.md
 │   ├── scanRepo.ts, searchDocPreview.ts, searchDocApply.ts
 │   ├── fenerisPrep.ts, fenerisSecurityStatus.ts
 │   ├── baselinePre.ts, baselinePost.ts, docker.ts
 │   ├── memoryCheck.ts, proposeFixes.ts, governanceSelfTest.ts,
-│   │   governanceUnlock.ts, rollbackKnownGood.ts, analyzeDependency.ts
+│   │   governanceUnlock.ts, provenanceReseal.ts, rollbackKnownGood.ts, analyzeDependency.ts
 │   ├── skjoldrFirewall*.ts (6 files)
 │   ├── monday*.ts (4 files — HIL review layer)
 │   └── wyerdTraderTradingCycle.ts, kennrDesign*.ts (3 files), skadiLeadScan.ts

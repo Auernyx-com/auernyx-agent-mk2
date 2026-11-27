@@ -20,6 +20,7 @@ import { memoryCheck } from "../capabilities/memoryCheck";
 import { proposeFixes } from "../capabilities/proposeFixes";
 import { governanceSelfTest } from "../capabilities/governanceSelfTest";
 import { governanceUnlock } from "../capabilities/governanceUnlock";
+import { provenanceReseal } from "../capabilities/provenanceReseal";
 import { rollbackKnownGood } from "../capabilities/rollbackKnownGood";
 import { skjoldrFirewallStatus } from "../capabilities/skjoldrFirewallStatus";
 import { skjoldrFirewallApplyProfile } from "../capabilities/skjoldrFirewallApplyProfile";
@@ -43,7 +44,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { getKintsugiPolicy, policyHash, verifyKintsugiIntegrity } from "./kintsugi/memory";
 import { runLifecycle } from "./runLifecycle";
-import { ensureGenesisRecord, verifyProvenance, activateJudgment, clearJudgment, appendProvenanceAudit, readJudgment } from "./provenance";
+import { ensureGenesisRecord, verifyProvenance, activateJudgment, clearJudgment, appendProvenanceAudit, readJudgment, recordSealedCopyIfMissing } from "./provenance";
 import { readGovernanceLock } from "./governanceLock";
 import { readOpenInfractions } from "./feneris";
 import { getModuleHealthStatus } from "./moduleRegistry";
@@ -130,6 +131,8 @@ export function createCore(repoRoot: string): AuernyxCore {
     } else {
         clearJudgment(repoRoot);
         appendProvenanceAudit(repoRoot, { kind: "startup.provenance.ok" });
+        // A seal from before sealed copies gets its copy now (config proven by hash).
+        recordSealedCopyIfMissing(repoRoot, { writeEnabled: cfg.writeEnabled });
     }
 
     const router = createRouter(policy, {
@@ -145,6 +148,7 @@ export function createCore(repoRoot: string): AuernyxCore {
         proposeFixes,
         governanceSelfTest,
         governanceUnlock,
+        provenanceReseal,
         rollbackKnownGood,
 
         skjoldrFirewallStatus,

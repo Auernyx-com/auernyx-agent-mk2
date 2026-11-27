@@ -230,3 +230,31 @@ test("end to end: after an unauthorized genesis deletion, Judgment activates and
     /obsidian_judgment_active/
   );
 });
+
+// 2026-11-27 (provenance re-seal): a genesis file that exists but can't be
+// parsed was reported as missing (or deleted), the same as no file at all.
+// It is damage to the seal, so it gets its own code, and a later
+// write-enabled run never writes over it.
+test("a genesis file that exists but can't be parsed is genesis_parse_error, not missing or deleted", () => {
+  const repoRoot = makeRepoRoot();
+  assert.equal(ensureGenesisRecord(repoRoot, { writeEnabled: true }).created, true);
+  fs.writeFileSync(genesisPath(repoRoot), "{ not json");
+
+  const result = verifyProvenance(repoRoot);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.code, "genesis_parse_error");
+
+  assert.equal(ensureGenesisRecord(repoRoot, { writeEnabled: true }).created, false);
+  assert.equal(fs.readFileSync(genesisPath(repoRoot), "utf8"), "{ not json");
+});
+
+test("an unparseable genesis with no other evidence is still genesis_parse_error", () => {
+  const repoRoot = makeRepoRoot();
+  fs.mkdirSync(path.dirname(genesisPath(repoRoot)), { recursive: true });
+  fs.writeFileSync(genesisPath(repoRoot), "garbage");
+
+  const result = verifyProvenance(repoRoot);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.code, "genesis_parse_error");
+  assert.equal(ensureGenesisRecord(repoRoot, { writeEnabled: true }).created, false);
+});

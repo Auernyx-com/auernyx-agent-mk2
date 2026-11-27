@@ -10,6 +10,7 @@
     "proposeFixes",
     "governanceSelfTest",
     "governanceUnlock",
+    "provenanceReseal",
     "rollbackKnownGood",
     "skjoldrFirewallStatus",
     "skjoldrFirewallApplyProfile",
