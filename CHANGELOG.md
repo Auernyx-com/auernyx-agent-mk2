@@ -70,6 +70,46 @@ fixed, one PR per finding. Suite at 476 tests, all passing, after #218.
   get the required `Analyze` checks. GitHub's default CodeQL setup is turned
   off and must stay off.
 - #203, #204 — Dependabot: `@types/node` 26.6.6, `@types/vscode` 1.146.0.
+- #226 — new required check `changelog` (`changelog-required.yml`): any PR to
+  `main` that doesn't change `CHANGELOG.md` fails. Exceptions: the
+  `no-changelog` label and Dependabot PRs. If it can't tell, it fails. Before
+  this, 11 of the 12 PRs merged from #213 to #224 skipped the CHANGELOG.
+
+**Kintsugi fail-closed and governance lock**
+Each fix was proven with tests that failed on `main` first.
+- #220 — `proposeFixes`: a fail-closed policy (`FAILED_CLOSED`, or any
+  `riskTolerance` that isn't one of the three real states) refuses every
+  loosening change with `RISK_EXCEEDS_THRESHOLD` (CRITICAL), even with typed
+  APPLY, and writes nothing. Before, typed APPLY alone could move
+  `FAILED_CLOSED` straight to `CONTROLLED`, which unlocks Tier 2. The preview
+  lists loosening suggestions under `withheld`. Tightening still works.
+- #221 — `governanceUnlock` re-runs the self-test checks (Kintsugi ledger
+  integrity, protected-path tripwire, critical Ghost deviation), now shared in
+  `core/selfTestChecks.ts`. Before, it only checked the main audit ledger, so
+  it cleared locks while the cause was still there. Also: the lock reason now
+  names the check that actually failed. Before, a working guard plus a
+  critical Ghost deviation was reported as a protected-path failure.
+- #222 — the self-test trips the lock but never clears it (circuit breaker,
+  Justin's decision). A passing self-test on a locked system records the pass,
+  keeps the lock and returns `unlockRequired: true`. `governanceUnlock` is the
+  only way out.
+- #223 — `FAILED_CLOSED` now behaves like the governance lock: only
+  `memoryCheck`, `governanceSelfTest` and `governanceUnlock` run, read-only
+  capabilities included. Before, it ran every Tier 0 and Tier 1 capability,
+  just like `WITHIN_TOLERANCE`. One shared definition,
+  `isRiskToleranceFailClosed`, treats an unknown value as `FAILED_CLOSED`.
+  `governanceUnlock` is the way out: typed APPLY first (`HIL_REQUIRED`
+  without it), then the audit-ledger and self-test checks, then a recorded
+  policy change to `WITHIN_TOLERANCE` only, never `CONTROLLED`. Monday's
+  BLOCKED text names the real value and points at `governanceUnlock`.
+- #224 — Obsidian's Judgment: deleting `genesis.json` on a sealed install now
+  fails closed (`genesis_deleted`) and is never silently re-created
+  (`genesis.recreate_refused` is logged with the evidence). Before, the next
+  write-enabled run re-sealed whatever the config said and cleared Judgment.
+  Signs the install was already sealed: a `genesis.created` audit entry,
+  Kintsugi ledger records, or `logs/ledger.ndjson` entries. A never-sealed
+  install still seals normally. Limit: if genesis **and** all of that
+  evidence are deleted, it reads as a fresh install.
 
 **Provenance re-seal**
 - #225 — new `provenanceReseal` capability: the recorded way to accept an
@@ -113,9 +153,9 @@ fixed, one PR per finding. Suite at 476 tests, all passing, after #218.
 - `config.governance.riskTolerance` drives no enforcement. The router and
   capabilities read the Kintsugi active policy, and the config value only shows
   in `/config` and the UI.
-- In the Kintsugi policy, `FAILED_CLOSED` currently behaves like
+- ~~In the Kintsugi policy, `FAILED_CLOSED` currently behaves like
   `WITHIN_TOLERANCE`: the router only checks for `CONTROLLED` on tier-2
-  capabilities.
+  capabilities.~~ Resolved by #223.
 
 ## 2026-09-04 to 2026-09-08 — Independent Security & Correctness Audit
 
