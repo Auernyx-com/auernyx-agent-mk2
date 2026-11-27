@@ -272,3 +272,57 @@ test("analysisHash is deterministic for identical input and data", async () => {
 
   assert.equal(first.analysisHash, second.analysisHash);
 });
+
+test("advisory lookup failure never approves (both fail)", async () => {
+  const restore = mockFetchSequence([
+    {
+      ok: true,
+      status: 200,
+      body: {
+        time: { "1.0.1": "2023-01-01T00:00:00.000Z" },
+        versions: { "1.0.1": { description: "small fix" } }
+      }
+    },
+    { ok: false, status: 500, body: {} },
+    { ok: false, status: 500, body: {} }
+  ]);
+
+  const result = await analyzeDependency(mockContext, {
+    packageName: "pkgadvfail",
+    oldVersion: "1.0.0",
+    newVersion: "1.0.1"
+  });
+  restore();
+
+  assert.notEqual(result.recommendation, "approve");
+  assert.ok(result.evidence.some((e) => /advisor/i.test(e)), "evidence must say the advisory check failed");
+});
+
+test("advisory lookup failure for only the new version never approves", async () => {
+  const restore = mockFetchSequence([
+    {
+      ok: true,
+      status: 200,
+      body: {
+        time: { "1.0.1": "2023-01-01T00:00:00.000Z" },
+        versions: { "1.0.1": { description: "small fix" } }
+      }
+    },
+    {
+      ok: true,
+      status: 200,
+      body: { pkgadvhalf: [{ ghsa_id: "GHSA-old1", severity: "high", title: "old bug" }] }
+    },
+    { ok: false, status: 503, body: {} }
+  ]);
+
+  const result = await analyzeDependency(mockContext, {
+    packageName: "pkgadvhalf",
+    oldVersion: "1.0.0",
+    newVersion: "1.0.1"
+  });
+  restore();
+
+  // Before the fix this read as "fixes" + approve: the failed lookup looked like zero advisories.
+  assert.notEqual(result.recommendation, "approve");
+});
