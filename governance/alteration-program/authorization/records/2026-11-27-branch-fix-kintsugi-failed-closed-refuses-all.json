@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-kintsugi-failed-closed-refuses-all",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/kintsugi-failed-closed-refuses-all: fix(kintsugi): FAILED_CLOSED refuses everything but recovery; governanceUnlock is the way out (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/kintsugi-failed-closed-refuses-all",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/kintsugi-failed-closed-refuses-all: fix(kintsugi): FAILED_CLOSED refuses everything but recovery; governanceUnlock is the way out",
+  "branch": "fix/kintsugi-failed-closed-refuses-all"
+}
