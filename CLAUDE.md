@@ -44,6 +44,7 @@ Mk2 provides two **independent** agents that share a governance core but do not 
 - **Policy** (`core/policy.ts`) defines all `CapabilityName` values with `readOnly` and `tier` (0=safe, 1=controlled, 2=high-risk). All capabilities require an approval by policy — no tier bypasses the approval gate.
 - **Allowlist** (`config/allowlist.json`) controls which capabilities are enabled at runtime; `createPolicy(repoRoot)` loads it.
 - **Governance lock** (`core/governanceLock.ts`) — `logs/governance.lock.json`; while locked, only `memoryCheck`, `governanceSelfTest`, and `governanceUnlock` run.
+- **Kintsugi FAILED_CLOSED** (`riskTolerance` in `.auernyx/kintsugi/policy/active.policy.json`; an unknown value counts as FAILED_CLOSED) — behaves like the governance lock: only those same three capabilities run. `governanceUnlock` with typed APPLY is the only way out, and it drops to `WITHIN_TOLERANCE` only. `proposeFixes` never loosens a fail-closed policy.
 - **Guarded filesystem** (`core/guardedFs.ts`) — all capability writes must go through `guardedWriteFile` / `guardedMkdir`, which block writes to protected paths (`core/kintsugi/protectedPaths.ts`).
 - **Protected paths** include anything under `.auernyx/kintsugi/` (ledger records, policy history, active policy). These are write-once audit paths.
 - **Step-scoped approvals** — each `PlanStep` requires a `StepApproval` with matching `stepId`. A single approval does not cover multiple steps.

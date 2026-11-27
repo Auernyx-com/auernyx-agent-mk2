@@ -84,12 +84,14 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
   - Circuit breaker: the self-test trips the lock when a check fails, but never clears it. A passing self-test on a locked system records the pass, keeps the lock and its reason, and returns `unlockRequired: true`. Only `governanceUnlock` clears the lock.
 
 ### 9) governanceUnlock
-- Purpose: Clear governance lock only if integrity checks pass.
+- Purpose: Clear governance lock only if integrity checks pass. Also the one way out of Kintsugi `FAILED_CLOSED`.
 - Writes:
   - `logs/governance.lock.json`
   - Kintsugi evidence records from the re-run self-test checks (tripwire MRR, Ghost MFR)
+  - When leaving `FAILED_CLOSED`: `.auernyx/kintsugi/policy/history/*.policy.json` + `.auernyx/kintsugi/policy/active.policy.json` (human-approved policy change, POLICY_CHANGE record)
 - Notes:
   - Clears the lock only when (1) the main audit ledger (`logs/ledger.ndjson`) verifies from genesis and (2) the self-test's own checks pass again: Kintsugi ledger integrity, the protected-path tripwire, and no critical Ghost deviation (shared code: `core/selfTestChecks.ts`). If any still fails it stays locked, keeps the original lock reason, and returns `PRECONDITIONS_NOT_MET` with `failedChecks`. A lock never clears while its cause is still there.
+  - Kintsugi `FAILED_CLOSED` (or any unknown `riskTolerance`, which counts as `FAILED_CLOSED`): needs typed APPLY (`approval.confirm=APPLY`) on top of the router's approval + approver identity, checked before anything else (`HIL_REQUIRED` otherwise, nothing written, a lock held at the same time stays held), then the same audit-ledger and self-test checks. Drops only to `WITHIN_TOLERANCE`, never `CONTROLLED`. If the lock is held too, one call clears both.
 
 ### 10) rollbackKnownGood
 - Purpose: List or restore a Kintsugi Known Good Snapshot (policy rollback).

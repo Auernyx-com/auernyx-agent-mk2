@@ -5,7 +5,8 @@ import * as os from "os";
 import * as path from "path";
 import { governanceSelfTest } from "../capabilities/governanceSelfTest";
 import { governanceUnlock } from "../capabilities/governanceUnlock";
-import { readGovernanceLock } from "../core/governanceLock";
+import { readGovernanceLock, writeGovernanceLock } from "../core/governanceLock";
+import { getKintsugiPolicy } from "../core/kintsugi/memory";
 
 // 2026-11-27 Kintsugi fail-closed plan, step 2. governanceUnlock cleared the
 // lock on one check only: the main audit ledger's hash chain
@@ -24,10 +25,11 @@ function makeRepoRoot(): string {
 
 type LedgerEvent = { event: string; data: any };
 
-function makeCtx(repoRoot: string, events: LedgerEvent[] = []) {
+function makeCtx(repoRoot: string, events: LedgerEvent[] = [], approval?: unknown) {
   return {
     repoRoot,
     sessionId: "test-session",
+    approval,
     ledger: { append: (_sessionId: string, event: string, data: unknown) => events.push({ event, data }) },
   } as any;
 }
@@ -134,4 +136,112 @@ test("a critical Ghost deviation with a working guard locks with the Ghost reaso
   assert.equal(result.lock.locked, true);
   assert.match(result.lock.reason, /Ghost verification/);
   assert.doesNotMatch(result.lock.reason, /was not blocked/);
+});
+
+// 2026-11-27 Kintsugi fail-closed plan, step 3: governanceUnlock is also the
+// one way out of Kintsugi FAILED_CLOSED (Justin's decision). Leaving it
+// loosens the policy, so it needs typed APPLY on top of the router's approval
+// and identity, plus the same audit-ledger and self-test checks as clearing
+// the lock. It drops only to WITHIN_TOLERANCE, never to CONTROLLED.
+const confirmed = { approvedBy: "human", at: new Date().toISOString(), reason: "test", confirm: "APPLY" };
+
+function seedRiskTolerance(repoRoot: string, riskTolerance: unknown) {
+  const dir = path.join(repoRoot, ".auernyx", "kintsugi", "policy");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "active.policy.json"), JSON.stringify({ ...getKintsugiPolicy(repoRoot), riskTolerance }));
+}
+
+function policyHistoryFiles(repoRoot: string): string[] {
+  const dir = path.join(repoRoot, ".auernyx", "kintsugi", "policy", "history");
+  return fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+}
+
+function kintsugiRecords(repoRoot: string): any[] {
+  const dir = path.join(repoRoot, ".auernyx", "kintsugi", "ledger", "records");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
+}
+
+test("FAILED_CLOSED: unlock without typed APPLY refuses (HIL_REQUIRED) and writes nothing", async () => {
+  const repoRoot = makeRepoRoot();
+  seedRiskTolerance(repoRoot, "FAILED_CLOSED");
+
+  const result = (await governanceUnlock(makeCtx(repoRoot, [], { approvedBy: "human", at: "now", reason: "test" }))) as any;
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "HIL_REQUIRED");
+  assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, "FAILED_CLOSED");
+  assert.deepEqual(policyHistoryFiles(repoRoot), []);
+  assert.deepEqual(kintsugiRecords(repoRoot), [], "refused before any check ran: no evidence records either");
+});
+
+test("FAILED_CLOSED: unlock with typed APPLY and every check passing drops to WITHIN_TOLERANCE, never CONTROLLED, and records the change", async () => {
+  const repoRoot = makeRepoRoot();
+  seedRiskTolerance(repoRoot, "FAILED_CLOSED");
+  const events: LedgerEvent[] = [];
+
+  const result = (await governanceUnlock(makeCtx(repoRoot, events, confirmed))) as any;
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.riskTolerance, { from: "FAILED_CLOSED", to: "WITHIN_TOLERANCE" });
+  assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, "WITHIN_TOLERANCE");
+  assert.equal(policyHistoryFiles(repoRoot).length, 1, "a policy snapshot is written for the change");
+  assert.ok(kintsugiRecords(repoRoot).some((r) => r.normalized_error_code === "POLICY_CHANGE"));
+  assert.ok(events.some((e) => e.event === "governance.unlock.failed_closed_exit"));
+});
+
+test("FAILED_CLOSED: with typed APPLY but a still-failing check, it stays FAILED_CLOSED", async () => {
+  const repoRoot = makeRepoRoot();
+  seedRiskTolerance(repoRoot, "FAILED_CLOSED");
+  dropCriticalProtectedPath(repoRoot);
+
+  const result = (await governanceUnlock(makeCtx(repoRoot, [], confirmed))) as any;
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "PRECONDITIONS_NOT_MET");
+  assert.deepEqual(result.failedChecks, ["ghost_critical"]);
+  assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, "FAILED_CLOSED");
+});
+
+test("an unknown riskTolerance value is treated as FAILED_CLOSED: unlock with typed APPLY sets WITHIN_TOLERANCE", async () => {
+  const repoRoot = makeRepoRoot();
+  seedRiskTolerance(repoRoot, "banana");
+
+  const result = (await governanceUnlock(makeCtx(repoRoot, [], confirmed))) as any;
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.riskTolerance, { from: "banana", to: "WITHIN_TOLERANCE" });
+  assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, "WITHIN_TOLERANCE");
+});
+
+test("locked AND FAILED_CLOSED: one unlock with typed APPLY clears both", async () => {
+  const repoRoot = makeRepoRoot();
+  writeGovernanceLock(repoRoot, { locked: true, reason: "test lock" });
+  seedRiskTolerance(repoRoot, "FAILED_CLOSED");
+
+  const result = (await governanceUnlock(makeCtx(repoRoot, [], confirmed))) as any;
+
+  assert.equal(result.ok, true);
+  assert.equal(result.unlockedFrom, "test lock");
+  assert.equal(readGovernanceLock(repoRoot).locked, false);
+  assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, "WITHIN_TOLERANCE");
+});
+
+test("locked but NOT FAILED_CLOSED: typed APPLY is not required to clear the lock (unchanged)", async () => {
+  const repoRoot = makeRepoRoot();
+  writeGovernanceLock(repoRoot, { locked: true, reason: "test lock" });
+
+  const result = (await governanceUnlock(makeCtx(repoRoot))) as any;
+
+  assert.equal(result.ok, true);
+  assert.equal(result.riskTolerance, undefined, "the policy is not touched");
+  assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, "WITHIN_TOLERANCE");
+});
+
+test("nothing locked and an open policy: unlock does nothing", async () => {
+  const repoRoot = makeRepoRoot();
+  const result = (await governanceUnlock(makeCtx(repoRoot))) as any;
+  assert.equal(result.ok, true);
+  assert.equal(result.alreadyUnlocked, true);
+  assert.deepEqual(policyHistoryFiles(repoRoot), []);
 });

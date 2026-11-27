@@ -7,7 +7,7 @@ import type { RouterContext } from "../core/router";
 import type { CapabilityName } from "../core/policy";
 import { getCapabilityMeta } from "../core/policy";
 import { loadMondayPersona } from "../core/monday";
-import { getKintsugiPolicy } from "../core/kintsugi/memory";
+import { getKintsugiPolicy, isRiskToleranceFailClosed } from "../core/kintsugi/memory";
 import { getModuleTier2Descriptors, type ModuleTier2Descriptor } from "../core/moduleRegistry";
 
 // Core descriptors are hardcoded and cannot be overridden by registry entries.
@@ -20,8 +20,8 @@ const CORE_TIER2_DESCRIPTORS: Partial<Record<string, ModuleTier2Descriptor>> = {
         irreversible: true
     },
     governanceUnlock: {
-        action: "Clears the active governance lock and restores write access system-wide.",
-        consequence: "The system returns to normal operating mode. Resolve the underlying issue before unlocking — unlocking without fixing the cause will re-trigger the lock.",
+        action: "Clears the active governance lock and/or lifts Kintsugi FAILED_CLOSED to WITHIN_TOLERANCE (typed APPLY), restoring normal operation.",
+        consequence: "The system returns to normal operating mode. It re-checks the audit ledger and every self-test check first and refuses, staying closed, while the cause is still there. Resolve the underlying issue before unlocking.",
         irreversible: false
     },
     docker: {
@@ -92,11 +92,17 @@ export async function mondayTier2Review(ctx: RouterContext, input?: unknown): Pr
     ];
 
     if (!isControlled) {
+        // Names the value actually found (it used to hard-code
+        // WITHIN_TOLERANCE). A fail-closed policy can't be raised by
+        // proposeFixes; governanceUnlock is the way out.
+        const failClosed = isRiskToleranceFailClosed(kintsugiPolicy.riskTolerance);
         lines.push(
             ``,
-            `BLOCKED — risk tolerance is WITHIN_TOLERANCE.`,
+            `BLOCKED — risk tolerance is ${kintsugiPolicy.riskTolerance}.`,
             `Tier 2 operations require CONTROLLED mode.`,
-            `Run proposeFixes first to elevate risk tolerance, then return here.`
+            failClosed
+                ? `Leave FAILED_CLOSED with governanceUnlock (typed APPLY; the audit ledger and every self-test check must pass), then use proposeFixes to elevate risk tolerance.`
+                : `Run proposeFixes first to elevate risk tolerance, then return here.`
         );
     } else {
         lines.push(
