@@ -158,3 +158,16 @@ test("after-merge Dependabot records are verified against GitHub and vouched wit
   assert.ok(content.includes("records come from more than one commit -- nothing vouched."), "one commit must introduce all records");
   assert.ok(content.includes("const triggeredSha = context.payload.pull_request.head.sha;"), "gate re-register must compare with the PR head");
 });
+
+// CodeQL as a workflow file (2026-11-27): default setup skips Dependabot
+// commits, which left the required Analyze checks missing on Dependabot PRs.
+test("CodeQL workflow runs on all PRs to main and keeps the required check names", () => {
+  const cq = fs.readFileSync(path.join(path.dirname(WORKFLOW_PATH), "codeql.yml"), "utf8");
+  assert.ok(cq.includes("name: Analyze (${{ matrix.language }})"), "job name must produce `Analyze (<language>)`");
+  for (const lang of ["javascript-typescript", "python", "actions"]) {
+    assert.ok(new RegExp(`language: \\[[^\\]]*\\b${lang}\\b`).test(cq), `must analyze ${lang}`);
+  }
+  assert.ok(/pull_request:\s*\n\s*branches: \[ main \]/.test(cq), "must run on PRs to main (Dependabot's included)");
+  assert.ok(!/if:.*dependabot/i.test(cq), "must not skip Dependabot PRs");
+  assert.ok(cq.includes("security-events: write"), "needs security-events: write to upload");
+});
