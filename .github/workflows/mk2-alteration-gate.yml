@@ -4,6 +4,12 @@ on:
   pull_request:
     branches: [ main ]
     types: [opened, synchronize, reopened]
+  # An approval (or dismissing one) re-runs the gate at once. This is what
+  # authorizes a Dependabot PR: the dependabot-approval job reads the live
+  # approval; nothing is pushed to Dependabot's branch. (No branch filter
+  # exists for this event; jobs check base.ref == main instead.)
+  pull_request_review:
+    types: [submitted, dismissed]
 
 # auto-authorize commits and pushes an authorization record mid-run, which
 # fires a second, near-simultaneous synchronize event on this same PR. Without
@@ -28,13 +34,19 @@ jobs:
   # and no record exists yet. Skips cleanly when actor is github-actions[bot]
   # (prevents infinite loop when this job's own commit triggers synchronize).
   auto-authorize:
+    # Never on Dependabot PRs: any push to Dependabot's branch stalls its
+    # checks and makes Dependabot stop managing (rebasing/superseding) the PR.
+    # Those are authorized by the dependabot-approval job instead.
     if: |
       github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     outputs:
       is_allowed: ${{ steps.check-allowlist.outputs.is_allowed }}
       record_commit_sha: ${{ steps.record-commit.outputs.record_commit_sha }}
+      backfill_verified: ${{ steps.verify-backfill.outputs.backfill_verified }}
     steps:
       # MK2_RECORD_PUSH_TOKEN: a fine-grained PAT (this repo only, Contents
       # read/write). A push made with the built-in GITHUB_TOKEN cannot start
@@ -143,7 +155,11 @@ jobs:
                   out.write(f"authorized_by={authorized_by}\n")
           PYEOF
         env:
-          ACTOR:                  ${{ github.actor }}
+          # On a review event github.actor is the REVIEWER, so any review by an
+          # allowlisted login (even a comment or "request changes") would read
+          # as self-authorship. Use the PR author there; approvals still count
+          # through APPROVED_REVIEWERS_JSON.
+          ACTOR:                  ${{ github.event_name == 'pull_request_review' && github.event.pull_request.user.login || github.actor }}
           ASSIGNEES_JSON:         ${{ toJson(github.event.pull_request.assignees) }}
           REVIEWERS_JSON:         ${{ toJson(github.event.pull_request.requested_reviewers) }}
           APPROVED_REVIEWERS_JSON: ${{ steps.fetch-reviews.outputs.approved_reviewers }}
@@ -153,10 +169,41 @@ jobs:
         if: steps.check-allowlist.outputs.is_allowed == 'true'
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          # Dependabot after-merge records (records/*-dependabot-pr-N.json)
+          # are not this PR's own authorization, so they don't count here.
           RECORD_COUNT=$(git diff --name-only "${BASE_SHA}...HEAD" \
-            | grep -cE "^governance/alteration-program/authorization/records/.*\.json$" || true)
+            | grep -E "^governance/alteration-program/authorization/records/.*\.json$" \
+            | grep -cvE -- "-dependabot-pr-[0-9]+\.json$" || true)
           echo "record_count=${RECORD_COUNT}" >> "$GITHUB_OUTPUT"
           echo "Authorization records in PR changeset: ${RECORD_COUNT}"
+
+      # Dependabot after-merge records this PR files (tools/open-pr.sh). Every
+      # fact in each one is re-derived from GitHub here: merged, Dependabot's
+      # own verified commits, manifest-only, approved by an allowlisted login
+      # before the merge, same merge commit. Any mismatch fails this job, so
+      # no record commit is vouched for and ci_gate.py fails closed.
+      - name: Verify Dependabot after-merge records
+        id: verify-backfill
+        uses: actions/github-script@v7
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const rules = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/avrs-dependabot.js`);
+            const files = execSync(`git diff --name-only --diff-filter=AM "${process.env.BASE_SHA}...HEAD"`).toString()
+              .split('\n').filter((f) => f.startsWith(rules.RECORD_DIR + '/') && /-dependabot-pr-\d+\.json$/.test(f));
+            if (!files.length) { core.setOutput('backfill_verified', 'none'); return; }
+            const allowlist = JSON.parse(execSync(`git show "${process.env.BASE_SHA}:governance/alteration-program/authorization/allowlist.json"`).toString()).authorizedLogins || [];
+            const api = rules.octokitApi(github, context.repo.owner, context.repo.repo);
+            for (const f of files) {
+              const record = JSON.parse(fs.readFileSync(f, 'utf8'));
+              const res = await rules.verifyBackfillRecord({ api, record, allowlist });
+              if (!res.ok) { core.setFailed(`${f}: ${res.reason}`); return; }
+              core.info(`verified ${f}`);
+            }
+            core.setOutput('backfill_verified', 'true');
 
       - name: Create authorization record
         id: create-record
@@ -293,12 +340,19 @@ jobs:
         run: |
           RECORDS=$(git diff --name-only --diff-filter=AM "${BASE_SHA}...HEAD" \
             | grep -E "^governance/alteration-program/authorization/records/.*\.json$" || true)
-          COUNT=$(printf '%s' "$RECORDS" | grep -c . || true)
-          if [ "$COUNT" -ne 1 ]; then
-            echo "PR #${PR_NUMBER} adds ${COUNT} authorization records (need exactly 1) -- nothing vouched."
+          OWN=$(printf '%s\n' "$RECORDS" | grep -vE -- "-dependabot-pr-[0-9]+\.json$" | grep -c . || true)
+          if [ "$OWN" -ne 1 ]; then
+            echo "PR #${PR_NUMBER} adds ${OWN} own authorization records (need exactly 1) -- nothing vouched."
             exit 0
           fi
-          RECORD_FILE="$RECORDS"
+          # Its own record plus any Dependabot after-merge records must all
+          # come from ONE commit; that commit is the one vouched for.
+          SHAS=$(printf '%s\n' "$RECORDS" | while read -r f; do git log -1 --format=%H -- "$f"; done | sort -u)
+          if [ "$(printf '%s\n' "$SHAS" | grep -c .)" -ne 1 ]; then
+            echo "PR #${PR_NUMBER} records come from more than one commit -- nothing vouched."
+            exit 0
+          fi
+          RECORD_FILE=$(printf '%s\n' "$RECORDS" | grep -vE -- "-dependabot-pr-[0-9]+\.json$")
           RECORD_SHA=$(git log -1 --format=%H -- "$RECORD_FILE")
           echo "record_commit_sha=${RECORD_SHA}" >> "$GITHUB_OUTPUT"
           echo "Vouching for ${RECORD_FILE} at commit ${RECORD_SHA} (is_allowed=true this run)."
@@ -335,9 +389,52 @@ jobs:
 
   # Runs after auto-authorize (or after it is skipped). Checks out the latest
   # branch HEAD so it sees any auth record auto-authorize may have just committed.
+  # Dependabot PRs only. Read-only: this job pushes nothing. It checks out
+  # main's copy of the rules and allowlist (not the PR's), reads the live
+  # approval and the PR's commits/files, and hands the result to the gate
+  # through job outputs. The record it would file is printed to the job
+  # summary now and filed in the repo after the merge (tools/open-pr.sh).
+  dependabot-approval:
+    if: |
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      approved_by: ${{ steps.check.outputs.approved_by }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - name: Checkout main's rules
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Check the live approval
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const rules = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/avrs-dependabot.js`);
+            const allowlist = JSON.parse(fs.readFileSync('governance/alteration-program/authorization/allowlist.json', 'utf8')).authorizedLogins || [];
+            const api = rules.octokitApi(github, context.repo.owner, context.repo.repo);
+            const res = await rules.checkDependabotApproval({
+              api, prNumber: context.payload.pull_request.number, allowlist,
+              today: new Date().toISOString().slice(0, 10),
+            });
+            core.setOutput('reason', res.reason);
+            core.info(res.reason);
+            if (!res.approved) return;
+            core.setOutput('approved_by', res.approvedBy);
+            const text = JSON.stringify(res.record, null, 2);
+            core.info(`AVRS record (filed in the repo after merge):\n${text}`);
+            await core.summary.addHeading('AVRS record (filed after merge)').addCodeBlock(text, 'json').write();
+
   gate:
-    needs: auto-authorize
-    if: always()
+    needs: [auto-authorize, dependabot-approval]
+    if: always() && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -362,6 +459,10 @@ jobs:
         env:
           MK2_BASE_REF: ${{ github.event.pull_request.base.sha || 'main' }}
           MK2_RECORD_COMMIT_SHA: ${{ needs.auto-authorize.outputs.record_commit_sha }}
+          MK2_BACKFILL_VERIFIED: ${{ needs.auto-authorize.outputs.backfill_verified }}
+          MK2_IS_DEPENDABOT_PR: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+          MK2_DEPENDABOT_APPROVED_BY: ${{ needs.dependabot-approval.outputs.approved_by }}
+          MK2_DEPENDABOT_REASON: ${{ needs.dependabot-approval.outputs.reason }}
         run: python3 tools/ci_gate.py
 
       # ── Permanent fix for HEAD-mismatch bug ─────────────────────────────────
@@ -379,7 +480,11 @@ jobs:
           script: |
             const { execSync } = require('child_process');
             const currentSha  = execSync('git rev-parse HEAD').toString().trim();
-            const triggeredSha = context.sha;
+            // The PR head this run was triggered for. (context.sha is the
+            // merge-ref commit, which never equals the branch head, so it made
+            // this step fire on every run, which fails on read-only Dependabot
+            // runs.) It only differs when auto-authorize pushed a record.
+            const triggeredSha = context.payload.pull_request.head.sha;
 
             if (currentSha === triggeredSha) {
               core.info('HEAD unchanged — automatic check run covers current HEAD. Done.');

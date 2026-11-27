@@ -58,8 +58,35 @@ either:
 Being assigned, or requested as a reviewer, does not count. A record written
 by anyone else still fails the gate (forged-record check above).
 
+## Dependabot PRs: authorized by approval, recorded after merge
+Nothing but Dependabot may push to a Dependabot branch. Any other push
+(record commit, empty commit) leaves the head with no checks **and** makes
+Dependabot stop managing the PR, so it never rebases it or closes it when a
+newer version supersedes it, and duplicates pile up.
+
+1. **Authorization = Justin's approval.** The `dependabot-approval` job
+   (read-only, uses main's rules) passes the gate only when an allowlisted
+   login's latest review is APPROVED (a later "request changes" cancels it),
+   every commit is Dependabot's own GitHub-verified commit, and only
+   `package.json` / `package-lock.json` change. Approving re-runs the gate.
+   Until then `gate` fails with "waiting for approval". The approval is
+   bound to the PR, so `@dependabot rebase` keeps it.
+2. **Record at approval:** the job writes the full record (approver, review
+   ID, commit, change) to its job summary.
+3. **Record in the repo after merge:** every non-Dependabot PR fails the gate
+   while a Dependabot merge on main (since 2026-11-27) has no
+   `records/<date>-dependabot-pr-<N>.json`. `tools/open-pr.sh` files them
+   (via `tools/backfill-dependabot-records.js`) in the same commit as the
+   PR's own record. `auto-authorize` re-checks every fact in them against
+   GitHub (merged, Dependabot-only, approved by an allowlisted login before
+   the merge, same merge commit) before the gate trusts them.
+
+If a Dependabot PR picked up foreign commits, comment `@dependabot recreate`
+to rebuild it clean. `dependabot-gate.yml` (intent files, unenforced since
+2026-02-20) was removed 2026-11-27.
+
 ## Fallback: PR opened without the script
-If the PR has no record (opened by hand, or a Dependabot PR after approval),
+If the PR has no record (opened by hand),
 `auto-authorize` writes it and pushes it with `GITHUB_TOKEN`, tagged
 `[skip ci]`. GitHub never starts check runs for that push, so the new head
 gets no `test` / `kotlin-proof` runs that count toward the PR. Closing and
