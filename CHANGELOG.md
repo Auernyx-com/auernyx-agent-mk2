@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-27 — CHANGELOG.md required on every PR
+
+The rule "update CHANGELOG.md in the same PR" lived only in memory, and it was
+missed: 11 of the last 12 merged PRs (#213–#224, all but #219) didn't touch
+this file. CI now enforces it.
+
+- New workflow `.github/workflows/changelog-required.yml`, job `changelog`: a PR
+  to `main` fails unless it changes `CHANGELOG.md`.
+- Ways past it, both visible on the PR: the `no-changelog` label, or a
+  Dependabot author (those are authorized by the `dependabot-approval` job).
+- Fails closed: if the PR's file list can't be read, the check fails.
+- `governance/alteration-program/TRUNK_ENFORCEMENT.md` lists it with the
+  required checks. It becomes required in branch protection when this PR merges.
+
 ## 2026-11-27 — Review fixes, Dependabot gate, CodeQL
 
 A `/code-review high` pass on `proposeFixes.ts`, `core/skjoldrFirewall.ts`,
