@@ -17,6 +17,18 @@ function getCachedConfig(filePath: string): any | null {
     }
 }
 
+// Env wins over the file: "1" forces on, "0" forces off, anything else = file value.
+// Returns a copy so the cached file-only object is never mutated.
+function applyEnvOverrides<T extends { writeEnabled: boolean; receiptsEnabled: boolean }>(cfg: T): T {
+    const w = process.env.AUERNYX_WRITE_ENABLED;
+    const r = process.env.AUERNYX_RECEIPTS_ENABLED;
+    return {
+        ...cfg,
+        writeEnabled: w === "1" ? true : w === "0" ? false : cfg.writeEnabled,
+        receiptsEnabled: r === "1" ? true : r === "0" ? false : cfg.receiptsEnabled,
+    };
+}
+
 function setCachedConfig(filePath: string, config: any, mtime: number): void {
     configCache.set(filePath, { config, mtime });
 }
@@ -126,10 +138,12 @@ export function loadConfig(repoRoot: string): {
 } {
     const filePath = path.join(repoRoot, "config", "auernyx.config.json");
     
-    // Check cache first
+    // Check cache first. The cache holds the FILE's values only; env
+    // overrides are applied on every call so a changed AUERNYX_WRITE_ENABLED /
+    // AUERNYX_RECEIPTS_ENABLED takes effect without waiting for a file change.
     const cached = getCachedConfig(filePath);
     if (cached) {
-        return cached;
+        return applyEnvOverrides(cached);
     }
     
     {
@@ -149,10 +163,10 @@ export function loadConfig(repoRoot: string): {
                 paths: { scanAllowedRoots: [] },
                 governance: DEFAULT_GOVERNANCE,
                 addons: { skjoldrFirewall: DEFAULT_SKJOLDR },
-                writeEnabled: process.env.AUERNYX_WRITE_ENABLED === "1",
-                receiptsEnabled: process.env.AUERNYX_RECEIPTS_ENABLED === "0" ? false : true
+                writeEnabled: false,
+                receiptsEnabled: true
             };
-            return defaultConfig;
+            return applyEnvOverrides(defaultConfig);
         }
 
         // Fail closed on a broken file. Silently falling back to defaults here
@@ -169,19 +183,9 @@ export function loadConfig(repoRoot: string): {
         }
         const parsed = parsedUnknown as AuernyxConfig;
 
-        const writeEnabled =
-            process.env.AUERNYX_WRITE_ENABLED === "1"
-                ? true
-                : process.env.AUERNYX_WRITE_ENABLED === "0"
-                    ? false
-                    : parsed.writeEnabled === true;
-
-        const receiptsEnabled =
-            process.env.AUERNYX_RECEIPTS_ENABLED === "1"
-                ? true
-                : process.env.AUERNYX_RECEIPTS_ENABLED === "0"
-                    ? false
-                    : parsed.receiptsEnabled !== false;
+        // File values only; env overrides are applied in applyEnvOverrides.
+        const writeEnabled = parsed.writeEnabled === true;
+        const receiptsEnabled = parsed.receiptsEnabled !== false;
 
         const host = parsed.daemon?.host ?? DEFAULT_DAEMON.host;
         const port = Number(parsed.daemon?.port ?? DEFAULT_DAEMON.port);
@@ -284,6 +288,6 @@ export function loadConfig(repoRoot: string): {
         };
 
         setCachedConfig(filePath, result, stat.mtimeMs);
-        return result;
+        return applyEnvOverrides(result);
     }
 }
