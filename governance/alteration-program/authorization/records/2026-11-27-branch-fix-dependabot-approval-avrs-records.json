@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-dependabot-approval-avrs-records",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/dependabot-approval-avrs-records: ci(gate): Dependabot PRs authorized by approval, AVRS record filed after merge (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/dependabot-approval-avrs-records",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/dependabot-approval-avrs-records: ci(gate): Dependabot PRs authorized by approval, AVRS record filed after merge",
+  "branch": "fix/dependabot-approval-avrs-records"
+}
