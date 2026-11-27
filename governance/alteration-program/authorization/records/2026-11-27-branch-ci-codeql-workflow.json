@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-ci-codeql-workflow",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch ci/codeql-workflow: ci(codeql): run CodeQL from a workflow file so Dependabot PRs get scanned (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-ci/codeql-workflow",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "ci/codeql-workflow: ci(codeql): run CodeQL from a workflow file so Dependabot PRs get scanned",
+  "branch": "ci/codeql-workflow"
+}
