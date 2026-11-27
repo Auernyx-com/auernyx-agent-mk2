@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-27 — CI on Node 24, @types/node pinned to 24
+
+CI tested on Node 20 while Citadel runs Node 24.22.1, and `@types/node` had
+moved to 26 (#203), typing APIs newer than any Node this project runs on. A
+dev dependency, `@vscode/test-electron` 3.0.0, already declares
+`"node": ">=22"`, so Node 20 was below what the toolchain supports.
+
+- `node-version` `20` → `24` in all 6 setup steps across 5 workflows:
+  `ci-tests.yml` (2), `branch-registry-update.yml`, `platform-canary.yml`,
+  `platform-propagate.yml`, `auernyx-dependency-review.yml`.
+- `package.json` / `package-lock.json`: `@types/node` `^26.6.6` → `^24.19.4`.
+- `.github/dependabot.yml`: ignore `@types/node` major updates, so the types
+  stay on the runtime's major. Bump it together with the workflows' Node
+  version.
+- Checked locally on Node 24.22.1: `npm run typecheck` clean, 564/564 tests.
+- Not changed: `@types/vscode` 1.146 vs `engines.vscode` `^1.85.0` is a
+  separate decision (raise the engines floor or pin the types lower).
+
 ## 2026-11-27 — v1.1.0 restored: release notes, version, Monday's mark
 
 The v1.1.0 release (2026-05-06) was written on branch `Ghostwolf101-patch-1`
