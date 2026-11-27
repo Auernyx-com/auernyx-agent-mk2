@@ -1,0 +1,13 @@
+{
+  "governance_record": "2026-11-27-branch-fix-config-bad-json-fail-closed",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/config-bad-json-fail-closed: fix(config): fail closed on a corrupted config file instead of silent defaults (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/config-bad-json-fail-closed",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/config-bad-json-fail-closed: fix(config): fail closed on a corrupted config file instead of silent defaults",
+  "branch": "fix/config-bad-json-fail-closed",
+  "backfilledDependabotPRs": [
+    203,
+    204
+  ]
+}

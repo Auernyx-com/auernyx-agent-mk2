@@ -32,13 +32,46 @@ test("returns sane defaults when no config file exists", () => {
   assert.equal(cfg.addons.skjoldrFirewall.enabled, false);
 });
 
-test("returns sane defaults for a corrupted config file, rather than throwing", () => {
-  const repoRoot = makeRepoRoot();
+// A config file that EXISTS but can't be used must fail closed. The old
+// behavior silently returned defaults, which meant one typo turned daemon
+// auth off (secret ""), reset protectedPaths to the 3 defaults, and blanked
+// approverIdentity, with no warning at all. Missing file = defaults (above);
+// broken file = loud error naming the file.
+function writeRawConfig(repoRoot: string, raw: string): string {
   fs.mkdirSync(path.join(repoRoot, "config"), { recursive: true });
-  fs.writeFileSync(path.join(repoRoot, "config", "auernyx.config.json"), "{not valid json");
+  const filePath = path.join(repoRoot, "config", "auernyx.config.json");
+  fs.writeFileSync(filePath, raw);
+  return filePath;
+}
 
+test("a corrupted (unparseable) config file throws, naming the file, instead of silently using defaults", () => {
+  const repoRoot = makeRepoRoot();
+  const filePath = writeRawConfig(repoRoot, '{"daemon": {"secret": "s3cret",}}'); // trailing comma typo
+
+  assert.throws(() => loadConfig(repoRoot), (err: unknown) => {
+    assert.ok(err instanceof Error);
+    assert.ok(err.message.includes(filePath), `message should name the file: ${err.message}`);
+    assert.match(err.message, /not valid JSON/);
+    return true;
+  });
+});
+
+for (const [label, raw] of [["null", "null"], ["an array", "[]"], ["a string", '"hello"'], ["a number", "42"]] as const) {
+  test(`a config file whose top level is ${label} throws instead of silently using defaults`, () => {
+    const repoRoot = makeRepoRoot();
+    writeRawConfig(repoRoot, raw);
+    assert.throws(() => loadConfig(repoRoot), /must be a JSON object/);
+  });
+}
+
+test("once a corrupted config file is fixed, loadConfig reads the fixed values (no stale failure cached)", () => {
+  const repoRoot = makeRepoRoot();
+  const filePath = writeRawConfig(repoRoot, "{not valid json");
+  assert.throws(() => loadConfig(repoRoot));
+
+  fs.writeFileSync(filePath, JSON.stringify({ daemon: { secret: "s3cret" } }));
   const cfg = loadConfig(repoRoot);
-  assert.equal(cfg.governance.riskTolerance, "WITHIN_TOLERANCE");
+  assert.equal(cfg.daemon.secret, "s3cret");
 });
 
 test("a real config file's values are read through correctly", () => {

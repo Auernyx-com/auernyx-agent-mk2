@@ -1,0 +1,15 @@
+{
+  "governance_record": "2026-11-27-dependabot-pr-203",
+  "kind": "dependabot-merge",
+  "pullRequest": 203,
+  "change": "deps: bump @types/node from 25.9.4 to 26.6.6",
+  "approvedBy": "Ghostwolf101",
+  "approvedAt": "2026-11-16",
+  "approvalReviewId": 5913803309,
+  "approvedCommit": "60f72dc47ee9986f62e1a2329f88247127b1819f",
+  "mergeCommit": "326a8fd0cd19be0ec9d984c3efe11b832d5628d3",
+  "mergedAt": "2026-11-27T10:05:57Z",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "Dependabot PR #203 merged after approval by Ghostwolf101: deps: bump @types/node from 25.9.4 to 26.6.6"
+}
