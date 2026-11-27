@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as http from "node:http";
+import type { AddressInfo } from "node:net";
 import { analyzeDependency } from "../capabilities/analyzeDependency";
 import type { RouterContext } from "../core/router";
 
@@ -393,4 +395,37 @@ test("a major bump that still carries a moderate advisory stays HIGH (the adviso
 
   assert.equal(result.recommendation, "review");
   assert.equal(result.riskLevel, "high");
+});
+
+// Item 9 (2026-11-27 /code-review high): fetchJson cleared its timeout as
+// soon as response HEADERS arrived, so a registry that sends headers and then
+// stalls the body made response.json() wait forever. Real fetch + a real
+// local server that never finishes the body; fetch is only re-pointed from
+// registry.npmjs.org to the local server (signal and options pass through).
+test("a registry that sends headers then stalls the body still fail-closes on timeout (no hang)", { timeout: 20_000 }, async () => {
+  const sockets = new Set<import("node:net").Socket>();
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.write('{"name": "pkgstall", '); // ...and never end
+  });
+  server.on("connection", (s) => sockets.add(s));
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
+  const port = (server.address() as AddressInfo).port;
+
+  const original = globalThis.fetch;
+  globalThis.fetch = ((_url: string | URL | Request, init?: RequestInit) =>
+    original(`http://127.0.0.1:${port}/`, init)) as typeof fetch;
+
+  const started = Date.now();
+  try {
+    const result = await analyzeDependency(mockContext, { packageName: "pkgstall", oldVersion: "1.0.0", newVersion: "1.0.1" });
+    assert.equal(result.ok, false);
+    assert.equal(result.recommendation, "reject");
+    assert.ok(result.evidence.some((e) => /timeout/i.test(e)), result.evidence.join(" | "));
+    assert.ok(Date.now() - started < 15_000, "must give up at the fetch timeout, not hang");
+  } finally {
+    globalThis.fetch = original;
+    for (const s of sockets) s.destroy();
+    server.close();
+  }
 });
