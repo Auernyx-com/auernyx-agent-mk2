@@ -24,6 +24,11 @@ const CORE_TIER2_DESCRIPTORS: Partial<Record<string, ModuleTier2Descriptor>> = {
         consequence: "The system returns to normal operating mode. It re-checks the audit ledger and every self-test check first and refuses, staying closed, while the cause is still there. Resolve the underlying issue before unlocking.",
         irreversible: false
     },
+    provenanceReseal: {
+        action: "Accepts the governance config as it is now (config/auernyx.config.json + config/allowlist.json) as the new sealed state, or repairs a damaged seal, and lifts Obsidian's Judgment. Without { apply: true } it only shows what changed.",
+        consequence: "Whatever changed becomes the approved baseline. It needs typed APPLY, the approver named in the seal (not in the edited file), the audit ledger and every self-test check, and it is recorded (seal record, Kintsugi record, receipt). It does not clear the governance lock or Kintsugi FAILED_CLOSED. If the change was not intended, put the files back instead.",
+        irreversible: false
+    },
     docker: {
         action: "Executes Docker operations against the configured target.",
         consequence: "Container state changes immediately. Scope and impact depend on the specific operation being run.",

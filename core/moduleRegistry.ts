@@ -36,7 +36,7 @@ export interface ModuleRegistryEntry {
     // Health check: if indicator_capability is missing from the allowlist, branch is OUT_OF_TOLERANCE.
     indicator_capability: CapabilityName;
     // Tier 2 descriptors for this module's high-risk capabilities only.
-    // Core capability descriptors (rollback, governanceUnlock, docker) are hardcoded in
+    // Core capability descriptors (rollback, governanceUnlock, provenanceReseal, docker) are hardcoded in
     // mondayTier2Review and cannot be overridden by registry entries.
     tier2_capabilities?: Partial<Record<string, ModuleTier2Descriptor>>;
     // Onboarding question for this module — shown in Phase 2 when the module is registered.

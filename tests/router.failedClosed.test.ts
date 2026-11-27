@@ -14,7 +14,7 @@ import { createPolicy } from "../core/policy";
 // governanceUnlock run; everything else is refused, read-only included. An
 // unknown riskTolerance value counts as FAILED_CLOSED, never looser.
 
-const CAPS = ["memoryCheck", "governanceSelfTest", "governanceUnlock", "proposeFixes", "searchDocApply", "scanRepo"];
+const CAPS = ["memoryCheck", "governanceSelfTest", "governanceUnlock", "provenanceReseal", "proposeFixes", "searchDocApply", "scanRepo"];
 
 function makeTempRepoRoot(riskTolerance?: unknown): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mk2-router-failedclosed-test-"));
@@ -54,7 +54,8 @@ for (const tolerance of ["FAILED_CLOSED", "banana"]) {
     });
   }
 
-  for (const capability of ["memoryCheck", "governanceSelfTest", "governanceUnlock"]) {
+  // provenanceReseal joined the recovery list 2026-11-27 (Justin's decision).
+  for (const capability of ["memoryCheck", "governanceSelfTest", "governanceUnlock", "provenanceReseal"]) {
     test(`riskTolerance ${tolerance}: ${capability} still runs (same list as the governance lock)`, async () => {
       const repoRoot = makeTempRepoRoot(tolerance);
       const result = (await makeRouter(repoRoot).run(capability as any, ctx(repoRoot), undefined, approval)) as any;

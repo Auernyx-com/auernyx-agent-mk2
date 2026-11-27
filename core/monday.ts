@@ -275,7 +275,7 @@ export function formatGovernanceLockForHuman(lock: GovernanceLock, repoRoot: str
 
     lines.push(
         ``,
-        `Permitted while locked: memoryCheck  governanceSelfTest  governanceUnlock`,
+        `Permitted while locked: memoryCheck  governanceSelfTest  governanceUnlock  provenanceReseal`,
         `To clear: run governanceUnlock with a valid approval.`
     );
 
@@ -304,7 +304,9 @@ export function formatJudgmentForHuman(judgment: JudgmentRecord, repoRoot: strin
     lines.push(
         ``,
         `This is a provenance judgment, not a governance lock. governanceUnlock will not clear it.`,
-        `Run governanceSelfTest to diagnose. Resolve the underlying integrity failure first.`
+        `If the change was not intended: put the sealed files back exactly as they were. Judgment clears on the next run.`,
+        `If it was intended: run provenanceReseal. Without { apply: true } it shows what changed and writes nothing;`,
+        `then apply with the hash it gives, typed APPLY, as the approver named in the seal.`
     );
 
     return lines.join("\n");

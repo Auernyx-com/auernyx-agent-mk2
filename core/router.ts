@@ -54,9 +54,15 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
 
         // Obsidian's Judgment: when active, refuse all privileged (non-readOnly) capabilities.
         // Enforcement is behavioral; UI is downstream.
+        //
+        // provenanceReseal is the one writing capability allowed under Judgment
+        // (2026-11-27, Justin): it is the recorded way out, the same way
+        // governanceUnlock is the way out of the lock. It writes only a seal
+        // record, a sealed copy and its Kintsugi record, and only with typed
+        // APPLY, the approver named in the seal, and every self-test check.
         if (isJudgmentActive(ctx.repoRoot)) {
             const meta = getCapabilityMeta(capability);
-            if (!meta.readOnly) {
+            if (!meta.readOnly && capability !== "provenanceReseal") {
                 throw new Error("obsidian_judgment_active");
             }
         }
@@ -68,7 +74,11 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
         }
 
         // Governance lock: while locked, only allow minimal recovery/status operations.
-        const allowedWhileClosed: CapabilityName[] = ["memoryCheck", "governanceSelfTest", "governanceUnlock"];
+        // provenanceReseal joined the list 2026-11-27 (Justin): governanceUnlock
+        // writes, so Judgment refuses it, and with Judgment and the lock both on
+        // there would otherwise be no recorded way out at all. Re-seal never
+        // clears the lock or FAILED_CLOSED; only governanceUnlock does.
+        const allowedWhileClosed: CapabilityName[] = ["memoryCheck", "governanceSelfTest", "governanceUnlock", "provenanceReseal"];
         const lock = readGovernanceLock(ctx.repoRoot);
         if (lock.locked) {
             if (!allowedWhileClosed.includes(capability)) {
@@ -77,8 +87,9 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
         }
 
         // Kintsugi FAILED_CLOSED behaves like the governance lock (Justin's
-        // decision, 2026-11-27): the same three recovery/status capabilities
-        // run, everything else is refused, read-only included. Before this the
+        // decision, 2026-11-27): the same recovery/status capabilities run
+        // (now four, with provenanceReseal), everything else is refused,
+        // read-only included. Before this the
         // only riskTolerance check was the Tier 2 gate below, so FAILED_CLOSED
         // ran every Tier 0/1 capability, writes included, exactly like
         // WITHIN_TOLERANCE. An unknown value counts as FAILED_CLOSED. The way
@@ -102,7 +113,13 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
         // WITHIN_TOLERANCE risk tolerance could never be cleared through the
         // capability system at all. governanceUnlock still enforces its own real
         // gate — ledger integrity must verify — before it will actually unlock.
-        if (capability !== "governanceUnlock" && meta.tier >= 2 && kintsugiPolicy.riskTolerance !== "CONTROLLED") {
+        //
+        // provenanceReseal is exempt for the same reason: under Judgment,
+        // proposeFixes (the only way to CONTROLLED) is refused, so requiring
+        // CONTROLLED would leave Judgment with no way out. It enforces its own
+        // gates (typed APPLY, sealed approver, audit ledger, self-test checks).
+        const exemptFromControlledGate = capability === "governanceUnlock" || capability === "provenanceReseal";
+        if (!exemptFromControlledGate && meta.tier >= 2 && kintsugiPolicy.riskTolerance !== "CONTROLLED") {
             throw new Error("risk_tolerance_insufficient");
         }
 
@@ -121,7 +138,15 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
             // intentionally off," which let any syntactically-valid approval object
             // (no proof a human actually approved anything) through for every tier-1/2
             // capability whenever this one config field was left at its default.
-            if (!meta.readOnly) {
+            //
+            // provenanceReseal is checked against the approver named in the
+            // SEAL, inside the capability, not against this config value: under
+            // Judgment the config is exactly what changed, so checking it here
+            // would let anyone who wrote their own name into it approve the
+            // re-seal, and would block a real handover (the current approver
+            // signing off on a new one). The capability refuses before writing
+            // anything unless the identity matches the sealed approver.
+            if (!meta.readOnly && capability !== "provenanceReseal") {
                 const expected = cfg.governance.approverIdentity.trim();
                 if (expected.length === 0) {
                     throw new Error("no_authority: approverIdentity not configured");
@@ -156,6 +181,7 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
                 return "governanceSelfTest";
             }
             if (text.includes("governance") && text.includes("unlock")) return "governanceUnlock";
+            if (text.includes("reseal") || text.includes("re-seal")) return "provenanceReseal";
 
             if (text.includes("rollback") || text.includes("known good") || text.includes("known_good") || text.includes("kgs")) {
                 return "rollbackKnownGood";

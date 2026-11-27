@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-feat-provenance-reseal",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch feat/provenance-reseal: feat(provenance): provenanceReseal, the approved way out of Obsidian's Judgment (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-feat/provenance-reseal",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "feat/provenance-reseal: feat(provenance): provenanceReseal, the approved way out of Obsidian's Judgment",
+  "branch": "feat/provenance-reseal"
+}

@@ -71,6 +71,44 @@ fixed, one PR per finding. Suite at 476 tests, all passing, after #218.
   off and must stay off.
 - #203, #204 — Dependabot: `@types/node` 26.6.6, `@types/vscode` 1.146.0.
 
+**Provenance re-seal**
+- #225 — new `provenanceReseal` capability: the recorded way to accept an
+  intended change to a sealed `config/auernyx.config.json` or
+  `config/allowlist.json` after Obsidian's Judgment trips. Before, the only
+  ways out were restoring the file byte for byte, wiping the audit history, or
+  hand-writing `genesis.json`, and none of them recorded who approved what.
+  - Preview (`{}`) shows why Judgment tripped and a key-by-key diff against the
+    sealed copy (secrets shown as `[redacted]`), and writes nothing.
+  - Apply needs the previewed `governanceHash` (`PREVIEW_STALE` /
+    `CONFIRM_HASH_REQUIRED`), typed APPLY (`HIL_REQUIRED`), the approver named
+    in the **seal**, not in the edited config (`SEALED_APPROVER_MISMATCH`), and
+    the same audit-ledger and self-test bar as `governanceUnlock`.
+  - Apply writes a chained seal record in `.auernyx/provenance/seals/` plus its
+    sealed copy, a Kintsugi `PROVENANCE_RESEAL` record, the receipt and a
+    provenance audit line. `genesis.json` is never rewritten.
+  - A deleted, edited or unreadable genesis, or a broken seal chain, can be
+    re-sealed with approval, checked against the last surviving sealed copy.
+    The new seal is an anchor (verification restarts there). If no sealed copy
+    survived, it refuses with `NO_SEALED_COPY`.
+  - Router: the 4th recovery capability. It runs under Judgment, the governance
+    lock and Kintsugi `FAILED_CLOSED`, and skips the Tier 2 `CONTROLLED` gate
+    (like unlock). It never clears the lock or `FAILED_CLOSED`.
+  - Also: every seal keeps a sealed copy; an unreadable genesis is reported as
+    `genesis_parse_error`, not "missing"; seal records count as evidence of a
+    sealed install; Feneris no longer flags a genesis absence that an approved
+    anchor accepted; Monday's Judgment text names the way out (it used to say
+    "Run governanceSelfTest", which Judgment refuses); onboarding no longer
+    claims genesis re-seals on startup.
+  - **Upgrade note:** `config/allowlist.json` gains `provenanceReseal`, which
+    changes the governance hash. An install that is already sealed trips
+    Judgment on pull, and seals from before #225 have no sealed copy, so the
+    re-seal refuses with `SEALED_APPROVER_UNKNOWN`. Fix: put the allowlist
+    back, run once with writes on, re-apply, re-seal. Citadel's checkout has
+    never been sealed.
+  - **Limit:** seals and approvals are plain hashes and plain-text identities
+    with no key. A legitimate change now gets a record, but someone with file
+    access could still forge one. Signed approvals are the real fix (open).
+
 **Still open (design questions, not bugs)**
 - `config.governance.riskTolerance` drives no enforcement. The router and
   capabilities read the Kintsugi active policy, and the config value only shows

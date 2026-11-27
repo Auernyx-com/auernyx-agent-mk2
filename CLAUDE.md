@@ -32,7 +32,7 @@ Mk2 provides two **independent** agents that share a governance core but do not 
 
 **All capability execution flows through `core/runLifecycle.ts`.** This is the governance invariant — nothing executes outside this path. The lifecycle enforces:
 
-1. **Provenance check** (`core/provenance.ts`) — verifies `genesis.json` hash on every run; provenance failure activates Obsidian's Judgment, which blocks all non-read-only operations
+1. **Provenance check** (`core/provenance.ts`) — verifies `genesis.json` and the seal chain (`.auernyx/provenance/seals/`) on every run; provenance failure activates Obsidian's Judgment, which blocks all non-read-only operations except `provenanceReseal` (the approved, recorded way to accept a config change or repair a damaged seal)
 2. **Legitimacy gate** (`core/legitimacyGate.ts`) — rejects illegitimate or ambiguous requests before planning
 3. **Planner** (`core/planner.ts`) — produces a versioned, hash-identified `Plan` with typed `PlanStep[]` (READ_ONLY / CONTROLLED_WRITE / HIGH_RISK)
 4. **Router** (`core/router.ts`) — maps intents to `CapabilityName` via text matching; executes only plan-scoped steps; enforces write gate, governance lock, and Obsidian's Judgment
@@ -43,8 +43,9 @@ Mk2 provides two **independent** agents that share a governance core but do not 
 
 - **Policy** (`core/policy.ts`) defines all `CapabilityName` values with `readOnly` and `tier` (0=safe, 1=controlled, 2=high-risk). All capabilities require an approval by policy — no tier bypasses the approval gate.
 - **Allowlist** (`config/allowlist.json`) controls which capabilities are enabled at runtime; `createPolicy(repoRoot)` loads it.
-- **Governance lock** (`core/governanceLock.ts`) — `logs/governance.lock.json`; while locked, only `memoryCheck`, `governanceSelfTest`, and `governanceUnlock` run.
-- **Kintsugi FAILED_CLOSED** (`riskTolerance` in `.auernyx/kintsugi/policy/active.policy.json`; an unknown value counts as FAILED_CLOSED) — behaves like the governance lock: only those same three capabilities run. `governanceUnlock` with typed APPLY is the only way out, and it drops to `WITHIN_TOLERANCE` only. `proposeFixes` never loosens a fail-closed policy.
+- **Governance lock** (`core/governanceLock.ts`) — `logs/governance.lock.json`; while locked, only `memoryCheck`, `governanceSelfTest`, `governanceUnlock` and `provenanceReseal` run.
+- **Kintsugi FAILED_CLOSED** (`riskTolerance` in `.auernyx/kintsugi/policy/active.policy.json`; an unknown value counts as FAILED_CLOSED) — behaves like the governance lock: only those same four capabilities run. `governanceUnlock` with typed APPLY is the only way out, and it drops to `WITHIN_TOLERANCE` only. `proposeFixes` never loosens a fail-closed policy.
+- **Obsidian's Judgment / re-seal** — a config or allowlist edit on a sealed install trips Judgment. `provenanceReseal` previews the diff against the sealed copy, then (typed APPLY, the approver named in the **seal**, audit ledger + self-test checks, the previewed governance hash) appends a chained seal record. It never clears the lock or FAILED_CLOSED. `genesis.json` is never rewritten.
 - **Guarded filesystem** (`core/guardedFs.ts`) — all capability writes must go through `guardedWriteFile` / `guardedMkdir`, which block writes to protected paths (`core/kintsugi/protectedPaths.ts`).
 - **Protected paths** include anything under `.auernyx/kintsugi/` (ledger records, policy history, active policy). These are write-once audit paths.
 - **Step-scoped approvals** — each `PlanStep` requires a `StepApproval` with matching `stepId`. A single approval does not cover multiple steps.

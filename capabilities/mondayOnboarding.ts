@@ -289,7 +289,7 @@ function selectQuestions(scope: OnboardingScope, repoRoot: string): OnboardingQu
 
 const BASE_CAPABILITIES: CapabilityName[] = [
     "scanRepo", "searchDocPreview", "memoryCheck",
-    "governanceSelfTest", "governanceUnlock",
+    "governanceSelfTest", "governanceUnlock", "provenanceReseal",
     "baselinePre", "baselinePost",
     "fenerisPrep", "proposeFixes", "analyzeDependency"
 ];
@@ -501,7 +501,7 @@ export async function mondayOnboarding(ctx: RouterContext, input?: unknown): Pro
             "1. Write recommended_allowlist to config/allowlist.json",
             "2. Merge recommended_config_patch into config/auernyx.config.json",
             "3. If daemon_secret_required was true — set AUERNYX_SECRET env var before starting",
-            "4. Start daemon once with AUERNYX_WRITE_ENABLED=1 — genesis will be created with the new hash",
+            "4. New install: start daemon once with AUERNYX_WRITE_ENABLED=1 — genesis will be created with the new hash. Already sealed: run provenanceReseal instead (preview, then apply as the sealed approver)",
             "5. Restart without AUERNYX_WRITE_ENABLED=1 for normal operation"
         ];
 
@@ -511,8 +511,9 @@ export async function mondayOnboarding(ctx: RouterContext, input?: unknown): Pro
             `Review the recommended configuration below before applying.`,
             ``,
             `IMPORTANT: allowlist.json and auernyx.config.json are both in the governance hash.`,
-            `Applying these changes invalidates the genesis record if one already exists.`,
-            `Apply configuration first — genesis re-seals on next startup with AUERNYX_WRITE_ENABLED=1.`,
+            `On a new install, apply the configuration first: genesis seals it on the first startup with AUERNYX_WRITE_ENABLED=1.`,
+            `On an install that is already sealed, applying it trips Obsidian's Judgment (genesis is never re-created over a seal).`,
+            `Accept it with provenanceReseal: preview what changed, then apply with typed APPLY as the approver named in the seal.`,
             ``,
             `Apply steps:`,
             ...applySteps.map(s => `  ${s}`)

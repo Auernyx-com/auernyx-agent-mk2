@@ -93,6 +93,21 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
   - Clears the lock only when (1) the main audit ledger (`logs/ledger.ndjson`) verifies from genesis and (2) the self-test's own checks pass again: Kintsugi ledger integrity, the protected-path tripwire, and no critical Ghost deviation (shared code: `core/selfTestChecks.ts`). If any still fails it stays locked, keeps the original lock reason, and returns `PRECONDITIONS_NOT_MET` with `failedChecks`. A lock never clears while its cause is still there.
   - Kintsugi `FAILED_CLOSED` (or any unknown `riskTolerance`, which counts as `FAILED_CLOSED`): needs typed APPLY (`approval.confirm=APPLY`) on top of the router's approval + approver identity, checked before anything else (`HIL_REQUIRED` otherwise, nothing written, a lock held at the same time stays held), then the same audit-ledger and self-test checks. Drops only to `WITHIN_TOLERANCE`, never `CONTROLLED`. If the lock is held too, one call clears both.
 
+### 9b) provenanceReseal
+- Purpose: The recorded way to accept a governance config change on a sealed install, or to recover from damage to the seal itself, and lift Obsidian's Judgment (added 2026-11-27).
+- Why: any change to `config/auernyx.config.json` or `config/allowlist.json` after sealing trips Judgment (`governance_hash_mismatch`). Before this, the only ways out were putting the file back byte for byte, wiping the audit history, or hand-writing `genesis.json`, and the last two left no record of who approved what.
+- Preview (no `apply`): `{}` returns why Judgment tripped, what changed in each sealed file (key by key, compared with the sealed copy; allowlist changes as added/removed capabilities; secret-looking values only as `[redacted]`), where the approver comes from, and `confirm.governanceHash`. Nothing is written.
+- Apply: `{ "apply": true, "governanceHash": "<confirm.governanceHash from the preview>" }`. Refused, with nothing written, unless:
+  - the hash still matches the config (`PREVIEW_STALE` if the config changed after the preview; `CONFIRM_HASH_REQUIRED` if no hash was sent),
+  - typed APPLY (`HIL_REQUIRED`),
+  - the approval's identity is the approver named in the **seal**, not in the edited config (`SEALED_APPROVER_MISMATCH`). Nobody can write their own name into the config and approve themselves; a handover is the current approver approving a config that names the new one,
+  - the audit ledger verifies from genesis and every self-test check passes (same bar as `governanceUnlock`).
+- Writes (apply only): `.auernyx/provenance/seals/NNNNNN.json` (append-only, chained by `previous_record_hash`; `genesis.json` is never rewritten), a sealed copy in `.auernyx/provenance/sealed/`, a Kintsugi record (`PROVENANCE_RESEAL`), the receipt and a provenance audit line. The seal record's `restoration_proof` and `hitl_approval` use the field layout of the canon judgment schema.
+- Seal damage (`genesis_deleted`, `genesis_parse_error`, `genesis_hash_mismatch`, `seal_chain_broken`): re-sealable with approval (Justin, 2026-11-27). The approver is checked against the last surviving sealed copy; if none survived it refuses (`NO_SEALED_COPY`). The new seal is an anchor: verification restarts there, and it pins `genesis.json` as it is (sha256) or as absent.
+- Router: the 4th recovery capability. It runs under Judgment, the governance lock and Kintsugi `FAILED_CLOSED`, and skips the Tier 2 `CONTROLLED` gate (like `governanceUnlock`, it would otherwise have no way to run). It never clears the lock or `FAILED_CLOSED`. The router doesn't check the config's `approverIdentity` for it; the capability checks the sealed one before writing anything.
+- Seals from before 2026-11-27 have no sealed copy, so they can't name an approver (`SEALED_APPROVER_UNKNOWN`): put the config back as sealed and run once with writes enabled (the copy is written then, proven by the governance hash), then change it again and re-seal.
+- Limit: seals and approvals are plain hashes and plain-text identities with no key. This gives a legitimate change a record; it does not stop someone with file access from forging one. Signed approvals are the real fix (to-do).
+
 ### 10) rollbackKnownGood
 - Purpose: List or restore a Kintsugi Known Good Snapshot (policy rollback).
 - Reads/Writes:
@@ -165,6 +180,7 @@ Routing is simple and deterministic:
 - Contains `propose fixes` / starts with `fix` → `proposeFixes`
 - Contains `governance` + `self-test` → `governanceSelfTest`
 - Contains `governance` + `unlock` → `governanceUnlock`
+- Contains `reseal` / `re-seal` → `provenanceReseal`
 - Contains `rollback` / `known good` / `kgs` → `rollbackKnownGood`
 - Contains `skjoldr` or `firewall` → routes to the matching Skjoldr capability based on keywords:
   - `status` → `skjoldrFirewallStatus`
@@ -508,11 +524,11 @@ Notes:
 - This includes Tier 0 / read-only actions like `scanRepo`.
 - Ledger writes are automatic evidence (they happen to record approvals and actions); approval gating is applied to capability side-effects.
 
-Current tiers (policy metadata, `core/policy.ts` — ground truth as of 2026-08-29):
+Current tiers (policy metadata, `core/policy.ts` — ground truth as of 2026-11-27):
 
 - Tier 0 (read-only): `scanRepo`, `searchDocPreview`, `memoryCheck`, `skjoldrFirewallStatus`, `skjoldrFirewallAdviseInboundRuleSets`, `analyzeDependency`, `mondaySystemStatus`, `mondayTier2Review`, `kennrDesignDiff`, `fenerisSecurityStatus`
 - Tier 1 (mutating, approval required): `searchDocApply`, `fenerisPrep`, `baselinePre`, `baselinePost`, `proposeFixes`, `governanceSelfTest`, `mondayInfractionReview`, `mondayOnboarding`, `wyerdTraderTradingCycle`, `kennrDesignExtract`, `kennrDesignDnaSynthesize`, `skadiLeadScan`
-- Tier 2 (high-risk, approval required): `docker`, `rollbackKnownGood`, `governanceUnlock`, `skjoldrFirewallApplyProfile`, `skjoldrFirewallApplyRulesetFile`, `skjoldrFirewallExportBaseline`, `skjoldrFirewallRestoreBaseline`
+- Tier 2 (high-risk, approval required): `docker`, `rollbackKnownGood`, `governanceUnlock`, `provenanceReseal`, `skjoldrFirewallApplyProfile`, `skjoldrFirewallApplyRulesetFile`, `skjoldrFirewallExportBaseline`, `skjoldrFirewallRestoreBaseline`
 
 Note: `fenerisPrep` and `baselinePost` are marked `readOnly: true` in policy metadata despite sitting at tier 1 — tier reflects operational risk classification, not strictly read/write status.
 
