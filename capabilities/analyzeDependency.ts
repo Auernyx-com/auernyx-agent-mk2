@@ -190,7 +190,9 @@ async function fetchNpmPackument(packageName: string, targetVersion: string): Pr
     }
 }
 
-async function fetchAdvisoriesFor(packageName: string, version: string): Promise<SecurityAdvisory[]> {
+// Returns null when the advisory database could not be checked. A failed lookup is NOT
+// "no advisories": callers must fail closed rather than read it as a clean result.
+async function fetchAdvisoriesFor(packageName: string, version: string): Promise<SecurityAdvisory[] | null> {
     const cacheKey = `${packageName}@${version}`;
     if (ADVISORY_CACHE.has(cacheKey)) return ADVISORY_CACHE.get(cacheKey) ?? [];
 
@@ -221,7 +223,7 @@ async function fetchAdvisoriesFor(packageName: string, version: string): Promise
         setBoundedCache(ADVISORY_CACHE, cacheKey, advisories);
         return advisories;
     } catch {
-        return [];
+        return null;
     }
 }
 
@@ -433,6 +435,12 @@ export async function analyzeDependency(_ctx: RouterContext, input?: unknown): P
             fetchAdvisoriesFor(parsed.packageName, parsed.oldVersion),
             fetchAdvisoriesFor(parsed.packageName, parsed.newVersion)
         ]);
+        if (oldAdvisories === null || newAdvisories === null) {
+            const which = [oldAdvisories === null ? parsed.oldVersion : null, newAdvisories === null ? parsed.newVersion : null]
+                .filter(Boolean)
+                .join(", ");
+            return failClosedOutput(parsed, `security advisory lookup failed for ${which}`, timestamp);
+        }
 
         const rawDate = packument.time?.[parsed.newVersion];
         const parsedDate = rawDate ? Date.parse(rawDate) : Number.NaN;
