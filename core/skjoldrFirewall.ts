@@ -53,8 +53,52 @@ function isRegularFile(filePath: string): boolean {
     }
 }
 
-function isPs1(commandPath: string): boolean {
-    return commandPath.toLowerCase().endsWith(".ps1");
+export type SkjoldrSpawnSpec = { file: string; args: string[]; windowsVerbatimArguments?: boolean };
+
+// Characters cmd.exe interprets even inside double quotes (or that break the
+// quoting). Since Node's April 2024 security release, spawn() refuses .cmd/.bat
+// without a shell exactly because of this kind of argument injection, so we
+// go through cmd.exe ourselves and refuse anything we can't quote safely.
+const CMD_UNSAFE = /["&|<>^%!\r\n]/;
+
+// One place that decides HOW a resolved Skjoldr command is started, per file
+// type and platform. Pure (platform is a parameter) so every branch is
+// testable on any OS. Throws when the file type can't run on this platform.
+export function buildSkjoldrSpawnSpec(
+    commandPath: string,
+    args: string[],
+    platform: NodeJS.Platform = process.platform
+): SkjoldrSpawnSpec {
+    const a = args ?? [];
+    const ext = path.extname(commandPath).toLowerCase();
+    const win = platform === "win32";
+
+    if (ext === ".ps1") {
+        return {
+            file: win ? "powershell.exe" : "pwsh",
+            args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", commandPath, ...a],
+        };
+    }
+    if (ext === ".cmd" || ext === ".bat") {
+        if (!win) throw new Error(`Cannot run a ${ext} file on ${platform}: ${commandPath}`);
+        const bad = [commandPath, ...a].find((x) => CMD_UNSAFE.test(x));
+        if (bad !== undefined) {
+            throw new Error(`Refusing to pass ${JSON.stringify(bad)} through cmd.exe: contains a character cmd.exe would interpret`);
+        }
+        const line = [commandPath, ...a].map((x) => `"${x}"`).join(" ");
+        return { file: "cmd.exe", args: ["/d", "/s", "/c", `"${line}"`], windowsVerbatimArguments: true };
+    }
+    if (ext === ".py") {
+        return { file: win ? "python" : "python3", args: [commandPath, ...a] };
+    }
+    return { file: commandPath, args: a };
+}
+
+// Is a bare program name (powershell.exe, pwsh, cmd.exe, python3) on PATH?
+function onPath(file: string, platform: NodeJS.Platform = process.platform): boolean {
+    const dirs = (process.env.PATH ?? "").split(path.delimiter).filter(Boolean);
+    const names = platform === "win32" && !path.extname(file) ? [file, `${file}.exe`] : [file];
+    return dirs.some((d) => names.some((n) => isRegularFile(path.join(d, n))));
 }
 
 function resolveCommand(configuredPath: string, configuredCommand: string, allowAutoDetect: boolean): { command?: string; notes: string[] } {
@@ -82,14 +126,22 @@ function resolveCommand(configuredPath: string, configuredCommand: string, allow
         return { command: base, notes };
     }
 
-    const candidates = [
+    // SkjoldrCLI.py / SkjoldrCLI.ps1 are the real entry points in the
+    // skjoldr-firewall repo (same 4-verb JSON contract). Off Windows, .exe and
+    // .cmd can't run, so only the Python CLI and PowerShell (via pwsh) apply,
+    // with the Python CLI first.
+    const windowsCandidates = [
         "skjoldr-firewall.exe",
         "skjoldr.exe",
         "skjoldr-firewall.cmd",
         "skjoldr.cmd",
         "skjoldr-firewall.ps1",
         "skjoldr.ps1",
-    ].map((name) => path.join(base, name));
+        "SkjoldrCLI.ps1",
+        "SkjoldrCLI.py",
+    ];
+    const otherCandidates = ["SkjoldrCLI.py", "SkjoldrCLI.ps1", "skjoldr-firewall.ps1", "skjoldr.ps1"];
+    const candidates = (process.platform === "win32" ? windowsCandidates : otherCandidates).map((name) => path.join(base, name));
 
     for (const candidate of candidates) {
         if (isRegularFile(candidate)) {
@@ -134,6 +186,23 @@ export function getSkjoldrFirewallStatus(repoRoot: string, options?: { allowAuto
     const allowAutoDetect = options?.allowAutoDetect !== false;
     const resolved = resolveCommand(configuredPath, configuredCommand, allowAutoDetect);
 
+    // A resolved command is only "available" if it can actually be started
+    // here: the file type must run on this platform and any interpreter it
+    // needs (powershell.exe / pwsh / cmd.exe / python3) must be on PATH.
+    let available = Boolean(resolved.command);
+    if (resolved.command) {
+        try {
+            const spec = buildSkjoldrSpawnSpec(resolved.command, statusArgs);
+            if (spec.file !== resolved.command && !onPath(spec.file)) {
+                available = false;
+                resolved.notes.push(`Needs '${spec.file}' on PATH to run ${resolved.command}; not found.`);
+            }
+        } catch (e) {
+            available = false;
+            resolved.notes.push(e instanceof Error ? e.message : String(e));
+        }
+    }
+
     return {
         enabled: true,
         configuredPath,
@@ -141,7 +210,7 @@ export function getSkjoldrFirewallStatus(repoRoot: string, options?: { allowAuto
         statusArgs,
         json,
         timeoutMs,
-        available: Boolean(resolved.command),
+        available,
         notes: resolved.notes,
         baselineSnapshotPath,
         baselineSnapshotHash,
@@ -173,18 +242,13 @@ export async function runSkjoldrCommand(
 ): Promise<{ exitCode: number | null; stdout: string; stderr: string }> {
     const commandPath = resolvedCommand;
 
-    const spawnSpec = isPs1(commandPath)
-        ? {
-              file: "powershell.exe",
-              args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", commandPath, ...(args ?? [])],
-          }
-        : {
-              file: commandPath,
-              args: args ?? [],
-          };
+    const spawnSpec = buildSkjoldrSpawnSpec(commandPath, args ?? []);
 
     return await new Promise((resolve, reject) => {
-        const child = spawn(spawnSpec.file, spawnSpec.args, { windowsHide: true });
+        const child = spawn(spawnSpec.file, spawnSpec.args, {
+            windowsHide: true,
+            windowsVerbatimArguments: spawnSpec.windowsVerbatimArguments === true,
+        });
 
         let stdout = "";
         let stderr = "";
