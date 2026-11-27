@@ -326,3 +326,71 @@ test("advisory lookup failure for only the new version never approves", async ()
   // Before the fix this read as "fixes" + approve: the failed lookup looked like zero advisories.
   assert.notEqual(result.recommendation, "approve");
 });
+
+// Item 3 (2026-11-27 /code-review high): an update whose NEW version still
+// carries a known advisory must never come back "approve". Before the fix,
+// only advisories new to the new version were caught, so a partial fix (or
+// the same vuln carried over) on a patch bump read as low-risk approve.
+function packumentFor(version: string): MockResponse {
+  return {
+    ok: true,
+    status: 200,
+    body: { time: { [version]: "2023-01-01T00:00:00.000Z" }, versions: { [version]: { description: "patch" } } }
+  };
+}
+
+test("a patch that fixes one advisory but still carries another is NOT approved", async () => {
+  const restore = mockFetchSequence([
+    packumentFor("1.0.1"),
+    {
+      ok: true,
+      status: 200,
+      body: {
+        pkgpartial: [
+          { id: "300", severity: "high", title: "still here", url: "https://example/advisory/300" },
+          { id: "301", severity: "low", title: "fixed one", url: "https://example/advisory/301" }
+        ]
+      }
+    },
+    { ok: true, status: 200, body: { pkgpartial: [{ id: "300", severity: "high", title: "still here", url: "https://example/advisory/300" }] } }
+  ]);
+
+  const result = await analyzeDependency(mockContext, { packageName: "pkgpartial", oldVersion: "1.0.0", newVersion: "1.0.1" });
+  restore();
+
+  assert.equal(result.ok, true);
+  assert.notEqual(result.recommendation, "approve");
+  assert.equal(result.recommendation, "review");
+  assert.equal(result.riskLevel, "high"); // the remaining advisory is high severity
+  assert.ok(result.evidence.some((e) => e.includes("300")), `evidence should name the remaining advisory: ${result.evidence.join(" | ")}`);
+});
+
+test("a patch that carries the same advisory over unchanged is NOT approved", async () => {
+  const restore = mockFetchSequence([
+    packumentFor("2.0.1"),
+    { ok: true, status: 200, body: { pkgcarried: [{ id: "400", severity: "moderate", title: "unfixed", url: "https://example/advisory/400" }] } },
+    { ok: true, status: 200, body: { pkgcarried: [{ id: "400", severity: "moderate", title: "unfixed", url: "https://example/advisory/400" }] } }
+  ]);
+
+  const result = await analyzeDependency(mockContext, { packageName: "pkgcarried", oldVersion: "2.0.0", newVersion: "2.0.1" });
+  restore();
+
+  assert.equal(result.ok, true);
+  assert.equal(result.recommendation, "review");
+  assert.equal(result.riskLevel, "medium"); // moderate severity only
+  assert.ok(result.evidence.some((e) => e.includes("400")));
+});
+
+test("a major bump that still carries a moderate advisory stays HIGH (the advisory check never lowers risk)", async () => {
+  const restore = mockFetchSequence([
+    packumentFor("4.0.0"),
+    { ok: true, status: 200, body: { pkgmajorcarry: [{ id: "500", severity: "moderate", title: "unfixed", url: "https://example/advisory/500" }] } },
+    { ok: true, status: 200, body: { pkgmajorcarry: [{ id: "500", severity: "moderate", title: "unfixed", url: "https://example/advisory/500" }] } }
+  ]);
+
+  const result = await analyzeDependency(mockContext, { packageName: "pkgmajorcarry", oldVersion: "3.0.0", newVersion: "4.0.0" });
+  restore();
+
+  assert.equal(result.recommendation, "review");
+  assert.equal(result.riskLevel, "high");
+});

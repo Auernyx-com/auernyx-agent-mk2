@@ -286,6 +286,25 @@ function scoreRisk(params: {
         return { riskLevel: "critical", recommendation: "reject", evidence };
     }
 
+    // The new version still carries known advisories (carried over, or left
+    // behind by a partial fix). Never approve that: a human has to look.
+    if (params.newAdvisories.length > 0) {
+        // Never lower the level the later checks would have given (breaking
+        // signals or a major/unknown jump are already HIGH on their own).
+        const serious =
+            params.newAdvisories.some((a) => a.severity === "high" || a.severity === "critical" || a.severity === "unknown") ||
+            params.breakingSignals.length > 0 ||
+            params.jump === "major" ||
+            params.jump === "unknown";
+        const level = serious ? "HIGH" : "MEDIUM";
+        evidence.push(`${level}: New version still carries ${params.newAdvisories.length} known ${params.newAdvisories.length === 1 ? "advisory" : "advisories"}${fixesVuln ? " (it fixes others)" : ""}.`);
+        for (const adv of params.newAdvisories) {
+            evidence.push(`  [${adv.severity.toUpperCase()}] ${adv.id}: ${adv.title} — ${adv.url}`);
+        }
+        evidence.push(...params.breakingSignals.map((s) => `HIGH: Breaking-signal: ${s}`));
+        return { riskLevel: serious ? "high" : "medium", recommendation: "review", evidence };
+    }
+
     if (params.breakingSignals.length > 0) {
         evidence.push(...params.breakingSignals.map((s) => `HIGH: Breaking-signal: ${s}`));
         return { riskLevel: "high", recommendation: "review", evidence };
