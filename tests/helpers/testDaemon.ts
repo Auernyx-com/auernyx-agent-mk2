@@ -63,10 +63,13 @@ const ENV_KEYS = [
   "AUERNYX_WRITE_ENABLED",
 ] as const;
 
-// startDaemon reads these env vars synchronously, at call time, into
+// startDaemon reads most of these env vars synchronously, at call time, into
 // per-instance closure variables — so it's safe to set them immediately
-// before calling startDaemon() and restore the previous values right after,
-// with no risk of leaking into other tests.
+// before calling startDaemon() and restore the previous values right after.
+// EXCEPTION: AUERNYX_WRITE_ENABLED is re-read on every request (the router
+// calls loadConfig per run, and since the item-4 fix env overrides are no
+// longer frozen in the config cache). It stays set for the daemon's lifetime
+// and is restored in close().
 export async function startTestDaemon(repoRoot: string, opts: TestDaemonOptions = {}): Promise<TestDaemon> {
   const saved: Record<string, string | undefined> = {};
   for (const k of ENV_KEYS) saved[k] = process.env[k];
@@ -85,9 +88,12 @@ export async function startTestDaemon(repoRoot: string, opts: TestDaemonOptions 
 
   const server = startDaemon(repoRoot);
 
-  for (const k of ENV_KEYS) {
+  const restore = (k: (typeof ENV_KEYS)[number]) => {
     if (saved[k] === undefined) delete process.env[k];
     else process.env[k] = saved[k];
+  };
+  for (const k of ENV_KEYS) {
+    if (k !== "AUERNYX_WRITE_ENABLED") restore(k);
   }
 
   await new Promise<void>((resolve) => server.once("listening", resolve));
@@ -96,7 +102,10 @@ export async function startTestDaemon(repoRoot: string, opts: TestDaemonOptions 
   return {
     server,
     port,
-    close: () => server.close(),
+    close: () => {
+      server.close();
+      restore("AUERNYX_WRITE_ENABLED");
+    },
   };
 }
 

@@ -150,3 +150,45 @@ test("loadConfig picks up a real file change once the mtime actually differs", a
   writeConfig(repoRoot, { daemon: { port: 2222 } });
   assert.equal(loadConfig(repoRoot).daemon.port, 2222);
 });
+
+// Item 4 (2026-11-27 /code-review high): the cache stored writeEnabled and
+// receiptsEnabled AFTER applying the env overrides, so a later change to
+// AUERNYX_WRITE_ENABLED / AUERNYX_RECEIPTS_ENABLED in the same process was
+// ignored until the file's mtime changed. With no config file the env was
+// read fresh every call, so behavior depended on whether a file existed.
+test("a change to AUERNYX_WRITE_ENABLED is honored on the next loadConfig even when the file is cached", () => {
+  const repoRoot = makeRepoRoot();
+  writeConfig(repoRoot, { writeEnabled: false });
+
+  const original = process.env.AUERNYX_WRITE_ENABLED;
+  try {
+    process.env.AUERNYX_WRITE_ENABLED = "1";
+    assert.equal(loadConfig(repoRoot).writeEnabled, true); // primes the cache
+
+    process.env.AUERNYX_WRITE_ENABLED = "0";
+    assert.equal(loadConfig(repoRoot).writeEnabled, false, "write kill switch must take effect without a file change");
+
+    delete process.env.AUERNYX_WRITE_ENABLED;
+    assert.equal(loadConfig(repoRoot).writeEnabled, false, "no env = the file's value");
+  } finally {
+    if (original === undefined) delete process.env.AUERNYX_WRITE_ENABLED;
+    else process.env.AUERNYX_WRITE_ENABLED = original;
+  }
+});
+
+test("a change to AUERNYX_RECEIPTS_ENABLED is honored on the next loadConfig even when the file is cached", () => {
+  const repoRoot = makeRepoRoot();
+  writeConfig(repoRoot, { receiptsEnabled: true });
+
+  const original = process.env.AUERNYX_RECEIPTS_ENABLED;
+  try {
+    delete process.env.AUERNYX_RECEIPTS_ENABLED;
+    assert.equal(loadConfig(repoRoot).receiptsEnabled, true); // primes the cache
+
+    process.env.AUERNYX_RECEIPTS_ENABLED = "0";
+    assert.equal(loadConfig(repoRoot).receiptsEnabled, false);
+  } finally {
+    if (original === undefined) delete process.env.AUERNYX_RECEIPTS_ENABLED;
+    else process.env.AUERNYX_RECEIPTS_ENABLED = original;
+  }
+});
