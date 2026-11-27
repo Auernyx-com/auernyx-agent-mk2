@@ -30,6 +30,29 @@ export async function governanceSelfTest(ctx: RouterContext, _input?: unknown): 
     const ghostCriticalFail = checks.failedChecks.includes("ghost_critical");
 
     const current = readGovernanceLock(ctx.repoRoot);
+
+    // Circuit breaker (Justin's decision, 2026-11-27): the self-test trips the
+    // lock but never clears it. governanceUnlock is the only way out, because
+    // it re-checks the main audit ledger as well as these same checks. A
+    // passing self-test on a locked system records the pass and keeps the lock.
+    if (checks.ok && current.locked) {
+        const held = {
+            locked: true,
+            reason: current.reason ||
+                "Locked before this self-test ran. The self-test passed, but it never clears the lock: run governanceUnlock, which re-checks everything before clearing it.",
+            lastSelfTest: { timestamp: now, ok: true, warnings: checks.warnings },
+        };
+        writeGovernanceLock(ctx.repoRoot, held);
+        return {
+            ok: true,
+            unlockRequired: true,
+            warnings: checks.warnings,
+            lock: held,
+            refusal: checks.refusal,
+            ghostVerification: checks.ghostResult && !checks.ghostResult.ok ? { deviations: checks.ghostResult.deviations } : undefined,
+        };
+    }
+
     const next = {
         locked: !checks.ok,
         reason: checks.ok
@@ -38,7 +61,7 @@ export async function governanceSelfTest(ctx: RouterContext, _input?: unknown): 
                 ? "A write to a protected audit path was not blocked — the guard that should have refused it did not respond correctly. This is a critical protection failure. System closed until this is manually reviewed and confirmed safe."
                 : ghostCriticalFail
                     ? "Ghost verification detected a critical dual-witness deviation — the two protected path witnesses no longer agree on a critical system. Something may have modified one of the protection layers without authorization. Full stop until a human reviews both lists and confirms they match."
-                    : "The governance self-test did not pass — a check the system runs on itself came back wrong. System closed as a precaution. Review the warnings and run the self-test again after the issue is resolved.",
+                    : "The governance self-test did not pass — a check the system runs on itself came back wrong. System closed as a precaution. Review the warnings, fix the issue, then run governanceUnlock: it re-checks everything before clearing the lock.",
         lastSelfTest: { timestamp: now, ok: checks.ok, warnings: checks.warnings },
     };
 

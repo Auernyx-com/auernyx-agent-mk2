@@ -4,7 +4,8 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { governanceSelfTest } from "../capabilities/governanceSelfTest";
-import { readGovernanceLock } from "../core/governanceLock";
+import { governanceUnlock } from "../capabilities/governanceUnlock";
+import { readGovernanceLock, writeGovernanceLock } from "../core/governanceLock";
 
 function makeRepoRoot(): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mk2-selftest-test-"));
@@ -93,4 +94,52 @@ test("a custom protectedPaths config replaces (not merges with) the defaults —
   assert.equal(result.ok, false);
   assert.equal(result.ghostVerification.deviations.length, 4); // 3 dropped critical + 1 unrecognized extra
   assert.ok(result.ghostVerification.deviations.some((d: any) => d.path === "custom/extra/path" && !d.critical));
+});
+
+// Justin's decision 2026-11-27: governanceUnlock is the only way out of the
+// governance lock (circuit breaker). The self-test trips the lock but never
+// clears it. Before this, a passing self-test cleared any lock by itself,
+// without the main audit-ledger check that governanceUnlock requires.
+test("a passing self-test does NOT clear an existing lock; it reports that governanceUnlock is required", async () => {
+  const repoRoot = makeRepoRoot();
+  writeGovernanceLock(repoRoot, { locked: true, reason: "test lock" });
+
+  const result = (await governanceSelfTest(makeCtx(repoRoot))) as any;
+
+  assert.equal(result.ok, true, "the checks themselves passed");
+  assert.equal(result.unlockRequired, true);
+  const lock = readGovernanceLock(repoRoot);
+  assert.equal(lock.locked, true);
+  assert.equal(lock.reason, "test lock", "the original reason is kept");
+  assert.equal(lock.lastSelfTest?.ok, true, "the passing result is still recorded");
+});
+
+test("after a passing self-test, governanceUnlock is what clears the lock", async () => {
+  const repoRoot = makeRepoRoot();
+  writeGovernanceLock(repoRoot, { locked: true, reason: "test lock" });
+  await governanceSelfTest(makeCtx(repoRoot));
+  assert.equal(readGovernanceLock(repoRoot).locked, true);
+
+  const result = (await governanceUnlock(makeCtx(repoRoot))) as any;
+  assert.equal(result.ok, true);
+  assert.equal(readGovernanceLock(repoRoot).locked, false);
+});
+
+test("a lock with no reason gets one that says how to clear it", async () => {
+  const repoRoot = makeRepoRoot();
+  writeGovernanceLock(repoRoot, { locked: true });
+
+  await governanceSelfTest(makeCtx(repoRoot));
+
+  const lock = readGovernanceLock(repoRoot);
+  assert.equal(lock.locked, true);
+  assert.match(lock.reason ?? "", /governanceUnlock/);
+});
+
+test("a passing self-test with no lock in place stays unlocked and needs no unlock", async () => {
+  const repoRoot = makeRepoRoot();
+  const result = (await governanceSelfTest(makeCtx(repoRoot))) as any;
+  assert.equal(result.ok, true);
+  assert.equal(result.unlockRequired, undefined);
+  assert.equal(readGovernanceLock(repoRoot).locked, false);
 });
