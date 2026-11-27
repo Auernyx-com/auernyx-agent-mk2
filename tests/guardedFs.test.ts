@@ -72,8 +72,8 @@ test("the default configured protectedPaths still block writes inside the repo",
   // explicit list — exercising the real default a fresh deployment gets,
   // not a value only this test knows about.
   const repoRoot = makeRepoRoot();
-  const protectedTarget = path.join(repoRoot, ".auernyx", "kintsugi", "active.policy.json");
+  const protectedTarget = path.join(repoRoot, ".auernyx", "kintsugi", "policy", "active.policy.json");
 
-  assert.equal(isPathProtected(repoRoot, protectedTarget, [".auernyx/kintsugi/active.policy.json"]), true);
+  assert.equal(isPathProtected(repoRoot, protectedTarget, [".auernyx/kintsugi/policy/active.policy.json"]), true);
   assert.throws(() => guardedWriteFile(repoRoot, protectedTarget, "nope", "test", "should be refused"));
 });

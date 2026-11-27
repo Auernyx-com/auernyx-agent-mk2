@@ -18,7 +18,7 @@ const GHOST_THREAT_MODEL: ReadonlyArray<{ path: string; label: string; critical:
         critical: true,
     },
     {
-        path: ".auernyx/kintsugi/active.policy.json",
+        path: ".auernyx/kintsugi/policy/active.policy.json",
         label: "active policy file",
         critical: true,
     },
