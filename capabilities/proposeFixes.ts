@@ -1,6 +1,6 @@
 import type { RouterContext } from "../core/router";
 import { GovernanceRefusalError } from "../core/governanceRefusal";
-import { getKintsugiPolicy, policyHash, recordHumanApprovedPolicyChange, verifyKintsugiIntegrity } from "../core/kintsugi/memory";
+import { getKintsugiPolicy, isRiskToleranceFailClosed, policyHash, recordHumanApprovedPolicyChange, verifyKintsugiIntegrity } from "../core/kintsugi/memory";
 
 type Suggestion = {
     id: string;
@@ -27,19 +27,14 @@ function isLooseningPolicy(before: any, after: any): boolean {
     return false;
 }
 
-// Fail closed: WITHIN_TOLERANCE and CONTROLLED are the only open states.
-// FAILED_CLOSED counts as closed, and so does any value outside the three
-// canonical states (drift or tampering; Feneris raises
-// kintsugi-policy-invalid for those), because an unknown state is treated as
-// the strictest one, never a looser one.
-function isFailClosed(riskTolerance: unknown): boolean {
-    return riskTolerance !== "WITHIN_TOLERANCE" && riskTolerance !== "CONTROLLED";
-}
+// Fail closed: FAILED_CLOSED or any unknown riskTolerance (see
+// isRiskToleranceFailClosed in core/kintsugi/memory.ts).
+const isFailClosed = isRiskToleranceFailClosed;
 
 function failClosedReason(riskTolerance: unknown): string {
     return `Kintsugi policy is fail-closed (riskTolerance=${JSON.stringify(riskTolerance) ?? "missing"}). ` +
-        "Loosening changes are refused, even with typed APPLY. Leaving FAILED_CLOSED is a separate recovery step " +
-        "(cause cleared + human approval); proposeFixes never does it.";
+        "Loosening changes are refused, even with typed APPLY. Leave FAILED_CLOSED with governanceUnlock " +
+        "(typed APPLY; the audit ledger and every self-test check must pass); proposeFixes never does it.";
 }
 
 export async function proposeFixes(ctx: RouterContext, input?: unknown): Promise<unknown> {

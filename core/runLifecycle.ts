@@ -246,8 +246,10 @@ export async function runLifecycle(args: {
             case "proposeFixes":
                 return [".auernyx/kintsugi/policy/history/*.policy.json", ".auernyx/kintsugi/policy/active.policy.json"];
             case "governanceSelfTest":
-            case "governanceUnlock":
                 return ["logs/governance.lock.json"];
+            case "governanceUnlock":
+                // Also lifts Kintsugi FAILED_CLOSED (policy snapshot + active policy).
+                return ["logs/governance.lock.json", ".auernyx/kintsugi/policy/history/*.policy.json", ".auernyx/kintsugi/policy/active.policy.json"];
             case "rollbackKnownGood":
                 return [".auernyx/kintsugi/policy/history/*.policy.json", ".auernyx/kintsugi/policy/active.policy.json"];
             default:

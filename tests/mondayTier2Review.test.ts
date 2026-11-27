@@ -125,3 +125,28 @@ test("core descriptors always win over a module registry entry for the same capa
   assert.match(result.human_readable, /Rolls the system back to a known-good snapshot/);
   assert.ok(!result.human_readable.includes("This is a lie."));
 });
+
+// 2026-11-27 Kintsugi fail-closed plan, step 3: the BLOCKED text hard-coded
+// "risk tolerance is WITHIN_TOLERANCE" and "Run proposeFixes first", both
+// wrong in FAILED_CLOSED (proposeFixes can no longer loosen a fail-closed
+// policy; governanceUnlock is the way out).
+test("with FAILED_CLOSED, the BLOCKED text names the real value and the real way out", async () => {
+  const repoRoot = makeRepoRoot();
+  const dir = path.join(repoRoot, ".auernyx", "kintsugi", "policy");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "active.policy.json"), JSON.stringify({ riskTolerance: "FAILED_CLOSED" }));
+
+  const result = (await mondayTier2Review(ctx(repoRoot), { capability: "docker" })) as any;
+
+  assert.equal(result.status, "risk_tolerance_insufficient");
+  assert.match(result.human_readable, /risk tolerance is FAILED_CLOSED/);
+  assert.doesNotMatch(result.human_readable, /WITHIN_TOLERANCE/);
+  assert.doesNotMatch(result.human_readable, /Run proposeFixes first/);
+  assert.match(result.human_readable, /governanceUnlock/);
+});
+
+test("the governanceUnlock review says it refuses while the cause remains (no longer 're-trigger the lock')", async () => {
+  const result = (await mondayTier2Review(ctx(makeRepoRoot()), { capability: "governanceUnlock" })) as any;
+  assert.doesNotMatch(result.human_readable, /re-trigger the lock/);
+  assert.match(result.human_readable, /refuses/);
+});

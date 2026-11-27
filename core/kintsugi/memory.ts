@@ -106,6 +106,16 @@ const DEFAULT_POLICY: KintsugiPolicy = {
     rollbackRiskClass: "CONTROLLED",
 };
 
+// Fail closed: WITHIN_TOLERANCE and CONTROLLED are the only open states.
+// FAILED_CLOSED counts as closed, and so does any value outside the three
+// canonical states (drift or tampering; Feneris raises
+// kintsugi-policy-invalid for those), because an unknown state is treated as
+// the strictest one, never a looser one. The one definition the router,
+// governanceUnlock and proposeFixes all use.
+export function isRiskToleranceFailClosed(riskTolerance: unknown): boolean {
+    return riskTolerance !== "WITHIN_TOLERANCE" && riskTolerance !== "CONTROLLED";
+}
+
 export function getKintsugiPolicy(repoRoot: string): KintsugiPolicy {
     try {
         const activePath = path.join(repoRoot, ACTIVE_POLICY_FILE);

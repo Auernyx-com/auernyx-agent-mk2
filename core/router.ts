@@ -6,7 +6,7 @@ import { Approval, ApprovalRequiredError, approvalIdentity, isValidApproval, isV
 import { loadConfig } from "./config";
 import { readGovernanceLock } from "./governanceLock";
 import { isJudgmentActive } from "./provenance";
-import { getKintsugiPolicy } from "./kintsugi/memory";
+import { getKintsugiPolicy, isRiskToleranceFailClosed } from "./kintsugi/memory";
 import type { PlanStep } from "./planner";
 
 export interface Intent {
@@ -68,12 +68,25 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
         }
 
         // Governance lock: while locked, only allow minimal recovery/status operations.
+        const allowedWhileClosed: CapabilityName[] = ["memoryCheck", "governanceSelfTest", "governanceUnlock"];
         const lock = readGovernanceLock(ctx.repoRoot);
         if (lock.locked) {
-            const allowedWhileLocked: CapabilityName[] = ["memoryCheck", "governanceSelfTest", "governanceUnlock"];
-            if (!allowedWhileLocked.includes(capability)) {
+            if (!allowedWhileClosed.includes(capability)) {
                 throw new Error(`governance_locked: ${lock.reason ?? "(unset)"}`);
             }
+        }
+
+        // Kintsugi FAILED_CLOSED behaves like the governance lock (Justin's
+        // decision, 2026-11-27): the same three recovery/status capabilities
+        // run, everything else is refused, read-only included. Before this the
+        // only riskTolerance check was the Tier 2 gate below, so FAILED_CLOSED
+        // ran every Tier 0/1 capability, writes included, exactly like
+        // WITHIN_TOLERANCE. An unknown value counts as FAILED_CLOSED. The way
+        // out is governanceUnlock (typed APPLY + audit ledger + self-test
+        // checks), which drops only to WITHIN_TOLERANCE.
+        const kintsugiPolicy = getKintsugiPolicy(ctx.repoRoot);
+        if (isRiskToleranceFailClosed(kintsugiPolicy.riskTolerance) && !allowedWhileClosed.includes(capability)) {
+            throw new Error(`kintsugi_failed_closed: riskTolerance=${JSON.stringify(kintsugiPolicy.riskTolerance) ?? "missing"}`);
         }
 
         // Risk tolerance gate: Tier 2 operations require the policy to be explicitly
@@ -89,7 +102,6 @@ export function createRouter(policy: Policy, capabilities: Record<CapabilityName
         // WITHIN_TOLERANCE risk tolerance could never be cleared through the
         // capability system at all. governanceUnlock still enforces its own real
         // gate — ledger integrity must verify — before it will actually unlock.
-        const kintsugiPolicy = getKintsugiPolicy(ctx.repoRoot);
         if (capability !== "governanceUnlock" && meta.tier >= 2 && kintsugiPolicy.riskTolerance !== "CONTROLLED") {
             throw new Error("risk_tolerance_insufficient");
         }
