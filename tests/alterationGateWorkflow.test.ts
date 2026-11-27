@@ -101,3 +101,26 @@ test("record commit gets a real test run, dispatched with the branch via env", (
   const ci = fs.readFileSync(path.join(path.dirname(WORKFLOW_PATH), "ci-tests.yml"), "utf8");
   assert.ok(/\n\s*workflow_dispatch:/.test(ci), "ci-tests must accept workflow_dispatch");
 });
+
+// The record-in-first-push path (tools/open-pr.sh, 2026-11-27). The record
+// file is named by branch because the PR number doesn't exist yet, so the
+// trusted-record step must find the record by what the PR adds, not by a
+// -pr-<N> file name. Trust still comes only from the live is_allowed check.
+test("trusted record step finds the record by the PR diff, not by PR-number file name", () => {
+  const content = readWorkflow();
+  assert.ok(!content.includes('records/*-pr-"${PR_NUMBER}".json'), "old PR-number lookup still present");
+  assert.ok(content.includes('git diff --name-only --diff-filter=AM "${BASE_SHA}...HEAD"'), "must look at what the PR adds");
+  assert.ok(content.includes("BASE_SHA: ${{ github.event.pull_request.base.sha }}"), "base sha must come through env");
+  assert.ok(content.includes('if [ "$COUNT" -ne 1 ]'), "must vouch for exactly one record or none");
+  const step = content.slice(content.indexOf("name: Determine trusted record commit"));
+  assert.ok(/if: steps\.check-allowlist\.outputs\.is_allowed == 'true'/.test(step.slice(0, 200)), "vouching must stay behind the live is_allowed check");
+});
+
+test("open-pr.sh commits the record as the author, without a skip-ci marker", () => {
+  const script = fs.readFileSync(path.join(__dirname, "..", "..", "tools", "open-pr.sh"), "utf8");
+  assert.ok(script.includes('RECORD_DIR="governance/alteration-program/authorization/records"'));
+  assert.ok(script.includes("authorizedLogins"), "must refuse logins not on the allowlist");
+  assert.ok(script.includes("date -u +%F"), "authorizedAt must use the UTC date (gate rejects future dates)");
+  assert.ok(!/skip[ -]?ci/i.test(script.split("\n").filter((l) => l.includes("git commit")).join("\n")), "record commit must not carry a skip-ci marker");
+  assert.ok(script.includes('"$BRANCH" = "main"'), "must refuse to run on main");
+});

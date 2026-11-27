@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-gate-record-in-first-push",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/gate-record-in-first-push: ci(gate): record goes in the author's first push, so checks run first time (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/gate-record-in-first-push",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/gate-record-in-first-push: ci(gate): record goes in the author's first push, so checks run first time",
+  "branch": "fix/gate-record-in-first-push"
+}
