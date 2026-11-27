@@ -74,6 +74,7 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
   - `.auernyx/kintsugi/policy/active.policy.json` (atomic replace)
 - Notes:
   - “Loosening” policy changes are treated as CONTROLLED and require typed APPLY (`approval.confirm=APPLY`).
+  - Fail closed: when `riskTolerance` is `FAILED_CLOSED` (or any value outside the three canonical states), every loosening change is refused with `RISK_EXCEEDS_THRESHOLD`, even with typed APPLY, and the preview withholds those suggestions (listed under `withheld`). Tightening changes still apply. Leaving `FAILED_CLOSED` is a separate recovery step, never `proposeFixes`.
 
 ### 8) governanceSelfTest
 - Purpose: Run a governance/integrity self-test and record the result.
