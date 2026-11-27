@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-unlock-rechecks-cause",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/unlock-rechecks-cause: fix(governance): unlock re-runs the self-test checks; lock reason names the real failure (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/unlock-rechecks-cause",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/unlock-rechecks-cause: fix(governance): unlock re-runs the self-test checks; lock reason names the real failure",
+  "branch": "fix/unlock-rechecks-cause"
+}
