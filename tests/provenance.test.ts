@@ -117,3 +117,116 @@ test("Obsidian's Judgment: activate, read, and clear round-trip correctly", () =
   assert.equal(isJudgmentActive(repoRoot), false);
   assert.equal(readJudgment(repoRoot), null);
 });
+
+// 2026-11-27, Justin: Obsidian's Judgment must fail closed if the genesis file
+// is deleted without prior authorization. Before this, ensureGenesisRecord
+// re-created a missing genesis on the next write-enabled run, sealing
+// whatever the config said at that moment, and Judgment cleared itself:
+// deleting genesis.json was a silent re-seal. A deleted genesis looked
+// exactly like an uninitialized repo. Now: if this install was already
+// sealed (evidence below), a missing genesis is tampering, not a fresh start.
+function provenanceAuditKinds(repoRoot: string): string[] {
+  const p = path.join(repoRoot, ".auernyx", "provenance", "audit.ndjson");
+  if (!fs.existsSync(p)) return [];
+  return fs.readFileSync(p, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l).kind);
+}
+
+function sealThenDeleteGenesis(repoRoot: string) {
+  assert.equal(ensureGenesisRecord(repoRoot, { writeEnabled: true }).created, true);
+  assert.equal(verifyProvenance(repoRoot).ok, true);
+  fs.rmSync(genesisPath(repoRoot));
+}
+
+test("a genesis deleted after sealing is NOT re-created; provenance fails closed with genesis_deleted", () => {
+  const repoRoot = makeRepoRoot();
+  sealThenDeleteGenesis(repoRoot);
+
+  const again = ensureGenesisRecord(repoRoot, { writeEnabled: true });
+
+  assert.equal(again.created, false);
+  assert.equal(fs.existsSync(genesisPath(repoRoot)), false);
+  const result = verifyProvenance(repoRoot);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.code, "genesis_deleted");
+});
+
+test("the refused re-creation is written to the provenance audit log with its evidence", () => {
+  const repoRoot = makeRepoRoot();
+  sealThenDeleteGenesis(repoRoot);
+  ensureGenesisRecord(repoRoot, { writeEnabled: true });
+
+  const p = path.join(repoRoot, ".auernyx", "provenance", "audit.ndjson");
+  const refused = fs.readFileSync(p, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l))
+    .find((e) => e.kind === "genesis.recreate_refused");
+  assert.ok(refused, "genesis.recreate_refused must be logged");
+  assert.ok(refused.data.evidence.includes("provenance_audit:genesis.created"));
+});
+
+test("deleting the provenance audit log along with genesis is still caught when Kintsugi ledger records exist", () => {
+  const repoRoot = makeRepoRoot();
+  sealThenDeleteGenesis(repoRoot);
+  fs.rmSync(path.join(repoRoot, ".auernyx", "provenance"), { recursive: true });
+  const records = path.join(repoRoot, ".auernyx", "kintsugi", "ledger", "records");
+  fs.mkdirSync(records, { recursive: true });
+  fs.writeFileSync(path.join(records, "r1.json"), "{}");
+
+  assert.equal(ensureGenesisRecord(repoRoot, { writeEnabled: true }).created, false);
+  const result = verifyProvenance(repoRoot);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.code, "genesis_deleted");
+});
+
+test("...and when the main audit ledger has entries", () => {
+  const repoRoot = makeRepoRoot();
+  sealThenDeleteGenesis(repoRoot);
+  fs.rmSync(path.join(repoRoot, ".auernyx", "provenance"), { recursive: true });
+  fs.mkdirSync(path.join(repoRoot, "logs"), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, "logs", "ledger.ndjson"), '{"hash":"x"}\n');
+
+  assert.equal(ensureGenesisRecord(repoRoot, { writeEnabled: true }).created, false);
+  const result = verifyProvenance(repoRoot);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.code, "genesis_deleted");
+});
+
+test("a fresh install that only ran read-only (audit log, active Judgment, no genesis.created) still seals on its first write-enabled run", () => {
+  // The real state of a checkout that has only ever run with writes off.
+  const repoRoot = makeRepoRoot();
+  const missing = verifyProvenance(repoRoot);
+  assert.equal(missing.ok, false);
+  if (!missing.ok) {
+    assert.equal(missing.code, "genesis_missing", "never sealed: still reported as uninitialized, not deleted");
+    activateJudgment(repoRoot, missing);
+  }
+  assert.ok(provenanceAuditKinds(repoRoot).includes("judgment.activated"));
+
+  assert.equal(ensureGenesisRecord(repoRoot, { writeEnabled: true }).created, true);
+  assert.equal(verifyProvenance(repoRoot).ok, true);
+});
+
+test("end to end: after an unauthorized genesis deletion, Judgment activates and the router refuses writes", async () => {
+  const { createRouter } = await import("../core/router");
+  const { createPolicy } = await import("../core/policy");
+  const repoRoot = makeRepoRoot();
+  fs.mkdirSync(path.join(repoRoot, "config"), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, "config", "allowlist.json"), JSON.stringify({ allowedCapabilities: ["searchDocApply"] }));
+  fs.writeFileSync(
+    path.join(repoRoot, "config", "auernyx.config.json"),
+    JSON.stringify({ governance: { approverIdentity: "Test Approver" }, writeEnabled: true })
+  );
+  sealThenDeleteGenesis(repoRoot);
+
+  // The same provenance block runLifecycle runs before every request.
+  ensureGenesisRecord(repoRoot, { writeEnabled: true });
+  const prov = verifyProvenance(repoRoot);
+  if (!prov.ok) activateJudgment(repoRoot, prov);
+  else clearJudgment(repoRoot);
+
+  assert.equal(isJudgmentActive(repoRoot), true);
+  const router = createRouter(createPolicy(repoRoot), { searchDocApply: async () => ({ ok: true }) } as any);
+  await assert.rejects(
+    () => router.run("searchDocApply" as any, { repoRoot, sessionId: "s", execution: { planId: "p", stepId: "s1" } } as any, undefined,
+      { approvedBy: "human", at: new Date().toISOString(), reason: "test", identity: "Test Approver" } as any),
+    /obsidian_judgment_active/
+  );
+});

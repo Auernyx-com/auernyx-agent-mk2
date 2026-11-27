@@ -7,7 +7,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { sha256Hex, stableStringify } from "./crypto";
-import { isJudgmentActive, judgmentPath, genesisPath } from "./provenance";
+import { isJudgmentActive, judgmentPath, genesisPath, priorSealEvidence } from "./provenance";
 import { readGovernanceLock } from "./governanceLock";
 import { getKintsugiPolicy } from "./kintsugi/memory";
 import type { CapabilityName } from "./policy";
@@ -421,13 +421,15 @@ function checkGenesisRecord(repoRoot: string, ts: string): FenerisInfraction | n
         status: "open",
         detected_by: { actor_id: "feneris", method: "sentinel_scan" },
         timestamps: { detected_at: ts },
-        evidence: makeEvidence("provenance-genesis-missing", { genesis_path: p, exists: false }, ts),
+        evidence: makeEvidence("provenance-genesis-missing", { genesis_path: p, exists: false, prior_seal_evidence: priorSealEvidence(repoRoot) }, ts),
         feneris_assessment: {
             score: { scope: 8, severity: 9, sensitivity: 7, blast_radius: 9 },
             origin_point: `check:provenance-genesis|component:provenance|path:.auernyx/provenance/genesis.json`,
             rationale: "The genesis record is missing. Every run verifies provenance against genesis.json — its absence means the next run will trigger Obsidian's Judgment and block all privileged operations. On an initialized system, genesis should always be present. Its absence after initialization is a serious signal."
         },
-        notes: "genesis.json is missing. Provenance verification will fail on the next run unless the system is in write-enabled mode and can recreate it."
+        notes: priorSealEvidence(repoRoot).length > 0
+            ? "genesis.json was deleted after this install was sealed (genesis_deleted). It is not re-created: Obsidian's Judgment stays active until an authorized re-seal."
+            : "genesis.json is missing and this install was never sealed. The first write-enabled run creates it; until then Obsidian's Judgment blocks privileged operations."
     };
 }
 

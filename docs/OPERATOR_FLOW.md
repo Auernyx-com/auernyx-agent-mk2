@@ -96,6 +96,11 @@ Quick recovery options:
   - Expect Judgment to activate
   - Verify UI + refusal behavior
 
+- **Genesis deleted on an install that was already sealed** (`genesis_deleted`, since 2026-11-27): genesis is **not** re-created, even with writes enabled, so Judgment stays active (fail closed). "Already sealed" means any of: a `genesis.created` entry in `.auernyx/provenance/audit.ndjson`, Kintsugi ledger records, or entries in `logs/ledger.ndjson`. The refusal is logged as `genesis.recreate_refused` with that evidence.
+  - There is no authorized re-seal command yet (planned: a human-approved, receipted re-seal).
+  - Until then: restore the original `genesis.json` from a backup, or, on a dev/test install only, wipe `.auernyx/` and `logs/` entirely (a full reset; all local audit history is lost).
+  - A never-sealed install (only read-only runs so far) still seals normally on its first write-enabled run.
+
 ## 6) Debug (F5) profiles
 
 In VS Code Run & Debug:
