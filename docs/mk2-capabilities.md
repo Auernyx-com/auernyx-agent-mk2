@@ -80,6 +80,8 @@ Important: `.auernyx/kintsugi/` is a protected path. Governed mutations must ref
 - Purpose: Run a governance/integrity self-test and record the result.
 - Writes:
   - `logs/governance.lock.json`
+- Notes:
+  - Circuit breaker: the self-test trips the lock when a check fails, but never clears it. A passing self-test on a locked system records the pass, keeps the lock and its reason, and returns `unlockRequired: true`. Only `governanceUnlock` clears the lock.
 
 ### 9) governanceUnlock
 - Purpose: Clear governance lock only if integrity checks pass. Also the one way out of Kintsugi `FAILED_CLOSED`.
