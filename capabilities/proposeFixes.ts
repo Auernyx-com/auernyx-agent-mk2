@@ -27,6 +27,21 @@ function isLooseningPolicy(before: any, after: any): boolean {
     return false;
 }
 
+// Fail closed: WITHIN_TOLERANCE and CONTROLLED are the only open states.
+// FAILED_CLOSED counts as closed, and so does any value outside the three
+// canonical states (drift or tampering; Feneris raises
+// kintsugi-policy-invalid for those), because an unknown state is treated as
+// the strictest one, never a looser one.
+function isFailClosed(riskTolerance: unknown): boolean {
+    return riskTolerance !== "WITHIN_TOLERANCE" && riskTolerance !== "CONTROLLED";
+}
+
+function failClosedReason(riskTolerance: unknown): string {
+    return `Kintsugi policy is fail-closed (riskTolerance=${JSON.stringify(riskTolerance) ?? "missing"}). ` +
+        "Loosening changes are refused, even with typed APPLY. Leaving FAILED_CLOSED is a separate recovery step " +
+        "(cause cleared + human approval); proposeFixes never does it.";
+}
+
 export async function proposeFixes(ctx: RouterContext, input?: unknown): Promise<unknown> {
     const parsed = (input ?? {}) as Partial<ProposeFixesInput>;
     const policy = getKintsugiPolicy(ctx.repoRoot);
@@ -81,6 +96,23 @@ export async function proposeFixes(ctx: RouterContext, input?: unknown): Promise
         const loosening = isLooseningPolicy(before, after);
         const riskLevel = loosening ? "ELEVATED" : "CONTROLLED";
 
+        // 2026-11-27: typed APPLY used to be the only thing between
+        // FAILED_CLOSED and CONTROLLED, and CONTROLLED unlocks Tier 2 in
+        // router.ts. This capability is Tier 1, so the router lets it run in
+        // FAILED_CLOSED. Checked before the typed-APPLY gate on purpose: no
+        // confirmation can loosen a fail-closed policy from inside.
+        if (loosening && isFailClosed(before.riskTolerance)) {
+            throw new GovernanceRefusalError({
+                system: "kintsugi:policy",
+                requestedAction: `Apply policy suggestion ${picked.id}`,
+                refusalReason: "RISK_EXCEEDS_THRESHOLD",
+                policyRefs: ["riskTolerance"],
+                riskLevel: "CRITICAL",
+                whatWouldBeRequired: "riskTolerance must be WITHIN_TOLERANCE or CONTROLLED before any loosening change",
+                notes: failClosedReason(before.riskTolerance),
+            });
+        }
+
         // Was `riskLevel === "CONTROLLED"` — the inverse of what the refusal's
         // own name and message say. loosening=true sets riskLevel="ELEVATED"
         // two lines up; the condition as written required typed APPLY only for
@@ -116,6 +148,23 @@ export async function proposeFixes(ctx: RouterContext, input?: unknown): Promise
         ctx.ledger?.append(ctx.sessionId, "proposeFixes.applied", { applied: picked.id, patch: picked.patch, riskLevel });
 
         return { ok: true, applied: picked.id, patch: picked.patch, riskLevel };
+    }
+
+    // A fail-closed policy is never offered a loosening suggestion: the apply
+    // path above would refuse it anyway, so listing it would only mislead.
+    if (isFailClosed(policy.riskTolerance)) {
+        const isLoosening = (s: Suggestion) => isLooseningPolicy(policy, { ...policy, ...(s.patch as any) });
+        return {
+            ok: true,
+            integrity,
+            policy,
+            policyHash: policyHash(policy),
+            suggestions: suggestions.filter((s) => !isLoosening(s)),
+            withheld: {
+                ids: suggestions.filter(isLoosening).map((s) => s.id),
+                reason: failClosedReason(policy.riskTolerance),
+            },
+        };
     }
 
     return {
