@@ -7,6 +7,11 @@ updates:
       day: "sunday"
       time: "03:00"
     open-pull-requests-limit: 3
+    ignore:
+      # @types/node tracks the Node runtime major (Node 24: CI + Citadel).
+      # Bump this together with the node-version in .github/workflows/.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     labels:
       - "dependencies"
       - "dependabot"
