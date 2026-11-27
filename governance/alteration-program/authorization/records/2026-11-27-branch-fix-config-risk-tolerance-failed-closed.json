@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-config-risk-tolerance-failed-closed",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/config-risk-tolerance-failed-closed: fix(config): keep riskTolerance FAILED_CLOSED; unknown values fail closed (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/config-risk-tolerance-failed-closed",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/config-risk-tolerance-failed-closed: fix(config): keep riskTolerance FAILED_CLOSED; unknown values fail closed",
+  "branch": "fix/config-risk-tolerance-failed-closed"
+}
