@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-ghost-child-path-not-coverage",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/ghost-child-path-not-coverage: fix(ghost): a narrower child path in Mnema's list no longer counts as coverage (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/ghost-child-path-not-coverage",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/ghost-child-path-not-coverage: fix(ghost): a narrower child path in Mnema's list no longer counts as coverage",
+  "branch": "fix/ghost-child-path-not-coverage"
+}
