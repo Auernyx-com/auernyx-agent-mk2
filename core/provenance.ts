@@ -5,6 +5,7 @@ import { sha256Hex, stableStringify } from "./crypto";
 
 export type ProvenanceFailureCode =
     | "genesis_missing"
+    | "genesis_deleted"
     | "genesis_parse_error"
     | "genesis_hash_mismatch"
     | "governance_hash_mismatch"
@@ -53,6 +54,45 @@ function auditPath(repoRoot: string): string {
 
 function ensureDir(p: string) {
     if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+}
+
+// 2026-11-27 (Justin): Obsidian's Judgment must fail closed if genesis is
+// deleted without prior authorization. A missing genesis used to look exactly
+// like an uninitialized repo, so the next write-enabled run re-created it,
+// sealing whatever the config said at that moment, and Judgment cleared
+// itself. Evidence that this install was already sealed; any one is enough.
+// Never the mere existence of the provenance audit log or judgment file:
+// read-only runs write those without ever sealing. Only written after a
+// write-enabled run has sealed genesis, and none of these paths are tracked
+// in git, so a fresh clone has none of them.
+export function priorSealEvidence(repoRoot: string): string[] {
+    const evidence: string[] = [];
+
+    const audit = readFileIfExists(auditPath(repoRoot)) ?? "";
+    const sealedBefore = audit.includes("genesis.created") && audit.split("\n").some((line) => {
+        try {
+            return JSON.parse(line)?.kind === "genesis.created";
+        } catch {
+            return false;
+        }
+    });
+    if (sealedBefore) evidence.push("provenance_audit:genesis.created");
+
+    try {
+        const records = path.join(repoRoot, ".auernyx", "kintsugi", "ledger", "records");
+        if (fs.existsSync(records) && fs.readdirSync(records).length > 0) evidence.push("kintsugi_ledger_records");
+    } catch {
+        evidence.push("kintsugi_ledger_records_unreadable");
+    }
+
+    try {
+        const ledger = path.join(repoRoot, "logs", "ledger.ndjson");
+        if (fs.existsSync(ledger) && fs.statSync(ledger).size > 0) evidence.push("audit_ledger_entries");
+    } catch {
+        evidence.push("audit_ledger_unreadable");
+    }
+
+    return evidence;
 }
 
 function readFileIfExists(p: string): string | undefined {
@@ -104,6 +144,15 @@ export function ensureGenesisRecord(repoRoot: string, options?: { writeEnabled?:
     if (fs.existsSync(p)) return { created: false };
     if (!writeEnabled) return { created: false };
 
+    // Already sealed once: a missing genesis is a deletion, not a fresh start.
+    // Never re-seal silently; Judgment stays active (verifyProvenance reports
+    // genesis_deleted) until a human-authorized re-seal.
+    const evidence = priorSealEvidence(repoRoot);
+    if (evidence.length > 0) {
+        appendProvenanceAudit(repoRoot, { kind: "genesis.recreate_refused", data: { evidence } });
+        return { created: false };
+    }
+
     try {
         ensureDir(path.dirname(p));
 
@@ -150,6 +199,15 @@ export function verifyProvenance(repoRoot: string): ProvenanceStatus {
 
     const genesisRaw = readGenesisRecord(repoRoot);
     if (!genesisRaw) {
+        const evidence = priorSealEvidence(repoRoot);
+        if (evidence.length > 0) {
+            return {
+                ok: false,
+                code: "genesis_deleted",
+                reason: "Genesis record deleted after this install was sealed; it is not re-created without an authorized re-seal",
+                details: { expected_path: genesisPath(repoRoot), evidence },
+            };
+        }
         return {
             ok: false,
             code: "genesis_missing",

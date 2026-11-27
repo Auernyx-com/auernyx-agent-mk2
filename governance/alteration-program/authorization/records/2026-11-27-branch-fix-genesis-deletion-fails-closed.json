@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-genesis-deletion-fails-closed",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/genesis-deletion-fails-closed: fix(provenance): a deleted genesis on a sealed install fails closed; no silent re-seal (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/genesis-deletion-fails-closed",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/genesis-deletion-fails-closed: fix(provenance): a deleted genesis on a sealed install fails closed; no silent re-seal",
+  "branch": "fix/genesis-deletion-fails-closed"
+}
