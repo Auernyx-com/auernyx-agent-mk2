@@ -118,7 +118,7 @@ const DEFAULT_GOVERNANCE: GovernanceConfig = {
     protectedPaths: [
         ".auernyx/kintsugi/ledger/records",
         ".auernyx/kintsugi/policy/history",
-        ".auernyx/kintsugi/active.policy.json",
+        ".auernyx/kintsugi/policy/active.policy.json",
     ],
     rollback: {
         allowRollback: false,

@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-kintsugi-active-policy-path",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/kintsugi-active-policy-path: fix(kintsugi): point default protected path + Ghost at the real active policy file (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/kintsugi-active-policy-path",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/kintsugi-active-policy-path: fix(kintsugi): point default protected path + Ghost at the real active policy file",
+  "branch": "fix/kintsugi-active-policy-path"
+}
