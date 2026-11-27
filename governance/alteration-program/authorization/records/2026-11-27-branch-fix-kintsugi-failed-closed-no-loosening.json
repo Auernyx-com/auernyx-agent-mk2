@@ -1,0 +1,9 @@
+{
+  "governance_record": "2026-11-27-branch-fix-kintsugi-failed-closed-no-loosening",
+  "authorization_logic": "Ghostwolf101 authorized via allowlist for branch fix/kintsugi-failed-closed-no-loosening: fix(kintsugi): a fail-closed policy can't be loosened from inside, even with typed APPLY (record committed by the author in the PR's first push, tools/open-pr.sh)",
+  "signature": "Ghostwolf101-2026-11-27-fix/kintsugi-failed-closed-no-loosening",
+  "authorizedBy": "Ghostwolf101",
+  "authorizedAt": "2026-11-27",
+  "reason": "fix/kintsugi-failed-closed-no-loosening: fix(kintsugi): a fail-closed policy can't be loosened from inside, even with typed APPLY",
+  "branch": "fix/kintsugi-failed-closed-no-loosening"
+}

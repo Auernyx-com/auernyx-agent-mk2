@@ -133,3 +133,76 @@ for (const start of ["FAILED_CLOSED", "within_tolerance", "SOMETHING_ELSE"]) {
     assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, start);
   });
 }
+
+// 2026-11-27 Kintsugi fail-closed plan, step 1. Typed APPLY was the only
+// thing standing between FAILED_CLOSED and CONTROLLED, and CONTROLLED unlocks
+// Tier 2 in router.ts (firewall, docker, rollback). proposeFixes is Tier 1,
+// so the router lets it run in FAILED_CLOSED. A fail-closed policy must not be
+// loosened from inside at all: FAILED_CLOSED, or any value outside the three
+// canonical states (drift or tampering), refuses every loosening suggestion
+// even WITH typed APPLY. Leaving FAILED_CLOSED is a separate recovery step.
+const confirmedApproval = { ...validApproval, confirm: "APPLY" };
+const isFailClosedRefusal = (err: unknown) =>
+  err instanceof GovernanceRefusalError && err.refusal.refusalReason === "RISK_EXCEEDS_THRESHOLD";
+
+function policyHistoryFiles(repoRoot: string): string[] {
+  const dir = path.join(repoRoot, ".auernyx", "kintsugi", "policy", "history");
+  return fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+}
+
+for (const start of ["FAILED_CLOSED", "within_tolerance", "SOMETHING_ELSE"]) {
+  test(`from ${start}, the move to CONTROLLED is refused even WITH typed APPLY, and nothing is written`, async () => {
+    const repoRoot = makeRepoRoot();
+    seedPolicy(repoRoot, { riskTolerance: start });
+    await assert.rejects(
+      () => proposeFixes(ctx(repoRoot, confirmedApproval), { apply: true, suggestionId: "enable-riskTolerance-controlled" }),
+      isFailClosedRefusal
+    );
+    assert.equal(getKintsugiPolicy(repoRoot).riskTolerance, start);
+    assert.deepEqual(policyHistoryFiles(repoRoot), [], "a refused change must not write a policy snapshot");
+  });
+}
+
+test("in FAILED_CLOSED, other loosening changes are refused even WITH typed APPLY", async () => {
+  const repoRoot = makeRepoRoot();
+  seedPolicy(repoRoot, { riskTolerance: "FAILED_CLOSED" });
+  await assert.rejects(
+    () => proposeFixes(ctx(repoRoot, confirmedApproval), { apply: true, suggestionId: "disable-confirmArtifactWrites" }),
+    isFailClosedRefusal
+  );
+  assert.equal(getKintsugiPolicy(repoRoot).confirmArtifactWrites, true);
+});
+
+test("in FAILED_CLOSED, the preview withholds loosening suggestions and says why", async () => {
+  const repoRoot = makeRepoRoot();
+  seedPolicy(repoRoot, { riskTolerance: "FAILED_CLOSED" });
+  const result = (await proposeFixes(ctx(repoRoot))) as any;
+
+  assert.equal(result.ok, true);
+  const ids = result.suggestions.map((s: any) => s.id);
+  assert.ok(!ids.includes("enable-riskTolerance-controlled"));
+  assert.ok(!ids.includes("disable-confirmArtifactWrites"));
+  assert.ok(ids.includes("enable-strictPreflightForArtifactWrites"), "tightening is still offered");
+  assert.deepEqual([...result.withheld.ids].sort(), ["disable-confirmArtifactWrites", "enable-riskTolerance-controlled"]);
+  assert.match(result.withheld.reason, /FAILED_CLOSED/);
+});
+
+test("in FAILED_CLOSED, a tightening change still applies and the state stays FAILED_CLOSED", async () => {
+  const repoRoot = makeRepoRoot();
+  seedPolicy(repoRoot, { riskTolerance: "FAILED_CLOSED" });
+  const result = (await proposeFixes(ctx(repoRoot, validApproval), {
+    apply: true,
+    suggestionId: "enable-strictPreflightForArtifactWrites",
+  })) as any;
+
+  assert.equal(result.ok, true);
+  const after = getKintsugiPolicy(repoRoot);
+  assert.equal(after.strictPreflightForArtifactWrites, true);
+  assert.equal(after.riskTolerance, "FAILED_CLOSED");
+});
+
+test("an open policy (WITHIN_TOLERANCE) has nothing withheld", async () => {
+  const repoRoot = makeRepoRoot();
+  const result = (await proposeFixes(ctx(repoRoot))) as any;
+  assert.equal(result.withheld, undefined);
+});
