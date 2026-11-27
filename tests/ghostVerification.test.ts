@@ -49,3 +49,24 @@ test("path comparison is case/slash-normalized and works with either as the more
   // the other two Ghost paths are still missing from this short list.
   assert.equal(result.deviations.some((d) => d.path === ".auernyx/kintsugi/ledger/records"), false);
 });
+
+// Item 5 (2026-11-27 /code-review high): Mnema's list is enforced by prefix
+// (governanceRefusal.isPathProtected: rel === p || rel.startsWith(p + "/")),
+// so an entry only protects its own subtree. A NARROWER child entry does not
+// protect the parent Ghost cares about, and must not count as coverage.
+test("a narrower child entry in Mnema's list does NOT count as covering Ghost's parent threat path", () => {
+  const result = runGhostVerification([
+    ".auernyx/kintsugi/ledger/records/2026", // child of the ledger-records threat only
+    ".auernyx/kintsugi/policy/history",
+    ".auernyx/kintsugi/active.policy.json",
+  ]);
+  const ledger = result.deviations.find((d) => d.path === ".auernyx/kintsugi/ledger/records");
+  assert.ok(ledger, "ledger/records is only partly protected: Ghost must report it missing");
+  assert.equal(ledger!.critical, true);
+  assert.equal(ledger!.inMnemaList, false);
+});
+
+test("a broader parent entry in Mnema's list still covers every Ghost threat path under it", () => {
+  const result = runGhostVerification([".auernyx/kintsugi"]);
+  assert.equal(result.deviations.filter((d) => d.inGhostThreatModel).length, 0);
+});

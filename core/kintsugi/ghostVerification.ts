@@ -46,8 +46,10 @@ function mnemaCovers(mnemaList: string[], targetRel: string): boolean {
     const target = normalizeRel(targetRel);
     for (const entry of mnemaList) {
         const norm = normalizeRel(entry);
+        // Only an exact or BROADER (parent) entry covers the target. Mnema's
+        // list is enforced by prefix (governanceRefusal.isPathProtected), so a
+        // narrower child entry protects just its own subtree, not the target.
         if (target === norm || target.startsWith(norm + "/")) return true;
-        if (norm === target || norm.startsWith(target + "/")) return true;
     }
     return false;
 }
